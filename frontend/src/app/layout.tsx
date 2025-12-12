@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CDI0436",
-  description: "Centro de desarrollo caminando con jesus",
+  title: "CDI - Sistema de Asistencia",
+  description: "Sistema de gestión de asistencia para CDI",
 };
 
 export default function RootLayout({
@@ -12,8 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body>
-        {children}
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
