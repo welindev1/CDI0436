@@ -107,7 +107,15 @@ export default function BeneficiariosPage() {
   const handleExportar = async () => {
     try {
       setIsExporting(true);
+      setError('');
+      console.log('Iniciando exportación de beneficiarios...');
+      
       const blob = await beneficiariosApi.exportarAExcel();
+      console.log('Blob recibido:', blob);
+      
+      if (!blob || blob.size === 0) {
+        throw new Error('El archivo exportado está vacío');
+      }
       
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -118,8 +126,36 @@ export default function BeneficiariosPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      
+      console.log('Exportación completada exitosamente');
     } catch (err: any) {
-      setError('Error al exportar beneficiarios');
+      console.error('Error detallado al exportar:', err);
+      console.error('Mensaje:', err.message);
+      console.error('Response:', err.response);
+      console.error('Status:', err.response?.status);
+      console.error('Data:', err.response?.data);
+      
+      let errorMessage = 'Error al exportar beneficiarios';
+      
+      // Si el error es un Blob de tipo JSON, intentar leerlo
+      if (err.response?.data instanceof Blob && err.response.data.type === 'application/json') {
+        try {
+          const text = await err.response.data.text();
+          const errorData = JSON.parse(text);
+          console.error('Error del servidor:', errorData);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (parseErr) {
+          console.error('No se pudo parsear el error:', parseErr);
+        }
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Endpoint de exportación no encontrado. Verifica que el backend esté corriendo.';
+      } else if (err.response?.status === 500) {
+        errorMessage = 'Error en el servidor al generar el archivo Excel.';
+      } else if (err.message) {
+        errorMessage = `Error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsExporting(false);
     }

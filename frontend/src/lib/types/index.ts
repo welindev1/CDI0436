@@ -1,11 +1,4 @@
 // Enums
-export enum RolUsuario {
-  ADMINISTRADOR = 'administrador',
-  PROFESOR = 'profesor',
-  TUTOR_LIDER = 'tutor_lider',
-  TUTOR = 'tutor',
-}
-
 export enum EstadoAsistencia {
   PRESENTE = 'presente',
   AUSENTE = 'ausente',
@@ -23,15 +16,38 @@ export enum DiaSemana {
   DOMINGO = 'domingo',
 }
 
+// Permisos y Roles
+export interface Permiso {
+  id: string;
+  codigo: string;
+  nombre: string;
+  modulo: string;
+  accion: string;
+  descripcion: string;
+}
+
+export interface Rol {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  es_super_admin: boolean;
+  activo: boolean;
+  permisos?: Permiso[];
+  creado_en?: string;
+  actualizado_en?: string;
+}
+
 // Interfaces
 export interface Usuario {
   id: string;
   nombre: string;
   correo: string;
-  rol: RolUsuario;
+  rol: Rol | null;
+  rol_id?: string | null;
+  permisos?: string[]; // Lista de códigos de permisos o ['*'] si es super admin
   activo: boolean;
-  creado_en: string;
-  actualizado_en: string;
+  creado_en?: string;
+  actualizado_en?: string;
 }
 
 export interface Tutor {

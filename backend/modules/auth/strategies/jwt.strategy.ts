@@ -18,17 +18,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // Cargar usuario con rol y permisos
     const usuario = await this.usuariosService.findOne(payload.sub);
-    
+
     if (!usuario || !usuario.activo) {
       throw new UnauthorizedException();
     }
 
+    // Retornar usuario con rol completo para el guard de permisos
     return {
-      id: payload.sub,
-      correo: payload.correo,
-      rol: payload.rol,
-      nombre: payload.nombre
+      id: usuario.id,
+      correo: usuario.correo,
+      nombre: usuario.nombre,
+      rol: usuario.rol,
+      rol_id: usuario.rol_id,
     };
   }
 }

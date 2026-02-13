@@ -1,12 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { RolUsuario } from '../usuarios/usuario.entity';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private usuariosService: UsuariosService,
     private jwtService: JwtService,
@@ -15,18 +15,27 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const usuario = await this.usuariosService.validateUser(
       loginDto.correo,
-      loginDto.password
+      loginDto.password,
     );
 
     if (!usuario) {
+      this.logger.warn(
+        `Intento de login fallido para correo: ${loginDto.correo}`,
+      );
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    this.logger.log(`Usuario logueado exitosamente: ${usuario.correo}`);
+
+    // Extraer códigos de permisos
+    const permisos =
+      usuario.rol?.permisos?.map((p) => p.codigo) || [];
+
     const payload = {
       sub: usuario.id,
       correo: usuario.correo,
-      rol: usuario.rol,
-      nombre: usuario.nombre
+      nombre: usuario.nombre,
+      rol_id: usuario.rol_id,
     };
 
     return {
@@ -36,32 +45,14 @@ export class AuthService {
         nombre: usuario.nombre,
         correo: usuario.correo,
         rol: usuario.rol
-      }
-    };
-  }
-
-  async register(registerDto: RegisterDto) {
-    // Registrar como TUTOR por defecto
-    const usuario = await this.usuariosService.create({
-      ...registerDto,
-      rol: RolUsuario.TUTOR
-    });
-
-    const payload = {
-      sub: usuario.id,
-      correo: usuario.correo,
-      rol: usuario.rol,
-      nombre: usuario.nombre
-    };
-
-    return {
-      access_token: this.jwtService.sign(payload),
-      usuario: {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        correo: usuario.correo,
-        rol: usuario.rol
-      }
+          ? {
+              id: usuario.rol.id,
+              nombre: usuario.rol.nombre,
+              es_super_admin: usuario.rol.es_super_admin,
+            }
+          : null,
+        permisos: usuario.rol?.es_super_admin ? ['*'] : permisos,
+      },
     };
   }
 
@@ -69,16 +60,26 @@ export class AuthService {
     try {
       const payload = this.jwtService.verify(token);
       const usuario = await this.usuariosService.findOne(payload.sub);
-      
+
       if (!usuario || !usuario.activo) {
         throw new UnauthorizedException();
       }
+
+      const permisos =
+        usuario.rol?.permisos?.map((p) => p.codigo) || [];
 
       return {
         id: usuario.id,
         nombre: usuario.nombre,
         correo: usuario.correo,
         rol: usuario.rol
+          ? {
+              id: usuario.rol.id,
+              nombre: usuario.rol.nombre,
+              es_super_admin: usuario.rol.es_super_admin,
+            }
+          : null,
+        permisos: usuario.rol?.es_super_admin ? ['*'] : permisos,
       };
     } catch (error) {
       throw new UnauthorizedException('Token inválido');

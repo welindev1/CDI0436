@@ -1,5 +1,4 @@
-import { IsString, IsEmail, IsEnum, MinLength, MaxLength } from 'class-validator';
-import { RolUsuario } from '../usuario.entity';
+import { IsString, IsEmail, IsUUID, MinLength, MaxLength, IsOptional } from 'class-validator';
 
 export class CreateUsuarioDto {
   @IsString()
@@ -14,6 +13,6 @@ export class CreateUsuarioDto {
   @MaxLength(50)
   password: string;
 
-  @IsEnum(RolUsuario)
-  rol: RolUsuario;
+  @IsUUID()
+  rol_id: string;
 }

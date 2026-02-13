@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
@@ -17,7 +22,7 @@ export class UsuariosService {
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     // Verificar si el correo ya existe
     const existe = await this.usuariosRepository.findOne({
-      where: { correo: createUsuarioDto.correo }
+      where: { correo: createUsuarioDto.correo },
     });
 
     if (existe) {
@@ -29,24 +34,26 @@ export class UsuariosService {
     const passwordHash = await bcrypt.hash(createUsuarioDto.password, salt);
 
     const usuario = this.usuariosRepository.create({
-      ...createUsuarioDto,
-      password_hash: passwordHash
+      nombre: createUsuarioDto.nombre,
+      correo: createUsuarioDto.correo,
+      password_hash: passwordHash,
+      rol_id: createUsuarioDto.rol_id,
     });
 
     const savedUsuario = await this.usuariosRepository.save(usuario);
-    
-    // Retornar objeto sin password_hash (no usar `delete` sobre propiedades no-optional)
-    const { password_hash, ...safeUsuario } = savedUsuario;
-    return safeUsuario as Usuario;
+
+    // Recargar con relación de rol
+    return this.findOne(savedUsuario.id);
   }
 
   async findAll(): Promise<Usuario[]> {
     const usuarios = await this.usuariosRepository.find({
-      order: { nombre: 'ASC' }
+      relations: ['rol', 'rol.permisos'],
+      order: { nombre: 'ASC' },
     });
 
-    // Eliminar passwords sin usar `delete`
-    return usuarios.map(u => {
+    // Eliminar passwords
+    return usuarios.map((u) => {
       const { password_hash, ...safe } = u;
       return safe as Usuario;
     });
@@ -54,7 +61,8 @@ export class UsuariosService {
 
   async findOne(id: string): Promise<Usuario> {
     const usuario = await this.usuariosRepository.findOne({
-      where: { id }
+      where: { id },
+      relations: ['rol', 'rol.permisos'],
     });
 
     if (!usuario) {
@@ -68,13 +76,14 @@ export class UsuariosService {
   // findByCorreo puede devolver null si no existe
   async findByCorreo(correo: string): Promise<Usuario | null> {
     return await this.usuariosRepository.findOne({
-      where: { correo }
+      where: { correo },
+      relations: ['rol', 'rol.permisos'],
     });
   }
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
     const usuario = await this.usuariosRepository.findOne({
-      where: { id }
+      where: { id },
     });
 
     if (!usuario) {
@@ -84,7 +93,7 @@ export class UsuariosService {
     // Si se intenta cambiar el correo, verificar que no exista
     if (updateUsuarioDto.correo && updateUsuarioDto.correo !== usuario.correo) {
       const existe = await this.usuariosRepository.findOne({
-        where: { correo: updateUsuarioDto.correo }
+        where: { correo: updateUsuarioDto.correo },
       });
 
       if (existe) {
@@ -92,16 +101,24 @@ export class UsuariosService {
       }
     }
 
-    Object.assign(usuario, updateUsuarioDto);
-    const updated = await this.usuariosRepository.save(usuario);
-    
-    const { password_hash, ...safeUpdated } = updated;
-    return safeUpdated as Usuario;
+    // Actualizar campos
+    if (updateUsuarioDto.nombre) usuario.nombre = updateUsuarioDto.nombre;
+    if (updateUsuarioDto.correo) usuario.correo = updateUsuarioDto.correo;
+    if (updateUsuarioDto.rol_id) usuario.rol_id = updateUsuarioDto.rol_id;
+    if (updateUsuarioDto.activo !== undefined)
+      usuario.activo = updateUsuarioDto.activo;
+
+    await this.usuariosRepository.save(usuario);
+
+    return this.findOne(id);
   }
 
-  async changePassword(id: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(
+    id: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<void> {
     const usuario = await this.usuariosRepository.findOne({
-      where: { id }
+      where: { id },
     });
 
     if (!usuario) {
@@ -109,25 +126,54 @@ export class UsuariosService {
     }
 
     // Verificar password actual
-    const isValid = await bcrypt.compare(changePasswordDto.passwordActual, usuario.password_hash);
+    const isValid = await bcrypt.compare(
+      changePasswordDto.passwordActual,
+      usuario.password_hash,
+    );
     if (!isValid) {
       throw new BadRequestException('La contraseña actual es incorrecta');
     }
 
     // Hash del nuevo password
     const salt = await bcrypt.genSalt(10);
-    usuario.password_hash = await bcrypt.hash(changePasswordDto.passwordNueva, salt);
+    usuario.password_hash = await bcrypt.hash(
+      changePasswordDto.passwordNueva,
+      salt,
+    );
+
+    await this.usuariosRepository.save(usuario);
+  }
+
+  async resetPassword(id: string, newPassword: string): Promise<void> {
+    const usuario = await this.usuariosRepository.findOne({
+      where: { id },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    usuario.password_hash = await bcrypt.hash(newPassword, salt);
 
     await this.usuariosRepository.save(usuario);
   }
 
   async remove(id: string): Promise<void> {
     const usuario = await this.usuariosRepository.findOne({
-      where: { id }
+      where: { id },
+      relations: ['rol'],
     });
 
     if (!usuario) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+    }
+
+    // No permitir eliminar super admin
+    if (usuario.rol?.es_super_admin) {
+      throw new BadRequestException(
+        'No se puede eliminar el usuario Super Administrador',
+      );
     }
 
     await this.usuariosRepository.remove(usuario);
@@ -135,18 +181,25 @@ export class UsuariosService {
 
   async softDelete(id: string): Promise<Usuario> {
     const usuario = await this.usuariosRepository.findOne({
-      where: { id }
+      where: { id },
+      relations: ['rol'],
     });
 
     if (!usuario) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
 
-    usuario.activo = false;
-    const updated = await this.usuariosRepository.save(usuario);
+    // No permitir desactivar super admin
+    if (usuario.rol?.es_super_admin) {
+      throw new BadRequestException(
+        'No se puede desactivar el usuario Super Administrador',
+      );
+    }
 
-    const { password_hash, ...safeUpdated } = updated;
-    return safeUpdated as Usuario;
+    usuario.activo = false;
+    await this.usuariosRepository.save(usuario);
+
+    return this.findOne(id);
   }
 
   async validateUser(correo: string, password: string): Promise<Usuario | null> {
