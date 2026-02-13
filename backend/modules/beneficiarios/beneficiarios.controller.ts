@@ -14,7 +14,8 @@ import {
   UploadedFile,
   BadRequestException,
   Res,
-  StreamableFile
+  StreamableFile,
+  ValidationPipe
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express'; // <-- CORRECTO
@@ -131,9 +132,15 @@ export class BeneficiariosController {
     res.send(buffer);
   }
 
+
   @Get('exportar')
   async exportar(
-    @Query() filters: FilterBeneficiarioDto,
+    @Query(new ValidationPipe({ 
+      transform: true, 
+      whitelist: true,
+      skipMissingProperties: true,
+      forbidNonWhitelisted: false 
+    })) filters: FilterBeneficiarioDto,
     @Res() res: Response
   ) {
     const buffer = await this.beneficiariosService.exportarAExcel(filters);

@@ -79,13 +79,20 @@ export const beneficiariosApi = {
   },
 
   exportarAExcel: async (filters?: any): Promise<Blob> => {
-    const params = new URLSearchParams();
-    if (filters) {
+    let url = '/beneficiarios/exportar';
+    
+    if (filters && Object.keys(filters).length > 0) {
+      const params = new URLSearchParams();
       Object.keys(filters).forEach(key => {
         if (filters[key]) params.append(key, filters[key]);
       });
+      const queryString = params.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
     }
-    const response = await apiClient.get(`/beneficiarios/exportar?${params}`, {
+    
+    const response = await apiClient.get(url, {
       responseType: 'blob',
     });
     return response.data;

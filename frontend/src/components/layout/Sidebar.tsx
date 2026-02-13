@@ -6,9 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils/cn';
 import {
-  LayoutDashboard,
   Users,
-  Calendar,
   ClipboardCheck,
   BookOpen,
   Clock,
@@ -18,67 +16,117 @@ import {
   Menu,
   X,
   UserCircle,
+  Shield,
+  UserCog,
 } from 'lucide-react';
 
-const menuItems = [
+interface MenuItem {
+  title: string;
+  icon: any;
+  href: string;
+  permisos?: string[]; // Si está vacío, todos tienen acceso
+}
+
+const menuItems: MenuItem[] = [
   {
-    title: 'Dashboard',
-    icon: LayoutDashboard,
-    href: '/dashboard',
-    roles: ['administrador'],
+    title: 'Solicitudes de Ayuda',
+    icon: FileText,
+    href: '/dashboard/ayudas',
+    permisos: ['ayudas:ver'],
   },
   {
     title: 'Beneficiarios',
     icon: Users,
     href: '/dashboard/beneficiarios',
-    roles: ['administrador', 'profesor', 'tutor_lider', 'tutor'],
+    permisos: ['beneficiarios:ver'],
   },
   {
     title: 'Tutores',
     icon: UserCircle,
     href: '/dashboard/tutores',
-    roles: ['administrador', 'profesor', 'tutor_lider'],
+    permisos: ['tutores:ver'],
   },
   {
     title: 'Clases',
     icon: BookOpen,
     href: '/dashboard/clases',
-    roles: ['administrador', 'profesor', 'tutor_lider', 'tutor'],
+    permisos: ['clases:ver'],
   },
   {
     title: 'Horarios',
     icon: Clock,
     href: '/dashboard/horarios',
-    roles: ['administrador', 'profesor', 'tutor_lider', 'tutor'],
+    permisos: ['horarios:ver'],
   },
   {
     title: 'Asistencias',
     icon: ClipboardCheck,
     href: '/dashboard/asistencias',
-    roles: ['administrador', 'profesor', 'tutor_lider', 'tutor'],
+    permisos: ['asistencias:ver'],
   },
   {
     title: 'Reportes',
     icon: FileText,
     href: '/dashboard/reportes',
-    roles: ['administrador', 'profesor', 'tutor_lider'],
+    permisos: ['reportes:ver'],
+  },
+];
+
+const adminMenuItems: MenuItem[] = [
+  {
+    title: 'Usuarios',
+    icon: UserCog,
+    href: '/dashboard/usuarios',
+    permisos: ['usuarios:ver'],
   },
   {
-    title: 'Configuración',
-    icon: Settings,
-    href: '/dashboard/configuracion',
-    roles: ['administrador'],
+    title: 'Roles y Permisos',
+    icon: Shield,
+    href: '/dashboard/roles',
+    permisos: ['roles:ver'],
   },
 ];
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, tieneAlgunPermiso, esSuperAdmin } = useAuth();
   const pathname = usePathname();
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(usuario?.rol || '')
-  );
+  // Filtrar menú por permisos
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (!item.permisos || item.permisos.length === 0) return true;
+    if (esSuperAdmin()) return true;
+    return tieneAlgunPermiso(item.permisos);
+  });
+
+  // Filtrar menú admin
+  const filteredAdminItems = adminMenuItems.filter((item) => {
+    if (!item.permisos || item.permisos.length === 0) return true;
+    if (esSuperAdmin()) return true;
+    return tieneAlgunPermiso(item.permisos);
+  });
+
+  const renderMenuItem = (item: MenuItem) => {
+    const Icon = item.icon;
+    const isActive = pathname === item.href;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={() => setIsOpen(false)}
+        className={cn(
+          'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+          isActive
+            ? 'bg-blue-50 text-blue-600 font-medium'
+            : 'text-gray-700 hover:bg-gray-50'
+        )}
+      >
+        <Icon className="w-5 h-5" />
+        <span>{item.title}</span>
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -130,34 +178,28 @@ export default function Sidebar() {
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {usuario?.nombre}
                 </p>
-                <p className="text-xs text-gray-500 capitalize">{usuario?.rol?.replace('_', ' ')}</p>
+                <p className="text-xs text-gray-500">
+                  {usuario?.rol?.nombre || 'Sin rol'}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {filteredMenuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
+            {filteredMenuItems.map(renderMenuItem)}
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                    isActive
-                      ? 'bg-blue-50 text-blue-600 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.title}</span>
-                </Link>
-              );
-            })}
+            {/* Sección de Administración */}
+            {filteredAdminItems.length > 0 && (
+              <>
+                <div className="pt-4 pb-2">
+                  <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Administración
+                  </p>
+                </div>
+                {filteredAdminItems.map(renderMenuItem)}
+              </>
+            )}
           </nav>
 
           {/* Logout */}
