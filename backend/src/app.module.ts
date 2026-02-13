@@ -34,11 +34,7 @@ import { RolesModule } from '../modules/roles/roles.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('DATABASE_HOST', 'localhost'),
-        port: configService.get<number>('DATABASE_PORT', 5432),
-        username: configService.get('DATABASE_USER', 'cdi'),
-        password: configService.get('DATABASE_PASSWORD', 'cdi123'),
-        database: configService.get('DATABASE_NAME', 'cdi_db'),
+        url: configService.get('DATABASE_URL'),
         entities: [
           Usuario,
           Tutor,
@@ -51,6 +47,9 @@ import { RolesModule } from '../modules/roles/roles.module';
           Permiso,
         ],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: false,
+        },
         logging: configService.get('NODE_ENV') !== 'production',
         autoLoadEntities: true,
       }),
