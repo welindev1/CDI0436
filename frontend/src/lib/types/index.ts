@@ -69,6 +69,7 @@ export interface Horario {
   hora_fin: string;
   descripcion?: string;
   activo: boolean;
+  clases?: Clase[];
   creado_en: string;
   actualizado_en: string;
 }
