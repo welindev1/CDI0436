@@ -107,7 +107,7 @@ export default function ClaseDetallePage() {
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
@@ -122,15 +122,16 @@ export default function ClaseDetallePage() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Button
                 variant="outline"
                 onClick={() => router.push(`/dashboard/clases/${claseId}/editar`)}
+                className="justify-center"
               >
                 <Edit className="w-5 h-5 mr-2" />
                 Editar
               </Button>
-              <Button onClick={() => setShowAgregarModal(true)}>
+              <Button onClick={() => setShowAgregarModal(true)} className="justify-center">
                 <UserPlus className="w-5 h-5 mr-2" />
                 Agregar Beneficiarios
               </Button>

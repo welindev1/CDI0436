@@ -104,12 +104,12 @@ export default function ClasesPage() {
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Clases</h1>
               <p className="text-gray-600 mt-1">Gestión de clases y asignaciones</p>
             </div>
-            <Button onClick={handleCreate} className="flex items-center gap-2">
+            <Button onClick={handleCreate} className="flex items-center gap-2 w-full sm:w-auto justify-center">
               <Plus className="w-5 h-5" />
               Nueva Clase
             </Button>

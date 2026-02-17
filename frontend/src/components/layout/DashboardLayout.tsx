@@ -15,7 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="lg:pl-64">
         <Header />
         
-        <main className="p-6">
+        <main className="p-4 sm:p-6 pt-16 lg:pt-6">
           {children}
         </main>
       </div>
