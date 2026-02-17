@@ -357,7 +357,15 @@ export class AsistenciasService {
         id: beneficiario.id,
         codigo: beneficiario.codigo,
         nombre: `${beneficiario.nombre} ${beneficiario.apellido || ''}`.trim(),
-        edad: beneficiario.edad,
+        edad: beneficiario.fecha_nacimiento
+          ? (() => {
+              const nac = new Date(beneficiario.fecha_nacimiento);
+              const hoy = new Date();
+              let edad = hoy.getFullYear() - nac.getFullYear();
+              if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+              return edad;
+            })()
+          : null,
         padre_tutor: beneficiario.padre_tutor
       },
       periodo: {
