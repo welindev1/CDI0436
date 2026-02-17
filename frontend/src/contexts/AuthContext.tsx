@@ -3,13 +3,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
-import { Usuario, LoginCredentials } from '@/lib/types';
+import { Usuario, LoginCredentials, RegisterData } from '@/lib/types';
 
 interface AuthContextType {
   usuario: Usuario | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   tienePermiso: (permiso: string) => boolean;
   tieneAlgunPermiso: (permisos: string[]) => boolean;
@@ -57,6 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         status: error.response?.status,
       });
       throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
+    }
+  };
+
+  const register = async (data: RegisterData) => {
+    try {
+      const { access_token, usuario } = await authApi.register(data);
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('usuario', JSON.stringify(usuario));
+      setUsuario(usuario);
+      router.push('/dashboard');
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Error al registrarse');
     }
   };
 
@@ -108,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         isAuthenticated: !!usuario,
         login,
+        register,
         logout,
         tienePermiso,
         tieneAlgunPermiso,
