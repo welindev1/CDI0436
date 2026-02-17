@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const beneficiariosActivos = beneficiarios.filter(b => b.activo).length;
   const beneficiariosInactivos = totalBeneficiarios - beneficiariosActivos;
   const totalClases = clases.length;
-  const clasesActivas = clases.filter(c => c.activa).length;
+  const clasesActivas = clases.filter(c => c.activo).length;
 
   // Edad promedio
   const beneficiariosConFecha = beneficiarios.filter(b => b.fecha_nacimiento);
@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   // Últimos beneficiarios registrados
   const ultimosBeneficiarios = [...beneficiarios]
-    .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+    .sort((a, b) => new Date(b.creado_en || '').getTime() - new Date(a.creado_en || '').getTime())
     .slice(0, 5);
 
   // Saludo dinámico
@@ -254,8 +254,8 @@ export default function DashboardPage() {
                           {clase.beneficiarios && ` • ${clase.beneficiarios.length} beneficiarios`}
                         </p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${clase.activa ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
-                        {clase.activa ? 'Activa' : 'Inactiva'}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${clase.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
+                        {clase.activo ? 'Activa' : 'Inactiva'}
                       </span>
                     </div>
                   ))}
@@ -269,72 +269,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Distribución por Género (resumen) */}
-          {beneficiarios.length > 0 && (() => {
-            const masculino = beneficiarios.filter(b => b.sexo === 'M').length;
-            const femenino = beneficiarios.filter(b => b.sexo === 'F').length;
-            const sinDefinir = totalBeneficiarios - masculino - femenino;
-            const pctM = Math.round((masculino / totalBeneficiarios) * 100);
-            const pctF = Math.round((femenino / totalBeneficiarios) * 100);
-
-            return (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Distribución por Género
-                </h2>
-                <div className="flex items-center gap-6 flex-wrap">
-                  {/* Barra de proporción */}
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="flex h-4 rounded-full overflow-hidden bg-gray-100">
-                      {masculino > 0 && (
-                        <div
-                          className="bg-blue-500 transition-all duration-500"
-                          style={{ width: `${pctM}%` }}
-                        />
-                      )}
-                      {femenino > 0 && (
-                        <div
-                          className="bg-pink-500 transition-all duration-500"
-                          style={{ width: `${pctF}%` }}
-                        />
-                      )}
-                    </div>
-                    <div className="flex justify-between mt-2 text-xs text-gray-500">
-                      <span>0%</span>
-                      <span>100%</span>
-                    </div>
-                  </div>
-
-                  {/* Leyenda */}
-                  <div className="flex gap-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{masculino}</p>
-                        <p className="text-xs text-gray-500">Masculino ({pctM}%)</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-pink-500 rounded-full" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{femenino}</p>
-                        <p className="text-xs text-gray-500">Femenino ({pctF}%)</p>
-                      </div>
-                    </div>
-                    {sinDefinir > 0 && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-gray-300 rounded-full" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{sinDefinir}</p>
-                          <p className="text-xs text-gray-500">Sin definir</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </DashboardLayout>
     </ProtectedRoute>
