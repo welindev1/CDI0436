@@ -141,7 +141,7 @@ export default function Sidebar() {
       {/* Overlay para móvil */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
           onClick={() => setIsOpen(false)}
         />
       )}
