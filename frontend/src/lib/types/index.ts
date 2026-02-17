@@ -58,6 +58,7 @@ export interface Tutor {
   correo?: string;
   especialidad?: string;
   activo: boolean;
+  clases?: Clase[];
   creado_en: string;
   actualizado_en: string;
 }
