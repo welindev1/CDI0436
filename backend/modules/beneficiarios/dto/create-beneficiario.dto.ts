@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsInt, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsBoolean, IsDateString, MaxLength } from 'class-validator';
 
 export class CreateBeneficiarioDto {
   @IsString()
@@ -28,11 +28,9 @@ export class CreateBeneficiarioDto {
   @IsOptional()
   padre_tutor?: string;
 
-  @IsInt()
-  @Min(0)
-  @Max(120)
+  @IsDateString()
   @IsOptional()
-  edad?: number;
+  fecha_nacimiento?: string;
 
   @IsString()
   @IsOptional()

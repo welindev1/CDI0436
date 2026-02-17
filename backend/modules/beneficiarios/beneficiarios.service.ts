@@ -19,6 +19,20 @@ interface ImportOptionsDto {
   omitirErrores?: boolean;
 }
 
+function calcularEdad(fechaNacimiento: Date | string | null | undefined): number | null {
+  if (!fechaNacimiento) return null;
+  const nacimiento = new Date(fechaNacimiento);
+  if (isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mesActual = hoy.getMonth();
+  const mesNacimiento = nacimiento.getMonth();
+  if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+  return edad;
+}
+
 @Injectable()
 export class BeneficiariosService {
   constructor(
@@ -75,11 +89,16 @@ export class BeneficiariosService {
       }
 
       if (filters.edadMin !== undefined) {
-        query.andWhere('beneficiario.edad >= :edadMin', { edadMin: filters.edadMin });
+        // Filter by calculated age from fecha_nacimiento
+        const fechaMax = new Date();
+        fechaMax.setFullYear(fechaMax.getFullYear() - filters.edadMin);
+        query.andWhere('beneficiario.fecha_nacimiento <= :fechaMax', { fechaMax: fechaMax.toISOString().split('T')[0] });
       }
 
       if (filters.edadMax !== undefined) {
-        query.andWhere('beneficiario.edad <= :edadMax', { edadMax: filters.edadMax });
+        const fechaMin = new Date();
+        fechaMin.setFullYear(fechaMin.getFullYear() - filters.edadMax - 1);
+        query.andWhere('beneficiario.fecha_nacimiento >= :fechaMin', { fechaMin: fechaMin.toISOString().split('T')[0] });
       }
     }
 
@@ -234,6 +253,7 @@ export class BeneficiariosService {
         id: beneficiario.id,
         codigo: beneficiario.codigo,
         nombre: `${beneficiario.nombre} ${beneficiario.apellido || ''}`.trim(),
+        edad: calcularEdad(beneficiario.fecha_nacimiento),
       }, 
       estadisticas: {
         totalClasesInscritas: totalClases,
@@ -281,6 +301,16 @@ export class BeneficiariosService {
         throw new Error('Faltan campos requeridos: CODIGO y NOMBRE');
       }
 
+      // Parse fecha de nacimiento from various column names
+      let fechaNacimiento: Date | undefined = undefined;
+      const fechaRaw = fila['FECHA_NACIMIENTO'] || fila['FECHA DE NACIMIENTO'] || fila['FECHA NACIMIENTO'] || fila.FECHA_NACIMIENTO;
+      if (fechaRaw) {
+        const parsed = new Date(fechaRaw);
+        if (!isNaN(parsed.getTime())) {
+          fechaNacimiento = parsed;
+        }
+      }
+
       const beneficiarioData: Partial<Beneficiario> = {
         codigo: String(fila.CODIGO).trim(),
         nombre: String(fila.NOMBRE).trim(),
@@ -291,17 +321,10 @@ export class BeneficiariosService {
           fila['PADRE O TUTOR'] || fila.PADRE_TUTOR
             ? String(fila['PADRE O TUTOR'] || fila.PADRE_TUTOR).trim()
             : undefined,
-        edad: fila.EDAD ? parseInt(String(fila.EDAD)) : undefined,
+        fecha_nacimiento: fechaNacimiento,
         correo: fila.CORREO ? String(fila.CORREO).trim() : undefined,
         activo: true
       };
-
-      if (
-        beneficiarioData.edad &&
-        (beneficiarioData.edad < 0 || beneficiarioData.edad > 120)
-      ) {
-        throw new Error('Edad inválida');
-      }
 
       const existente = await this.beneficiariosRepository.findOne({
         where: { codigo: beneficiarioData.codigo }
@@ -357,7 +380,7 @@ export class BeneficiariosService {
         DIRECCION: 'Calle Principal #123',
         TELEFONO: '809-555-1234',
         'PADRE O TUTOR': 'María Pérez',
-        EDAD: 15,
+        'FECHA DE NACIMIENTO': '2009-03-15',
         CORREO: 'juan.perez@example.com'
       },
       {
@@ -367,7 +390,7 @@ export class BeneficiariosService {
         DIRECCION: 'Av. Independencia #456',
         TELEFONO: '809-555-5678',
         'PADRE O TUTOR': 'Pedro González',
-        EDAD: 14,
+        'FECHA DE NACIMIENTO': '2010-07-22',
         CORREO: 'ana.gonzalez@example.com'
       }
     ];
@@ -381,7 +404,7 @@ export class BeneficiariosService {
       { wch: 30 },
       { wch: 15 },
       { wch: 20 },
-      { wch: 8 },
+      { wch: 20 },
       { wch: 25 }
     ];
     worksheet['!cols'] = columnWidths;
@@ -402,7 +425,10 @@ export class BeneficiariosService {
       DIRECCION: b.direccion || '',
       TELEFONO: b.telefono || '',
       'PADRE O TUTOR': b.padre_tutor || '',
-      EDAD: b.edad || '',
+      'FECHA DE NACIMIENTO': b.fecha_nacimiento 
+        ? new Date(b.fecha_nacimiento).toISOString().split('T')[0]
+        : '',
+      EDAD: calcularEdad(b.fecha_nacimiento) ?? '',
       CORREO: b.correo || '',
       ESTADO: b.activo ? 'Activo' : 'Inactivo',
       'FECHA REGISTRO': new Date(b.creado_en).toLocaleDateString('es-DO')
@@ -416,6 +442,7 @@ export class BeneficiariosService {
       { wch: 15 },
       { wch: 30 },
       { wch: 15 },
+      { wch: 20 },
       { wch: 20 },
       { wch: 8 },
       { wch: 25 },

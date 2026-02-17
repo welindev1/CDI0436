@@ -25,8 +25,8 @@ export class Beneficiario {
   @Column({ length: 100, nullable: true })
   padre_tutor: string;
 
-  @Column({ type: 'int', nullable: true })
-  edad: number;
+  @Column({ type: 'date', nullable: true })
+  fecha_nacimiento: Date;
 
   @Column({ type: 'text', nullable: true })
   foto_url: string;

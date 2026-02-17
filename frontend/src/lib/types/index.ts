@@ -83,7 +83,7 @@ export interface Beneficiario {
   direccion?: string;
   telefono?: string;
   padre_tutor?: string;
-  edad?: number;
+  fecha_nacimiento?: string;
   foto_url?: string;
   correo?: string;
   activo: boolean;

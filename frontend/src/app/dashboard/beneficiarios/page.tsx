@@ -25,6 +25,20 @@ import {
   Users
 } from 'lucide-react';
 
+function calcularEdad(fechaNacimiento: string | undefined): number | null {
+  if (!fechaNacimiento) return null;
+  const nacimiento = new Date(fechaNacimiento);
+  if (isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mesActual = hoy.getMonth();
+  const mesNacimiento = nacimiento.getMonth();
+  if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+  return edad;
+}
+
 export default function BeneficiariosPage() {
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,12 +245,14 @@ export default function BeneficiariosPage() {
                 <div>
                   <p className="text-sm text-gray-600">Edad Promedio</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {Math.round(
-                      beneficiarios
-                        .filter(b => b.edad)
-                        .reduce((acc, b) => acc + (b.edad || 0), 0) / 
-                      beneficiarios.filter(b => b.edad).length || 0
-                    )} años
+                    {(() => {
+                      const edades = beneficiarios
+                        .map(b => calcularEdad(b.fecha_nacimiento))
+                        .filter((e): e is number => e !== null);
+                      return edades.length > 0
+                        ? Math.round(edades.reduce((a, b) => a + b, 0) / edades.length)
+                        : 0;
+                    })()} años
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-purple-500" />
@@ -332,7 +348,10 @@ export default function BeneficiariosPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {beneficiario.edad ? `${beneficiario.edad} años` : '-'}
+                        {(() => {
+                          const edad = calcularEdad(beneficiario.fecha_nacimiento);
+                          return edad !== null ? `${edad} años` : '-';
+                        })()}
                       </TableCell>
                       <TableCell>{beneficiario.padre_tutor || '-'}</TableCell>
                       <TableCell>{beneficiario.telefono || '-'}</TableCell>

@@ -12,6 +12,20 @@ interface BeneficiarioFormProps {
   onCancel: () => void;
 }
 
+function calcularEdad(fechaNacimiento: string): number | null {
+  if (!fechaNacimiento) return null;
+  const nacimiento = new Date(fechaNacimiento);
+  if (isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mesActual = hoy.getMonth();
+  const mesNacimiento = nacimiento.getMonth();
+  if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+  return edad;
+}
+
 export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: BeneficiarioFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +36,7 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
     direccion: '',
     telefono: '',
     padre_tutor: '',
-    edad: '',
+    fecha_nacimiento: '',
     correo: '',
   });
 
@@ -35,7 +49,9 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
         direccion: beneficiario.direccion || '',
         telefono: beneficiario.telefono || '',
         padre_tutor: beneficiario.padre_tutor || '',
-        edad: beneficiario.edad?.toString() || '',
+        fecha_nacimiento: beneficiario.fecha_nacimiento
+          ? new Date(beneficiario.fecha_nacimiento).toISOString().split('T')[0]
+          : '',
         correo: beneficiario.correo || '',
       });
     }
@@ -49,7 +65,6 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
     try {
       const data: any = {
         ...formData,
-        edad: formData.edad ? parseInt(formData.edad) : undefined,
       };
 
       // Remover campos vacíos
@@ -73,6 +88,8 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
       [e.target.name]: e.target.value
     }));
   };
+
+  const edadCalculada = formData.fecha_nacimiento ? calcularEdad(formData.fecha_nacimiento) : null;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,16 +127,20 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
           placeholder="Pérez"
         />
 
-        <Input
-          label="Edad"
-          name="edad"
-          type="number"
-          value={formData.edad}
-          onChange={handleChange}
-          placeholder="15"
-          min="0"
-          max="120"
-        />
+        <div>
+          <Input
+            label="Fecha de Nacimiento"
+            name="fecha_nacimiento"
+            type="date"
+            value={formData.fecha_nacimiento}
+            onChange={handleChange}
+          />
+          {edadCalculada !== null && (
+            <p className="text-sm text-blue-600 mt-1 font-medium">
+              Edad: {edadCalculada} años
+            </p>
+          )}
+        </div>
 
         <Input
           label="Teléfono"
