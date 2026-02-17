@@ -168,7 +168,7 @@ export default function BeneficiariosPage() {
   );
 
   return (
-    <ProtectedRoute requiredRole={['administrador', 'profesor', 'tutor_lider']}>
+    <ProtectedRoute requiredPermisos={['beneficiarios:ver']}>
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}

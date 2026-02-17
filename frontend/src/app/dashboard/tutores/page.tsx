@@ -106,7 +106,7 @@ export default function TutoresPage() {
   );
 
   return (
-    <ProtectedRoute requiredRole={['administrador', 'profesor']}>
+    <ProtectedRoute requiredPermisos={['tutores:ver']}>
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}

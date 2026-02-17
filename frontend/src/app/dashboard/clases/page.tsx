@@ -100,7 +100,7 @@ export default function ClasesPage() {
   );
 
   return (
-    <ProtectedRoute requiredRole={['administrador', 'profesor', 'tutor_lider']}>
+    <ProtectedRoute requiredPermisos={['clases:ver']}>
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
