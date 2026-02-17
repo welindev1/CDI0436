@@ -88,7 +88,7 @@ const adminMenuItems: MenuItem[] = [
 ];
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const { usuario, logout, tieneAlgunPermiso, esSuperAdmin } = useAuth();
   const pathname = usePathname();
 

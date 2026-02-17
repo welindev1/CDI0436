@@ -8,9 +8,9 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-      <div className="flex items-center justify-between px-6 py-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 pl-16 lg:pl-6">
         {/* Search */}
-        <div className="flex-1 max-w-xl">
+        <div className="flex-1 max-w-xl hidden sm:block">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -22,7 +22,7 @@ export default function Header() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-4 ml-4">
+        <div className="flex items-center gap-4 ml-auto sm:ml-4">
           {/* Notifications */}
           <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <Bell className="w-6 h-6" />
