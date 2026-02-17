@@ -184,7 +184,7 @@ export default function ReportesPage() {
   };
 
   return (
-    <ProtectedRoute requiredRole={['administrador', 'profesor', 'tutor_lider']}>
+    <ProtectedRoute requiredPermisos={['reportes:ver']}>
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}

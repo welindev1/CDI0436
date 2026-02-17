@@ -116,7 +116,7 @@ export default function HorariosPage() {
   const diasFiltrados = diasOrdenados.filter(dia => horariosPorDia[dia]);
 
   return (
-    <ProtectedRoute requiredRole={['administrador', 'profesor']}>
+    <ProtectedRoute requiredPermisos={['horarios:ver']}>
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
