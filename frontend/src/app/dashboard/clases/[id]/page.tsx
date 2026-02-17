@@ -270,7 +270,13 @@ export default function ClaseDetallePage() {
                         </p>
                         <p className="text-sm text-gray-500">
                           Código: {beneficiario.codigo}
-                          {beneficiario.edad && ` • ${beneficiario.edad} años`}
+                          {beneficiario.fecha_nacimiento && (() => {
+                            const nac = new Date(beneficiario.fecha_nacimiento);
+                            const hoy = new Date();
+                            let edad = hoy.getFullYear() - nac.getFullYear();
+                            if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+                            return ` • ${edad} años`;
+                          })()}
                         </p>
                       </div>
                     </div>
