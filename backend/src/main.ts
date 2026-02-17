@@ -2,12 +2,21 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    ...(frontendUrl ? [frontendUrl] : []),
+  ];
 
   app.enableCors({
-    origin: ['http://localhost:3000',  'http://localhost:3001'],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -37,6 +46,6 @@ async function bootstrap() {
     next();
   });
 
-  await app.listen(process.env.PORT || 3001);
+  await app.listen(configService.get('PORT') || 3001);
 }
 bootstrap();
