@@ -18,7 +18,7 @@ import {
   ValidationPipe
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express'; // <-- CORRECTO
+import type { Response } from 'express';
 import { BeneficiariosService } from './beneficiarios.service';
 import { CreateBeneficiarioDto } from './dto/create-beneficiario.dto';
 import { UpdateBeneficiarioDto } from './dto/update-beneficiario.dto';
@@ -41,6 +41,65 @@ export class BeneficiariosController {
     return this.beneficiariosService.findAll(filters);
   }
 
+  // --- Static routes MUST come before :id ---
+
+  @Get('exportar')
+  async exportar(
+    @Query(new ValidationPipe({ 
+      transform: true, 
+      whitelist: true,
+      skipMissingProperties: true,
+      forbidNonWhitelisted: false 
+    })) filters: FilterBeneficiarioDto,
+    @Res() res: Response
+  ) {
+    const buffer = await this.beneficiariosService.exportarAExcel(filters);
+    
+    const fecha = new Date().toISOString().split('T')[0];
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename=beneficiarios_${fecha}.xlsx`,
+      'Content-Length': buffer.length
+    });
+
+    res.send(buffer);
+  }
+
+  @Get('plantilla/descargar')
+  async descargarPlantilla(@Res() res: Response) {
+    const buffer = await this.beneficiariosService.generarPlantillaExcel();
+    
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename=plantilla_beneficiarios.xlsx',
+      'Content-Length': buffer.length
+    });
+
+    res.send(buffer);
+  }
+
+  @Post('importar')
+  @UseInterceptors(FileInterceptor('file'))
+  async importar(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() options?: ImportOptionsDto
+  ) {
+    if (!file) {
+      throw new BadRequestException('No se proporcionó ningún archivo');
+    }
+
+    const allowedMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ];
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('El archivo debe ser un Excel (.xlsx o .xls)');
+    }
+
+    return await this.beneficiariosService.importarDesdeExcel(file.buffer, options);
+  }
+
   @Get('clase/:claseId')
   findByClase(@Param('claseId', ParseUUIDPipe) claseId: string) {
     return this.beneficiariosService.findByClase(claseId);
@@ -50,6 +109,8 @@ export class BeneficiariosController {
   findByCodigo(@Param('codigo') codigo: string) {
     return this.beneficiariosService.findByCodigo(codigo);
   }
+
+  // --- Dynamic :id routes come AFTER static routes ---
 
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -95,63 +156,5 @@ export class BeneficiariosController {
   @Patch(':id/desactivar')
   softDelete(@Param('id', ParseUUIDPipe) id: string) {
     return this.beneficiariosService.softDelete(id);
-  }
-
-  @Post('importar')
-  @UseInterceptors(FileInterceptor('file'))
-  async importar(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() options?: ImportOptionsDto
-  ) {
-    if (!file) {
-      throw new BadRequestException('No se proporcionó ningún archivo');
-    }
-
-    const allowedMimeTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel'
-    ];
-
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('El archivo debe ser un Excel (.xlsx o .xls)');
-    }
-
-    return await this.beneficiariosService.importarDesdeExcel(file.buffer, options);
-  }
-
-  @Get('plantilla/descargar')
-  async descargarPlantilla(@Res() res: Response) {
-    const buffer = await this.beneficiariosService.generarPlantillaExcel();
-    
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename=plantilla_beneficiarios.xlsx',
-      'Content-Length': buffer.length
-    });
-
-    res.send(buffer);
-  }
-
-
-  @Get('exportar')
-  async exportar(
-    @Query(new ValidationPipe({ 
-      transform: true, 
-      whitelist: true,
-      skipMissingProperties: true,
-      forbidNonWhitelisted: false 
-    })) filters: FilterBeneficiarioDto,
-    @Res() res: Response
-  ) {
-    const buffer = await this.beneficiariosService.exportarAExcel(filters);
-    
-    const fecha = new Date().toISOString().split('T')[0];
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename=beneficiarios_${fecha}.xlsx`,
-      'Content-Length': buffer.length
-    });
-
-    res.send(buffer);
   }
 }

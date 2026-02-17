@@ -125,6 +125,7 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
                 <li>• Descarga la plantilla para ver el formato correcto</li>
                 <li>• Los campos requeridos son: CODIGO y NOMBRE</li>
                 <li>• El código debe ser único para cada beneficiario</li>
+                <li>• Usa formato YYYY-MM-DD para FECHA DE NACIMIENTO (ej: 2009-03-15)</li>
                 <li>• Los demás campos son opcionales</li>
               </ul>
             </div>
