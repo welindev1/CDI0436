@@ -3,141 +3,338 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import StatCard from '@/components/dashboard/StatCard';
-import { Users, BookOpen, ClipboardCheck, TrendingUp } from 'lucide-react';
+import { Users, BookOpen, ClipboardCheck, TrendingUp, Calendar, Clock, UserCheck, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { beneficiariosApi } from '@/lib/api/beneficiarios';
+import { clasesApi } from '@/lib/api/clases';
+import { Beneficiario, Clase } from '@/lib/types';
+
+function calcularEdad(fechaNacimiento: string): number {
+  const nac = new Date(fechaNacimiento);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
+}
 
 export default function DashboardPage() {
   const { usuario } = useAuth();
-  const [stats, setStats] = useState({
-    totalBeneficiarios: 0,
-    totalClases: 0,
-    asistenciaHoy: 0,
-    promedioAsistencia: 0,
-  });
+  const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
+  const [clases, setClases] = useState<Clase[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Aquí harás las llamadas a la API
-    // Por ahora, datos de ejemplo
-    setStats({
-      totalBeneficiarios: 156,
-      totalClases: 12,
-      asistenciaHoy: 142,
-      promedioAsistencia: 91,
-    });
+    const loadData = async () => {
+      try {
+        const [bens, cls] = await Promise.all([
+          beneficiariosApi.getAll(),
+          clasesApi.getAll(),
+        ]);
+        setBeneficiarios(bens);
+        setClases(cls);
+      } catch (err) {
+        console.error('Error cargando datos del dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
+
+  const totalBeneficiarios = beneficiarios.length;
+  const beneficiariosActivos = beneficiarios.filter(b => b.activo).length;
+  const beneficiariosInactivos = totalBeneficiarios - beneficiariosActivos;
+  const totalClases = clases.length;
+  const clasesActivas = clases.filter(c => c.activa).length;
+
+  // Edad promedio
+  const beneficiariosConFecha = beneficiarios.filter(b => b.fecha_nacimiento);
+  const edadPromedio = beneficiariosConFecha.length > 0
+    ? Math.round(beneficiariosConFecha.reduce((acc, b) => acc + calcularEdad(b.fecha_nacimiento!), 0) / beneficiariosConFecha.length)
+    : 0;
+
+  // Últimos beneficiarios registrados
+  const ultimosBeneficiarios = [...beneficiarios]
+    .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime())
+    .slice(0, 5);
+
+  // Saludo dinámico
+  const hora = new Date().getHours();
+  const saludo = hora < 12 ? 'Buenos días' : hora < 18 ? 'Buenas tardes' : 'Buenas noches';
+
+  // Fecha actual
+  const fechaHoy = new Date().toLocaleDateString('es-DO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <DashboardLayout>
+          <div className="flex items-center justify-center h-96">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              <p className="text-gray-500 text-sm">Cargando dashboard...</p>
+            </div>
+          </div>
+        </DashboardLayout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
       <DashboardLayout>
         <div className="space-y-6">
-          {/* Welcome */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              ¡Bienvenido, {usuario?.nombre}!
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Aquí tienes un resumen de la actividad del día
-            </p>
+          {/* Welcome Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4" />
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold">
+                    {saludo}, {usuario?.nombre} 👋
+                  </h1>
+                  <p className="text-blue-100 mt-1 text-sm md:text-base">
+                    Panel de control del CDI
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-blue-200 text-sm bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm w-fit">
+                  <Calendar className="w-4 h-4" />
+                  <span className="capitalize">{fechaHoy}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Beneficiarios"
-              value={stats.totalBeneficiarios}
-              icon={Users}
-              color="blue"
-              trend={{ value: '+12%', isPositive: true }}
-            />
-            
-            <StatCard
-              title="Clases Activas"
-              value={stats.totalClases}
-              icon={BookOpen}
-              color="green"
-            />
-            
-            <StatCard
-              title="Asistencia Hoy"
-              value={stats.asistenciaHoy}
-              icon={ClipboardCheck}
-              color="purple"
-              trend={{ value: '+5%', isPositive: true }}
-            />
-            
-            <StatCard
-              title="Promedio Asistencia"
-              value={`${stats.promedioAsistencia}%`}
-              icon={TrendingUp}
-              color="yellow"
-              trend={{ value: '+2%', isPositive: true }}
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            {/* Total Beneficiarios */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{totalBeneficiarios}</p>
+              <p className="text-sm text-gray-500 mt-0.5">Beneficiarios</p>
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                  {beneficiariosActivos} activos
+                </span>
+                {beneficiariosInactivos > 0 && (
+                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                    {beneficiariosInactivos} inactivos
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Total Clases */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-emerald-600" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{totalClases}</p>
+              <p className="text-sm text-gray-500 mt-0.5">Clases</p>
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                  {clasesActivas} activas
+                </span>
+              </div>
+            </div>
+
+            {/* Edad Promedio */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">{edadPromedio}</p>
+              <p className="text-sm text-gray-500 mt-0.5">Edad Promedio</p>
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs font-medium text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                  {beneficiariosConFecha.length} con fecha
+                </span>
+              </div>
+            </div>
+
+            {/* Status */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <ClipboardCheck className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                {Math.round((beneficiariosActivos / (totalBeneficiarios || 1)) * 100)}%
+              </p>
+              <p className="text-sm text-gray-500 mt-0.5">Tasa Activos</p>
+              <div className="flex items-center gap-1 mt-2">
+                <span className="text-xs font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                  del total
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Recent Activity */}
+          {/* Bottom Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Próximas Clases */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Próximas Clases
-              </h2>
-              <div className="space-y-3">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">Matemáticas Básicas</p>
-                      <p className="text-sm text-gray-500">Juan Pérez • 14:00 - 16:00</p>
-                    </div>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-medium">
-                      Hoy
-                    </span>
-                  </div>
-                ))}
+            {/* Últimos Beneficiarios */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Últimos Beneficiarios
+                </h2>
+                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Recientes</span>
               </div>
+              {ultimosBeneficiarios.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No hay beneficiarios registrados</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {ultimosBeneficiarios.map((ben) => (
+                    <div key={ben.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {ben.nombre.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">
+                          {ben.nombre} {ben.apellido || ''}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {ben.codigo}
+                          {ben.fecha_nacimiento && ` • ${calcularEdad(ben.fecha_nacimiento)} años`}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${ben.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        {ben.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Asistencias Recientes */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Actividad Reciente
-              </h2>
-              <div className="space-y-3">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="flex items-center gap-3 p-3 border-l-4 border-green-500 bg-gray-50 rounded-r-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">Asistencia registrada</p>
-                      <p className="text-sm text-gray-500">Clase: Inglés Intermedio</p>
-                    </div>
-                    <span className="text-xs text-gray-400">Hace 5 min</span>
-                  </div>
-                ))}
+            {/* Clases */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Clases Registradas
+                </h2>
+                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{clasesActivas} activas</span>
               </div>
+              {clases.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No hay clases registradas</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {clases.slice(0, 5).map((clase) => (
+                    <div key={clase.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">
+                          {clase.nombre}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {clase.codigo || 'Sin código'}
+                          {clase.beneficiarios && ` • ${clase.beneficiarios.length} beneficiarios`}
+                        </p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${clase.activa ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
+                        {clase.activa ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </div>
+                  ))}
+                  {clases.length > 5 && (
+                    <p className="text-xs text-center text-gray-400 pt-1">
+                      y {clases.length - 5} clases más...
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Acciones Rápidas
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-center group">
-                <ClipboardCheck className="w-8 h-8 mx-auto mb-2 text-gray-400 group-hover:text-blue-500" />
-                <p className="font-medium text-gray-700 group-hover:text-blue-600">Tomar Asistencia</p>
-              </button>
-              
-              <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-center group">
-                <Users className="w-8 h-8 mx-auto mb-2 text-gray-400 group-hover:text-green-500" />
-                <p className="font-medium text-gray-700 group-hover:text-green-600">Nuevo Beneficiario</p>
-              </button>
-              
-              <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-center group">
-                <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-400 group-hover:text-purple-500" />
-                <p className="font-medium text-gray-700 group-hover:text-purple-600">Nueva Clase</p>
-              </button>
-            </div>
-          </div>
+          {/* Distribución por Género (resumen) */}
+          {beneficiarios.length > 0 && (() => {
+            const masculino = beneficiarios.filter(b => b.sexo === 'M').length;
+            const femenino = beneficiarios.filter(b => b.sexo === 'F').length;
+            const sinDefinir = totalBeneficiarios - masculino - femenino;
+            const pctM = Math.round((masculino / totalBeneficiarios) * 100);
+            const pctF = Math.round((femenino / totalBeneficiarios) * 100);
+
+            return (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Distribución por Género
+                </h2>
+                <div className="flex items-center gap-6 flex-wrap">
+                  {/* Barra de proporción */}
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="flex h-4 rounded-full overflow-hidden bg-gray-100">
+                      {masculino > 0 && (
+                        <div
+                          className="bg-blue-500 transition-all duration-500"
+                          style={{ width: `${pctM}%` }}
+                        />
+                      )}
+                      {femenino > 0 && (
+                        <div
+                          className="bg-pink-500 transition-all duration-500"
+                          style={{ width: `${pctF}%` }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                      <span>0%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Leyenda */}
+                  <div className="flex gap-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{masculino}</p>
+                        <p className="text-xs text-gray-500">Masculino ({pctM}%)</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-pink-500 rounded-full" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{femenino}</p>
+                        <p className="text-xs text-gray-500">Femenino ({pctF}%)</p>
+                      </div>
+                    </div>
+                    {sinDefinir > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-300 rounded-full" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{sinDefinir}</p>
+                          <p className="text-xs text-gray-500">Sin definir</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </DashboardLayout>
     </ProtectedRoute>
