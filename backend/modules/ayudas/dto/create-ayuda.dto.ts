@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional } from 'class-validator';
 import { TipoAyuda } from '../ayuda.entity';
 
 export class CreateAyudaDto {
@@ -21,6 +21,10 @@ export class CreateAyudaDto {
   @IsEnum(TipoAyuda, { message: 'El tipo de ayuda debe ser valida (medica, alimentos, otros)' })
   @IsNotEmpty({ message: 'El tipo de ayuda es requerido' })
   tipo: TipoAyuda;
+
+  @IsOptional()
+  @IsString({ message: 'La especificación del tipo debe ser texto' })
+  tipo_especificacion?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'El detalle de la solicitud es requerido' })
