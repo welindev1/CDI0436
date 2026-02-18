@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "CDI - Sistema de Asistencia",
   description: "Sistema de gestión de asistencia para CDI",
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({

@@ -35,6 +35,9 @@ export class Ayuda {
   })
   tipo: TipoAyuda;
 
+  @Column({ nullable: true })
+  tipo_especificacion: string;
+
   @Column({ type: 'text' })
   detalle: string;
 

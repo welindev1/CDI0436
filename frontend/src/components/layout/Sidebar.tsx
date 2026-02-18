@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils/cn';
@@ -158,8 +159,14 @@ export default function Sidebar() {
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">CDI</span>
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                <Image 
+                  src="/logo.svg" 
+                  alt="CDI Logo" 
+                  width={48} 
+                  height={48} 
+                  className="object-contain"
+                />
               </div>
               <div>
                 <h1 className="font-bold text-gray-900">Sistema CDI</h1>

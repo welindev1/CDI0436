@@ -7,6 +7,7 @@ export interface Ayuda {
   nombre_madre: string;
   nombre_tutor: string;
   tipo: 'medica' | 'alimentos' | 'otros';
+  tipo_especificacion?: string;
   detalle: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   creado_en: string;

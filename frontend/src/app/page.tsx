@@ -14,7 +14,9 @@ export default function Home() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>();
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<any>();
+
+  const tipoSeleccionado = watch('tipo');
 
   const onSubmit = async (data: any) => {
     try {
@@ -117,6 +119,18 @@ export default function Home() {
                 <p className="mt-1 text-sm text-red-600">Este campo es requerido</p>
               )}
             </div>
+
+            {tipoSeleccionado === 'otros' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                <Input
+                  label="Especifique el tipo de ayuda"
+                  type="text"
+                  {...register('tipo_especificacion', { required: tipoSeleccionado === 'otros' })}
+                  error={errors.tipo_especificacion ? 'Debe especificar el tipo de ayuda' : ''}
+                  placeholder="Ej: Útiles escolares, ropa, transporte..."
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -138,7 +138,9 @@ export default function AyudasPage() {
                           ayuda.tipo === 'alimentos' ? 'bg-green-100 text-green-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {ayuda.tipo === 'medica' ? 'Médica' : ayuda.tipo === 'alimentos' ? 'Alimentos' : 'Otros'}
+{ayuda.tipo === 'medica' ? 'Médica' : 
+                          ayuda.tipo === 'alimentos' ? 'Alimentos' : 
+                          ayuda.tipo_especificacion ? `Otros: ${ayuda.tipo_especificacion}` : 'Otros'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={ayuda.detalle}>
