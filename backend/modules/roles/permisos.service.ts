@@ -57,6 +57,9 @@ export const PERMISOS_SISTEMA = [
   { codigo: 'reportes:ver', nombre: 'Ver reportes', modulo: 'reportes', accion: 'ver', descripcion: 'Permite ver reportes' },
   { codigo: 'reportes:generar', nombre: 'Generar reportes', modulo: 'reportes', accion: 'generar', descripcion: 'Permite generar reportes' },
   { codigo: 'reportes:exportar', nombre: 'Exportar reportes', modulo: 'reportes', accion: 'exportar', descripcion: 'Permite exportar reportes' },
+
+  // Nutrición
+  { codigo: 'nutricion:ver', nombre: 'Ver nutrición', modulo: 'nutricion', accion: 'ver', descripcion: 'Permite ver el resumen de nutrición por clase y fecha' },
 ];
 
 @Injectable()

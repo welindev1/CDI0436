@@ -19,6 +19,7 @@ import {
   UserCircle,
   Shield,
   UserCog,
+  UtensilsCrossed,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -64,6 +65,12 @@ const menuItems: MenuItem[] = [
     icon: ClipboardCheck,
     href: '/dashboard/asistencias',
     permisos: ['asistencias:ver'],
+  },
+  {
+    title: 'Nutrición',
+    icon: UtensilsCrossed,
+    href: '/dashboard/nutricion',
+    permisos: ['nutricion:ver'],
   },
   {
     title: 'Reportes',

@@ -103,4 +103,8 @@ export const asistenciasApi = {
     const response = await apiClient.get(`/asistencias/estadisticas/mensuales/${mes}/${anio}`);
     return response.data;
   },
+  getResumenPorFecha: async (fecha: string): Promise<any[]> => {
+    const response = await apiClient.get(`/asistencias/resumen/fecha/${fecha}`);
+    return response.data;
+  },
 };

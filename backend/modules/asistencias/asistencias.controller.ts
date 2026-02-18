@@ -91,6 +91,11 @@ export class AsistenciasController {
     return this.asistenciasService.getEstadisticasMensuales(mes, anio);
   }
 
+  @Get('resumen/fecha/:fecha')
+  getResumenPorFecha(@Param('fecha') fecha: string) {
+    return this.asistenciasService.getResumenPorFecha(fecha);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.asistenciasService.findOne(id);
