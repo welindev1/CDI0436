@@ -160,8 +160,13 @@ export class BeneficiariosService {
 
     if (beneficiario.clases && beneficiario.clases.length > 0) {
       throw new BadRequestException(
-        `No se puede eliminar el beneficiario porque está inscrito en ${beneficiario.clases.length} clase(s)`
+        `No se puede eliminar el beneficiario porque está inscrito en ${beneficiario.clases.length} clase(s). Remuévalo de las clases primero.`
       );
+    }
+
+    // Eliminar asistencias asociadas antes de eliminar el beneficiario
+    if (beneficiario.asistencias && beneficiario.asistencias.length > 0) {
+      await this.beneficiariosRepository.manager.remove(beneficiario.asistencias);
     }
 
     await this.beneficiariosRepository.remove(beneficiario);
