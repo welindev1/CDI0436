@@ -3,15 +3,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api/auth';
+import { changePassword } from '@/lib/api/usuarios';
 import { Usuario, LoginCredentials, RegisterData } from '@/lib/types';
 
 interface AuthContextType {
   usuario: Usuario | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  primerLogin: boolean;
+  login: (credentials: LoginCredentials, recordarme?: boolean) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
+  cambiarPasswordPrimerLogin: (passwordActual: string, passwordNueva: string) => Promise<void>;
   tienePermiso: (permiso: string) => boolean;
   tieneAlgunPermiso: (permisos: string[]) => boolean;
   esSuperAdmin: () => boolean;
@@ -22,20 +25,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [primerLogin, setPrimerLogin] = useState(false);
   const router = useRouter();
 
-  // Verificar token al cargar
+  // Verificar token al cargar — soporta localStorage y sessionStorage (Recordarme)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token =
+          localStorage.getItem('token') || sessionStorage.getItem('token');
         if (token) {
           const { usuario } = await authApi.validateToken();
           setUsuario(usuario);
+          setPrimerLogin(!!(usuario as any).primer_login);
         }
       } catch (error) {
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('usuario');
       } finally {
         setIsLoading(false);
       }
@@ -44,12 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: LoginCredentials, recordarme = false) => {
     try {
       const { access_token, usuario } = await authApi.login(credentials);
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('usuario', JSON.stringify(usuario));
+
+      // Si "Recordarme" está activo, guardar en localStorage (persiste al cerrar el navegador)
+      // Si no, guardar en sessionStorage (se borra al cerrar la pestaña)
+      const storage = recordarme ? localStorage : sessionStorage;
+      storage.setItem('token', access_token);
+      storage.setItem('usuario', JSON.stringify(usuario));
+
       setUsuario(usuario);
+      setPrimerLogin(!!(usuario as any).primer_login);
       router.push('/dashboard');
     } catch (error: any) {
       console.error('Login error detailed:', {
@@ -76,8 +90,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('usuario');
     setUsuario(null);
+    setPrimerLogin(false);
     router.push('/');
+  };
+
+  // Cambiar contraseña en primer login — también limpia el flag
+  const cambiarPasswordPrimerLogin = async (passwordActual: string, passwordNueva: string) => {
+    if (!usuario) throw new Error('No hay usuario autenticado');
+    await changePassword(usuario.id, passwordActual, passwordNueva);
+    // Actualizar estado local para cerrar el modal
+    setPrimerLogin(false);
+    // Actualizar el objeto usuario en storage
+    const updatedUsuario = { ...usuario, primer_login: false };
+    const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+    storage.setItem('usuario', JSON.stringify(updatedUsuario));
+    setUsuario(updatedUsuario as Usuario);
   };
 
   // Verificar si el usuario es super admin
@@ -90,11 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const tienePermiso = useCallback(
     (permiso: string): boolean => {
       if (!usuario) return false;
-
-      // Super admin tiene todos los permisos
       if (esSuperAdmin()) return true;
-
-      // Verificar en la lista de permisos
       return usuario.permisos?.includes(permiso) === true;
     },
     [usuario, esSuperAdmin]
@@ -104,11 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const tieneAlgunPermiso = useCallback(
     (permisos: string[]): boolean => {
       if (!usuario) return false;
-
-      // Super admin tiene todos los permisos
       if (esSuperAdmin()) return true;
-
-      // Verificar si tiene al menos uno
       return permisos.some((permiso) => usuario.permisos?.includes(permiso));
     },
     [usuario, esSuperAdmin]
@@ -120,9 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usuario,
         isLoading,
         isAuthenticated: !!usuario,
+        primerLogin,
         login,
         register,
         logout,
+        cambiarPasswordPrimerLogin,
         tienePermiso,
         tieneAlgunPermiso,
         esSuperAdmin,

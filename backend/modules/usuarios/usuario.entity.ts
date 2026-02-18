@@ -33,6 +33,10 @@ export class Usuario {
   @Column({ default: true })
   activo: boolean;
 
+  @Column({ default: true })
+  primer_login: boolean;
+
+
   @CreateDateColumn()
   creado_en: Date;
 

@@ -140,6 +140,8 @@ export class UsuariosService {
       changePasswordDto.passwordNueva,
       salt,
     );
+    // Marcar que ya no es primer login
+    usuario.primer_login = false;
 
     await this.usuariosRepository.save(usuario);
   }
