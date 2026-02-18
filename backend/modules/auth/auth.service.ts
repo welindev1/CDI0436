@@ -44,6 +44,7 @@ export class AuthService {
         id: usuario.id,
         nombre: usuario.nombre,
         correo: usuario.correo,
+        primer_login: usuario.primer_login,
         rol: usuario.rol
           ? {
               id: usuario.rol.id,
@@ -72,6 +73,7 @@ export class AuthService {
         id: usuario.id,
         nombre: usuario.nombre,
         correo: usuario.correo,
+        primer_login: usuario.primer_login,
         rol: usuario.rol
           ? {
               id: usuario.rol.id,
