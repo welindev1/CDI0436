@@ -11,13 +11,14 @@ import { Table, TableHead, TableBody, TableRow, TableCell } from '@/components/u
 import BeneficiarioForm from '@/components/beneficiarios/BeneficiarioForm';
 import ImportarExcelModal from '@/components/beneficiarios/ImportarExcelModal';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
+import { useAuth } from '@/contexts/AuthContext';
 import { Beneficiario } from '@/lib/types';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
   UserX,
   Filter,
   Download,
@@ -40,6 +41,7 @@ function calcularEdad(fechaNacimiento: string | undefined): number | null {
 }
 
 export default function BeneficiariosPage() {
+  const { tienePermiso } = useAuth();
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -50,6 +52,10 @@ export default function BeneficiariosPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const puedeCrear = tienePermiso('beneficiarios:crear');
+  const puedeEditar = tienePermiso('beneficiarios:editar');
+  const puedeEliminar = tienePermiso('beneficiarios:eliminar');
 
   useEffect(() => {
     loadBeneficiarios();
@@ -123,14 +129,14 @@ export default function BeneficiariosPage() {
       setIsExporting(true);
       setError('');
       console.log('Iniciando exportación de beneficiarios...');
-      
+
       const blob = await beneficiariosApi.exportarAExcel();
       console.log('Blob recibido:', blob);
-      
+
       if (!blob || blob.size === 0) {
         throw new Error('El archivo exportado está vacío');
       }
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -140,23 +146,17 @@ export default function BeneficiariosPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       console.log('Exportación completada exitosamente');
     } catch (err: any) {
       console.error('Error detallado al exportar:', err);
-      console.error('Mensaje:', err.message);
-      console.error('Response:', err.response);
-      console.error('Status:', err.response?.status);
-      console.error('Data:', err.response?.data);
-      
+
       let errorMessage = 'Error al exportar beneficiarios';
-      
-      // Si el error es un Blob de tipo JSON, intentar leerlo
+
       if (err.response?.data instanceof Blob && err.response.data.type === 'application/json') {
         try {
           const text = await err.response.data.text();
           const errorData = JSON.parse(text);
-          console.error('Error del servidor:', errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (parseErr) {
           console.error('No se pudo parsear el error:', parseErr);
@@ -168,14 +168,14 @@ export default function BeneficiariosPage() {
       } else if (err.message) {
         errorMessage = `Error: ${err.message}`;
       }
-      
+
       setError(errorMessage);
     } finally {
       setIsExporting(false);
     }
   };
 
-  const filteredBeneficiarios = beneficiarios.filter(b => 
+  const filteredBeneficiarios = beneficiarios.filter(b =>
     b.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     b.codigo.toLowerCase().includes(searchTerm.toLowerCase())
@@ -191,20 +191,22 @@ export default function BeneficiariosPage() {
               <h1 className="text-2xl font-bold text-gray-900">Beneficiarios</h1>
               <p className="text-gray-600 mt-1">Gestión de beneficiarios del programa</p>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowImportModal(true)}
-                className="flex items-center gap-2 justify-center"
-              >
-                <Upload className="w-4 h-4" />
-                Importar Excel
-              </Button>
-              <Button onClick={handleCreate} className="flex items-center gap-2 justify-center">
-                <Plus className="w-5 h-5" />
-                Nuevo Beneficiario
-              </Button>
-            </div>
+            {(puedeCrear) && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-2 justify-center"
+                >
+                  <Upload className="w-4 h-4" />
+                  Importar Excel
+                </Button>
+                <Button onClick={handleCreate} className="flex items-center gap-2 justify-center">
+                  <Plus className="w-5 h-5" />
+                  Nuevo Beneficiario
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Stats */}
@@ -282,8 +284,8 @@ export default function BeneficiariosPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleExportar}
                   disabled={isExporting}
                   isLoading={isExporting}
@@ -306,15 +308,17 @@ export default function BeneficiariosPage() {
               <div className="text-center py-12">
                 <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">No se encontraron beneficiarios</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Button onClick={handleCreate}>
-                    Crear Primer Beneficiario
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowImportModal(true)}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Importar desde Excel
-                  </Button>
-                </div>
+                {puedeCrear && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button onClick={handleCreate}>
+                      Crear Primer Beneficiario
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowImportModal(true)}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Importar desde Excel
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <Table>
@@ -366,14 +370,16 @@ export default function BeneficiariosPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(beneficiario)}
-                            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                            title="Editar"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          {beneficiario.activo && (
+                          {puedeEditar && (
+                            <button
+                              onClick={() => handleEdit(beneficiario)}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                              title="Editar"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          )}
+                          {puedeEditar && beneficiario.activo && (
                             <button
                               onClick={() => handleDesactivar(beneficiario.id)}
                               className="p-1 text-yellow-600 hover:bg-yellow-50 rounded"
@@ -382,13 +388,18 @@ export default function BeneficiariosPage() {
                               <UserX className="w-4 h-4" />
                             </button>
                           )}
-                          <button
-                            onClick={() => handleDeleteClick(beneficiario.id)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {puedeEliminar && (
+                            <button
+                              onClick={() => handleDeleteClick(beneficiario.id)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {!puedeEditar && !puedeEliminar && (
+                            <span className="text-xs text-gray-400">Solo lectura</span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

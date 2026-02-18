@@ -6,7 +6,7 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { clasesApi } from '@/lib/api/clases';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
-import { FileDown, FileSpreadsheet, Search } from 'lucide-react';
+import { FileDown, FileSpreadsheet } from 'lucide-react';
 
 interface FiltrosReporteProps {
   tipoReporte: 'clase' | 'beneficiario';
@@ -17,8 +17,7 @@ interface FiltrosReporteProps {
 export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: FiltrosReporteProps) {
   const [filtros, setFiltros] = useState({
     id: '',
-    fechaInicio: '',
-    fechaFin: '',
+    fecha: '',
   });
   const [opciones, setOpciones] = useState<{ value: string; label: string }[]>([]);
 
@@ -58,7 +57,14 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
       alert(`Por favor selecciona ${tipoReporte === 'clase' ? 'una clase' : 'un beneficiario'}`);
       return;
     }
-    onGenerar(filtros, formato);
+    // Si hay fecha, filtrar por esa fecha exacta (fechaInicio = fechaFin = fecha)
+    // Si no hay fecha, traer todo el historial (ambos vacíos)
+    const filtrosConFecha = {
+      id: filtros.id,
+      fechaInicio: filtros.fecha || undefined,
+      fechaFin: filtros.fecha || undefined,
+    };
+    onGenerar(filtrosConFecha, formato);
   };
 
   return (
@@ -67,7 +73,7 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
         Filtros del Reporte
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
           label={tipoReporte === 'clase' ? 'Seleccionar Clase *' : 'Seleccionar Beneficiario *'}
           name="id"
@@ -78,18 +84,10 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
         />
 
         <Input
-          label="Fecha Inicio"
-          name="fechaInicio"
+          label="Fecha (opcional — sin fecha trae todo el historial)"
+          name="fecha"
           type="date"
-          value={filtros.fechaInicio}
-          onChange={handleChange}
-        />
-
-        <Input
-          label="Fecha Fin"
-          name="fechaFin"
-          type="date"
-          value={filtros.fechaFin}
+          value={filtros.fecha}
           onChange={handleChange}
         />
       </div>

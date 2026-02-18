@@ -435,6 +435,42 @@ export class AsistenciasService {
     return Object.values(agrupado);
   }
 
+  // Obtener resumen de asistencia por fecha (para módulo Nutrición)
+  async getResumenPorFecha(fecha: string): Promise<any[]> {
+    const clases = await this.clasesRepository.find({
+      where: { activo: true },
+      relations: ['beneficiarios', 'tutor', 'horario'],
+      order: { nombre: 'ASC' },
+    });
+
+    const fechaDate = new Date(fecha);
+
+    const resumen = await Promise.all(
+      clases.map(async (clase) => {
+        const asistencias = await this.asistenciasRepository.find({
+          where: {
+            clase: { id: clase.id },
+            fecha: fechaDate,
+            estado: EstadoAsistencia.PRESENTE,
+          },
+        });
+
+        return {
+          claseId: clase.id,
+          nombre: clase.nombre,
+          codigo: clase.codigo,
+          tutor: clase.tutor
+            ? `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim()
+            : null,
+          totalInscritos: clase.beneficiarios?.length || 0,
+          totalPresentes: asistencias.length,
+        };
+      }),
+    );
+
+    return resumen;
+  }
+
   // Obtener estadísticas mensuales
   async getEstadisticasMensuales(mes: number, anio: number): Promise<any> {
     const fechaInicio = new Date(anio, mes - 1, 1);

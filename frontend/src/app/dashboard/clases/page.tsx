@@ -11,12 +11,13 @@ import Alert from '@/components/ui/Alert';
 import { Table, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import ClaseForm from '@/components/clases/ClaseForm';
 import { clasesApi } from '@/lib/api/clases';
+import { useAuth } from '@/contexts/AuthContext';
 import { Clase } from '@/lib/types';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   BookOpen,
   Users,
   Calendar,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function ClasesPage() {
+  const { tienePermiso } = useAuth();
   const [clases, setClases] = useState<Clase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,6 +36,10 @@ export default function ClasesPage() {
   const [selectedClase, setSelectedClase] = useState<Clase | undefined>();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [claseToDelete, setClaseToDelete] = useState<string | null>(null);
+
+  const puedeCrear = tienePermiso('clases:crear');
+  const puedeEditar = tienePermiso('clases:editar');
+  const puedeEliminar = tienePermiso('clases:eliminar');
 
   useEffect(() => {
     loadClases();
@@ -93,7 +99,7 @@ export default function ClasesPage() {
     }
   };
 
-  const filteredClases = clases.filter(c => 
+  const filteredClases = clases.filter(c =>
     c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.tutor?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
@@ -109,10 +115,12 @@ export default function ClasesPage() {
               <h1 className="text-2xl font-bold text-gray-900">Clases</h1>
               <p className="text-gray-600 mt-1">Gestión de clases y asignaciones</p>
             </div>
-            <Button onClick={handleCreate} className="flex items-center gap-2 w-full sm:w-auto justify-center">
-              <Plus className="w-5 h-5" />
-              Nueva Clase
-            </Button>
+            {puedeCrear && (
+              <Button onClick={handleCreate} className="flex items-center gap-2 w-full sm:w-auto justify-center">
+                <Plus className="w-5 h-5" />
+                Nueva Clase
+              </Button>
+            )}
           </div>
 
           {/* Stats */}
@@ -153,7 +161,7 @@ export default function ClasesPage() {
                 <div>
                   <p className="text-sm text-gray-600">Promedio/Clase</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {clases.length > 0 
+                    {clases.length > 0
                       ? Math.round(clases.reduce((acc, c) => acc + (c.beneficiarios?.length || 0), 0) / clases.length)
                       : 0
                     }
@@ -194,9 +202,11 @@ export default function ClasesPage() {
               <div className="text-center py-12">
                 <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No se encontraron clases</p>
-                <Button onClick={handleCreate} className="mt-4">
-                  Crear Primera Clase
-                </Button>
+                {puedeCrear && (
+                  <Button onClick={handleCreate} className="mt-4">
+                    Crear Primera Clase
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
@@ -262,8 +272,8 @@ export default function ClasesPage() {
                     {/* Botones de acción */}
                     <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
                       <Link href={`/dashboard/clases/${clase.id}`} className="flex-1">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full flex items-center justify-center gap-2"
                           size="sm"
                         >
@@ -271,20 +281,24 @@ export default function ClasesPage() {
                           Ver Detalle
                         </Button>
                       </Link>
-                      <button
-                        onClick={() => handleEdit(clase)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                        title="Editar"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(clase.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {puedeEditar && (
+                        <button
+                          onClick={() => handleEdit(clase)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      )}
+                      {puedeEliminar && (
+                        <button
+                          onClick={() => handleDeleteClick(clase.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

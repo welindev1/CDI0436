@@ -42,23 +42,14 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       // Cargar asistencias existentes
       const asistenciasExistentes = await asistenciasApi.getByClaseYFecha(claseId, fecha);
 
-      // Mapear asistencias existentes
+      // Mapear SOLO las asistencias que ya existen en BD
+      // Los beneficiarios sin registro NO se inicializan (quedan fuera del mapa)
       const map = new Map();
       asistenciasExistentes.forEach(a => {
         map.set(a.beneficiario.id, {
           estado: a.estado,
           observaciones: a.observaciones || ''
         });
-      });
-
-      // Inicializar ausentes para los que no tienen registro
-      claseData.beneficiarios?.forEach(b => {
-        if (!map.has(b.id)) {
-          map.set(b.id, {
-            estado: EstadoAsistencia.AUSENTE,
-            observaciones: ''
-          });
-        }
       });
 
       setAsistencias(map);
@@ -113,11 +104,18 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       setError('');
       setSuccess('');
 
+      // Solo guardar los beneficiarios que tienen un estado seleccionado
       const asistenciasArray = Array.from(asistencias.entries()).map(([beneficiarioId, data]) => ({
         beneficiarioId,
         estado: data.estado,
         observaciones: data.observaciones || undefined
       }));
+
+      if (asistenciasArray.length === 0) {
+        setError('Debes marcar al menos un beneficiario antes de guardar');
+        setIsSaving(false);
+        return;
+      }
 
       await asistenciasApi.registrarAsistenciaMasiva({
         claseId,
@@ -137,11 +135,14 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   const getEstadisticas = () => {
     const stats = {
       total: clase?.beneficiarios?.length || 0,
+      sinMarcar: 0,
       presentes: 0,
       ausentes: 0,
       justificados: 0,
       tardes: 0
     };
+
+    stats.sinMarcar = stats.total - asistencias.size;
 
     asistencias.forEach(({ estado }) => {
       if (estado === EstadoAsistencia.PRESENTE) stats.presentes++;
@@ -184,11 +185,11 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
             <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
               <span>Tutor: {clase.tutor?.nombre} {clase.tutor?.apellido}</span>
               <span>•</span>
-              <span>Fecha: {new Date(fecha).toLocaleDateString('es-DO', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+              <span>Fecha: {new Date(fecha).toLocaleDateString('es-DO', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
               })}</span>
             </div>
           </div>
@@ -200,7 +201,17 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       </div>
 
       {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Sin Marcar</p>
+              <p className="text-2xl font-bold text-gray-600">{stats.sinMarcar}</p>
+            </div>
+            <Users className="w-8 h-8 text-gray-400" />
+          </div>
+        </div>
+
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -301,13 +312,11 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {clase.beneficiarios?.map((beneficiario, index) => {
-                const asistencia = asistencias.get(beneficiario.id) || {
-                  estado: EstadoAsistencia.AUSENTE,
-                  observaciones: ''
-                };
+                const asistencia = asistencias.get(beneficiario.id);
+                const estadoActual = asistencia?.estado ?? null;
 
                 return (
-                  <tr key={beneficiario.id} className="hover:bg-gray-50">
+                  <tr key={beneficiario.id} className={`hover:bg-gray-50 ${estadoActual === null ? 'bg-amber-50/30' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {index + 1}
                     </td>
@@ -322,11 +331,14 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
+                        {estadoActual === null && (
+                          <span className="text-xs text-amber-600 font-medium mr-1">Sin marcar</span>
+                        )}
                         <button
                           onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.PRESENTE)}
                           className={`p-2 rounded-lg transition-colors ${
-                            asistencia.estado === EstadoAsistencia.PRESENTE
+                            estadoActual === EstadoAsistencia.PRESENTE
                               ? 'bg-green-100 text-green-700 ring-2 ring-green-500'
                               : 'bg-gray-100 text-gray-500 hover:bg-green-50'
                           }`}
@@ -337,7 +349,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                         <button
                           onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.AUSENTE)}
                           className={`p-2 rounded-lg transition-colors ${
-                            asistencia.estado === EstadoAsistencia.AUSENTE
+                            estadoActual === EstadoAsistencia.AUSENTE
                               ? 'bg-red-100 text-red-700 ring-2 ring-red-500'
                               : 'bg-gray-100 text-gray-500 hover:bg-red-50'
                           }`}
@@ -348,7 +360,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                         <button
                           onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.TARDE)}
                           className={`p-2 rounded-lg transition-colors ${
-                            asistencia.estado === EstadoAsistencia.TARDE
+                            estadoActual === EstadoAsistencia.TARDE
                               ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-500'
                               : 'bg-gray-100 text-gray-500 hover:bg-yellow-50'
                           }`}
@@ -359,7 +371,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                         <button
                           onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.JUSTIFICADO)}
                           className={`p-2 rounded-lg transition-colors ${
-                            asistencia.estado === EstadoAsistencia.JUSTIFICADO
+                            estadoActual === EstadoAsistencia.JUSTIFICADO
                               ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500'
                               : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
                           }`}
@@ -372,7 +384,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                     <td className="px-6 py-4">
                       <input
                         type="text"
-                        value={asistencia.observaciones}
+                        value={asistencia?.observaciones ?? ''}
                         onChange={(e) => handleObservacionesChange(beneficiario.id, e.target.value)}
                         placeholder="Observaciones..."
                         className="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
