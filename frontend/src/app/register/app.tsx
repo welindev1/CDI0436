@@ -176,7 +176,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-6">
-              <Link href="/login">
+              <Link href="/">
                 <Button variant="outline" className="w-full" size="lg">
                   Iniciar Sesión
                 </Button>
