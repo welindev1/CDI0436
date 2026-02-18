@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     setUsuario(null);
-    router.push('/login');
+    router.push('/');
   };
 
   // Verificar si el usuario es super admin
