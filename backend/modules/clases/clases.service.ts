@@ -42,22 +42,6 @@ export class ClasesService {
       throw new NotFoundException(`Horario con ID ${createClaseDto.horarioId} no encontrado o inactivo`);
     }
 
-    // Verificar que no exista otra clase con el mismo tutor y horario
-    const conflicto = await this.clasesRepository.findOne({
-      where: {
-        tutor: { id: createClaseDto.tutorId },
-        horario: { id: createClaseDto.horarioId },
-        activo: true
-      }
-    });
-
-    if (conflicto) {
-      throw new ConflictException(
-        `El tutor ${tutor.nombre} ya tiene una clase asignada en este horario`
-      );
-    }
-
-    // Verificar código único si se proporciona
     if (createClaseDto.codigo) {
       const codigoExiste = await this.clasesRepository.findOne({
         where: { codigo: createClaseDto.codigo }
@@ -164,24 +148,6 @@ export class ClasesService {
       clase.horario = horario;
     }
 
-    // Verificar conflictos si se cambia tutor u horario
-    if (updateClaseDto.tutorId || updateClaseDto.horarioId) {
-      const tutorId = updateClaseDto.tutorId || clase.tutor.id;
-      const horarioId = updateClaseDto.horarioId || clase.horario.id;
-
-      const conflicto = await this.clasesRepository.createQueryBuilder('clase')
-        .where('clase.id != :claseId', { claseId: id })
-        .andWhere('clase.tutor.id = :tutorId', { tutorId })
-        .andWhere('clase.horario.id = :horarioId', { horarioId })
-        .andWhere('clase.activo = :activo', { activo: true })
-        .getOne();
-
-      if (conflicto) {
-        throw new ConflictException('El tutor ya tiene una clase asignada en este horario');
-      }
-    }
-
-    // Verificar código único si se cambia
     if (updateClaseDto.codigo && updateClaseDto.codigo !== clase.codigo) {
       const codigoExiste = await this.clasesRepository.findOne({
         where: { codigo: updateClaseDto.codigo }
