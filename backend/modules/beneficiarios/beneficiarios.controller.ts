@@ -100,6 +100,14 @@ export class BeneficiariosController {
     return await this.beneficiariosService.importarDesdeExcel(file.buffer, options);
   }
 
+  @Get('buscar-publico')
+  buscarPublico(@Query('nombre') nombre: string) {
+    if (!nombre || nombre.trim().length < 2) {
+      return [];
+    }
+    return this.beneficiariosService.buscarPublico(nombre.trim());
+  }
+
   @Get('clase/:claseId')
   findByClase(@Param('claseId', ParseUUIDPipe) claseId: string) {
     return this.beneficiariosService.findByClase(claseId);

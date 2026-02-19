@@ -26,6 +26,10 @@ export class CreateAyudaDto {
   @IsString({ message: 'La especificación del tipo debe ser texto' })
   tipo_especificacion?: string;
 
+  @IsOptional()
+  @IsString({ message: 'El teléfono debe ser texto' })
+  telefono?: string;
+
   @IsString()
   @IsNotEmpty({ message: 'El detalle de la solicitud es requerido' })
   detalle: string;

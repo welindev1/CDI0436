@@ -105,6 +105,21 @@ export class BeneficiariosService {
     return await query.getMany();
   }
 
+  async buscarPublico(nombre: string): Promise<Partial<Beneficiario>[]> {
+    const beneficiarios = await this.beneficiariosRepository.createQueryBuilder('beneficiario')
+      .select(['beneficiario.id', 'beneficiario.codigo', 'beneficiario.nombre', 'beneficiario.apellido', 'beneficiario.padre_tutor', 'beneficiario.telefono'])
+      .where('beneficiario.activo = :activo', { activo: true })
+      .andWhere(
+        '(beneficiario.nombre ILIKE :nombre OR beneficiario.apellido ILIKE :nombre OR CONCAT(beneficiario.nombre, \' \', beneficiario.apellido) ILIKE :nombre)',
+        { nombre: `%${nombre}%` }
+      )
+      .orderBy('beneficiario.nombre', 'ASC')
+      .take(10)
+      .getMany();
+
+    return beneficiarios;
+  }
+
   async findOne(id: string): Promise<Beneficiario> {
     const beneficiario = await this.beneficiariosRepository.findOne({
       where: { id },
