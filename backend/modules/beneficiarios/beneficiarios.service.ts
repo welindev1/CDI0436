@@ -59,7 +59,7 @@ export class BeneficiariosService {
     const query = this.beneficiariosRepository.createQueryBuilder('beneficiario')
       .leftJoinAndSelect('beneficiario.clases', 'clases')
       .leftJoinAndSelect('clases.tutor', 'tutor')
-      .leftJoinAndSelect('clases.horario', 'horario')
+      .leftJoinAndSelect('clases.horarios', 'horario')
       .orderBy('beneficiario.nombre', 'ASC');
 
     if (filters) {
@@ -108,7 +108,7 @@ export class BeneficiariosService {
   async findOne(id: string): Promise<Beneficiario> {
     const beneficiario = await this.beneficiariosRepository.findOne({
       where: { id },
-      relations: ['clases', 'clases.tutor', 'clases.horario', 'asistencias']
+      relations: ['clases', 'clases.tutor', 'clases.horarios', 'asistencias']
     });
 
     if (!beneficiario) {
@@ -121,7 +121,7 @@ export class BeneficiariosService {
   async findByCodigo(codigo: string): Promise<Beneficiario> {
     const beneficiario = await this.beneficiariosRepository.findOne({
       where: { codigo },
-      relations: ['clases', 'clases.tutor', 'clases.horario']
+      relations: ['clases', 'clases.tutor', 'clases.horarios']
     });
 
     if (!beneficiario) {

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsInt, Min, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsInt, Min, MaxLength, IsArray } from 'class-validator';
 
 export class CreateClaseDto {
   @IsString()
@@ -17,8 +17,9 @@ export class CreateClaseDto {
   @IsUUID()
   tutorId: string;
 
-  @IsUUID()
-  horarioId: string;
+  @IsArray()
+  @IsUUID('4', { each: true })
+  horarioIds: string[];
 
   @IsInt()
   @Min(0)

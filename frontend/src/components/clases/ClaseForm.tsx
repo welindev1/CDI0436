@@ -25,7 +25,7 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
     descripcion: '',
     codigo: '',
     tutorId: '',
-    horarioId: '',
+    horarioIds: [] as string[],
     capacidad_maxima: '',
   });
 
@@ -40,13 +40,11 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
         descripcion: clase.descripcion || '',
         codigo: clase.codigo || '',
         tutorId: clase.tutor?.id || '',
-        horarioId: clase.horario?.id || '',
+        horarioIds: clase.horarios?.map(h => h.id) || [],
         capacidad_maxima: clase.capacidad_maxima?.toString() || '',
       });
     }
   }, [clase]);
-
-  // ...existing code...
 
   const loadTutoresYHorarios = async () => {
     try {
@@ -61,11 +59,15 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
     }
   };
 
-// ...existing code...
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (formData.horarioIds.length === 0) {
+      setError('Debes seleccionar al menos un horario');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -74,9 +76,9 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
         capacidad_maxima: formData.capacidad_maxima ? parseInt(formData.capacidad_maxima) : 0,
       };
 
-      // Remover campos vacíos
+      // Remover campos vacíos (excepto horarioIds que es un array)
       Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === undefined) {
+        if (key !== 'horarioIds' && (data[key] === '' || data[key] === undefined)) {
           delete data[key];
         }
       });
@@ -96,14 +98,18 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
     }));
   };
 
+  const handleHorarioToggle = (horarioId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      horarioIds: prev.horarioIds.includes(horarioId)
+        ? prev.horarioIds.filter(id => id !== horarioId)
+        : [...prev.horarioIds, horarioId]
+    }));
+  };
+
   const tutorOptions = tutores.map(t => ({
     value: t.id,
     label: `${t.nombre} ${t.apellido || ''}`.trim()
-  }));
-
-  const horarioOptions = horarios.map(h => ({
-    value: h.id,
-    label: `${h.dia} - ${h.hora_inicio} a ${h.hora_fin}`
   }));
 
   return (
@@ -142,15 +148,6 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
           required
         />
 
-        <Select
-          label="Horario *"
-          name="horarioId"
-          value={formData.horarioId}
-          onChange={handleChange}
-          options={horarioOptions}
-          required
-        />
-
         <Input
           label="Capacidad Máxima"
           name="capacidad_maxima"
@@ -160,6 +157,46 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
           placeholder="20"
           min="0"
         />
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Horarios * <span className="text-xs text-gray-500 font-normal">(selecciona uno o más)</span>
+          </label>
+          {horarios.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">No hay horarios disponibles</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+              {horarios.map(h => {
+                const isSelected = formData.horarioIds.includes(h.id);
+                return (
+                  <label
+                    key={h.id}
+                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-blue-50 border border-blue-300'
+                        : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleHorarioToggle(h.id)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
+                      <span className="capitalize">{h.dia}</span> {h.hora_inicio} - {h.hora_fin}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {formData.horarioIds.length > 0 && (
+            <p className="mt-1 text-xs text-blue-600">
+              {formData.horarioIds.length} horario(s) seleccionado(s)
+            </p>
+          )}
+        </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">

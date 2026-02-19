@@ -21,8 +21,13 @@ export class Clase {
   @ManyToOne(() => Tutor, tutor => tutor.clases, { eager: true })
   tutor: Tutor;
 
-  @ManyToOne(() => Horario, horario => horario.clases, { eager: true })
-  horario: Horario;
+  @ManyToMany(() => Horario, horario => horario.clases, { eager: true })
+  @JoinTable({
+    name: 'clase_horario',
+    joinColumn: { name: 'clase_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'horario_id', referencedColumnName: 'id' }
+  })
+  horarios: Horario[];
 
   @ManyToMany(() => Beneficiario, beneficiario => beneficiario.clases)
   @JoinTable({
