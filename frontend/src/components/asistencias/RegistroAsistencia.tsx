@@ -7,7 +7,7 @@ import EstadoBadge from './EstadoBadge';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
 import { EstadoAsistencia, Clase, Beneficiario } from '@/lib/types';
-import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users } from 'lucide-react';
+import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search } from 'lucide-react';
 
 interface RegistroAsistenciaProps {
   claseId: string;
@@ -25,6 +25,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadClaseYAsistencias();
@@ -292,6 +293,19 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
 
       {/* Lista de beneficiarios */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Buscador */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Buscar beneficiario por nombre, apellido o código..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -311,7 +325,16 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {clase.beneficiarios?.map((beneficiario, index) => {
+              {clase.beneficiarios?.filter((b) => {
+                if (!searchTerm.trim()) return true;
+                const term = searchTerm.toLowerCase();
+                return (
+                  b.nombre?.toLowerCase().includes(term) ||
+                  b.apellido?.toLowerCase().includes(term) ||
+                  b.codigo?.toLowerCase().includes(term) ||
+                  `${b.nombre} ${b.apellido}`.toLowerCase().includes(term)
+                );
+              }).map((beneficiario, index) => {
                 const asistencia = asistencias.get(beneficiario.id);
                 const estadoActual = asistencia?.estado ?? null;
 

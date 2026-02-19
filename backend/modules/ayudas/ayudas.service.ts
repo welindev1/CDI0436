@@ -32,10 +32,20 @@ export class AyudasService {
     return ayuda;
   }
 
-  async updateEstado(id: string, updateEstadoDto: UpdateEstadoAyudaDto): Promise<Ayuda> {
+  async updateEstado(id: string, updateEstadoDto: UpdateEstadoAyudaDto): Promise<{ ayuda: Ayuda; whatsappUrl?: string }> {
     const ayuda = await this.findOne(id);
     ayuda.estado = updateEstadoDto.estado;
-    return await this.ayudasRepository.save(ayuda);
+    const saved = await this.ayudasRepository.save(ayuda);
+
+    let whatsappUrl: string | undefined;
+    if (saved.telefono) {
+      const telefono = saved.telefono.replace(/[^0-9]/g, '');
+      const estadoTexto = saved.estado === EstadoAyuda.APROBADA ? 'aprobada ✅' : 'rechazada ❌';
+      const mensaje = `Hola ${saved.nombre_beneficiario}, le informamos que su solicitud de ayuda (${saved.tipo}) ha sido ${estadoTexto}. CDI - Centro de Desarrollo Integral.`;
+      whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+    }
+
+    return { ayuda: saved, whatsappUrl };
   }
 
   async remove(id: string): Promise<void> {
@@ -49,6 +59,7 @@ export class AyudasService {
     const data = ayudas.map((a) => ({
       CODIGO: a.codigo_beneficiario,
       BENEFICIARIO: a.nombre_beneficiario,
+      TELEFONO: a.telefono || '',
       MADRE: a.nombre_madre,
       TUTOR: a.nombre_tutor,
       TIPO: a.tipo.toUpperCase(),
@@ -62,6 +73,7 @@ export class AyudasService {
     const columnWidths = [
       { wch: 15 }, // CODIGO
       { wch: 25 }, // BENEFICIARIO
+      { wch: 15 }, // TELEFONO
       { wch: 25 }, // MADRE
       { wch: 25 }, // TUTOR
       { wch: 15 }, // TIPO

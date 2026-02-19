@@ -38,6 +38,9 @@ export class Ayuda {
   @Column({ nullable: true })
   tipo_especificacion: string;
 
+  @Column({ length: 20, nullable: true })
+  telefono: string;
+
   @Column({ type: 'text' })
   detalle: string;
 

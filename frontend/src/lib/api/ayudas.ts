@@ -6,6 +6,7 @@ export interface Ayuda {
   codigo_beneficiario: string;
   nombre_madre: string;
   nombre_tutor: string;
+  telefono?: string;
   tipo: 'medica' | 'alimentos' | 'otros';
   tipo_especificacion?: string;
   detalle: string;

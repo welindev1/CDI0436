@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi, Ayuda } from '@/lib/api/ayudas';
-import { Download, CheckCircle, XCircle, Trash2, Search } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Trash2, Search, Phone } from 'lucide-react';
 
 export default function AyudasPage() {
   const [ayudas, setAyudas] = useState<Ayuda[]>([]);
@@ -33,8 +33,12 @@ export default function AyudasPage() {
   const handleEstado = async (id: string, estado: 'aprobada' | 'rechazada') => {
     if (!confirm(`¿Estás seguro de ${estado === 'aprobada' ? 'aprobar' : 'rechazar'} esta solicitud?`)) return;
     try {
-      await ayudasApi.updateEstado(id, estado);
+      const result = await ayudasApi.updateEstado(id, estado);
       fetchAyudas();
+      // Si hay URL de WhatsApp, abrir para enviar mensaje
+      if (result.whatsappUrl) {
+        window.open(result.whatsappUrl, '_blank');
+      }
     } catch (err) {
       alert('Error al actualizar estado');
     }
@@ -109,6 +113,9 @@ export default function AyudasPage() {
                       Beneficiario
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Teléfono
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tipo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -131,6 +138,22 @@ export default function AyudasPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="font-medium text-gray-900">{ayuda.nombre_beneficiario}</div>
                         <div className="text-xs text-gray-500">Tutor: {ayuda.nombre_tutor}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {ayuda.telefono ? (
+                          <a
+                            href={`https://wa.me/${ayuda.telefono.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-green-600 hover:text-green-800 transition"
+                            title="Abrir WhatsApp"
+                          >
+                            <Phone className="w-4 h-4" />
+                            {ayuda.telefono}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -188,7 +211,7 @@ export default function AyudasPage() {
                   ))}
                   {filteredAyudas.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                         No se encontraron solicitudes registradas.
                       </td>
                     </tr>

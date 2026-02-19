@@ -1,22 +1,104 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi } from '@/lib/api/ayudas';
-import { FileText, LogIn } from 'lucide-react';
+import { beneficiariosApi } from '@/lib/api/beneficiarios';
+import { FileText, LogIn, Search, User } from 'lucide-react';
 import Link from 'next/link';
+
+interface BeneficiarioSugerido {
+  id: string;
+  codigo: string;
+  nombre: string;
+  apellido?: string;
+  padre_tutor?: string;
+  telefono?: string;
+}
 
 export default function AyudasPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<any>();
+  // Autocomplete state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sugerencias, setSugerencias] = useState<BeneficiarioSugerido[]>([]);
+  const [showSugerencias, setShowSugerencias] = useState(false);
+  const [buscando, setBuscando] = useState(false);
+  const [beneficiarioSeleccionado, setBeneficiarioSeleccionado] = useState<BeneficiarioSugerido | null>(null);
+  const sugerenciasRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<any>();
 
   const tipoSeleccionado = watch('tipo');
+
+  // Close suggestions on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sugerenciasRef.current && !sugerenciasRef.current.contains(e.target as Node)) {
+        setShowSugerencias(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const buscarBeneficiarios = async (nombre: string) => {
+    if (nombre.trim().length < 2) {
+      setSugerencias([]);
+      setShowSugerencias(false);
+      return;
+    }
+
+    try {
+      setBuscando(true);
+      const resultados = await beneficiariosApi.buscarPublico(nombre);
+      setSugerencias(resultados);
+      setShowSugerencias(resultados.length > 0);
+    } catch {
+      setSugerencias([]);
+    } finally {
+      setBuscando(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setValue('nombre_beneficiario', value);
+    setBeneficiarioSeleccionado(null);
+
+    // Debounce search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      buscarBeneficiarios(value);
+    }, 300);
+  };
+
+  const seleccionarBeneficiario = (b: BeneficiarioSugerido) => {
+    const nombreCompleto = `${b.nombre} ${b.apellido || ''}`.trim();
+    setSearchQuery(nombreCompleto);
+    setBeneficiarioSeleccionado(b);
+    setShowSugerencias(false);
+
+    // Fill form fields
+    setValue('nombre_beneficiario', nombreCompleto);
+    setValue('codigo_beneficiario', b.codigo);
+    if (b.padre_tutor) {
+      setValue('nombre_madre', b.padre_tutor);
+      setValue('nombre_tutor', b.padre_tutor);
+    }
+    if (b.telefono) {
+      setValue('telefono', b.telefono);
+    }
+  };
 
   const onSubmit = async (data: any) => {
     try {
@@ -26,6 +108,8 @@ export default function AyudasPage() {
       await ayudasApi.create(data);
       setSuccess('¡Solicitud registrada correctamente! Pronto recibirás una respuesta.');
       reset();
+      setSearchQuery('');
+      setBeneficiarioSeleccionado(null);
     } catch (err: any) {
       setError('Error al registrar la solicitud. Por favor intenta nuevamente.');
     } finally {
@@ -69,13 +153,69 @@ export default function AyudasPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="Nombre Beneficiario"
-                type="text"
-                {...register('nombre_beneficiario', { required: true })}
-                error={errors.nombre_beneficiario ? 'Este campo es requerido' : ''}
-                placeholder="Nombre completo del beneficiario"
-              />
+              {/* Autocomplete Beneficiario */}
+              <div className="relative" ref={sugerenciasRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre Beneficiario
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => sugerencias.length > 0 && setShowSugerencias(true)}
+                    placeholder="Escribe para buscar beneficiario..."
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.nombre_beneficiario ? 'border-red-500' : 'border-gray-300'
+                    } ${beneficiarioSeleccionado ? 'bg-green-50 border-green-300' : ''}`}
+                  />
+                  {buscando && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                  )}
+                </div>
+                <input type="hidden" {...register('nombre_beneficiario', { required: true })} />
+                {errors.nombre_beneficiario && (
+                  <p className="mt-1 text-sm text-red-600">Este campo es requerido</p>
+                )}
+                {beneficiarioSeleccionado && (
+                  <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    Beneficiario seleccionado: {beneficiarioSeleccionado.codigo}
+                  </p>
+                )}
+
+                {/* Dropdown sugerencias */}
+                {showSugerencias && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {sugerencias.map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => seleccionarBeneficiario(b)}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {b.nombre} {b.apellido || ''}
+                            </p>
+                            {b.padre_tutor && (
+                              <p className="text-xs text-gray-500">Padre/Tutor: {b.padre_tutor}</p>
+                            )}
+                          </div>
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                            {b.codigo}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <Input
                 label="Código Beneficiario"
                 type="text"
@@ -101,6 +241,13 @@ export default function AyudasPage() {
                 placeholder="Nombre completo del tutor"
               />
             </div>
+
+            <Input
+              label="Número de Teléfono (WhatsApp)"
+              type="tel"
+              {...register('telefono')}
+              placeholder="Ej: 18095551234"
+            />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

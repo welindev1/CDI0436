@@ -97,4 +97,9 @@ export const beneficiariosApi = {
     });
     return response.data;
   },
+
+  buscarPublico: async (nombre: string): Promise<any[]> => {
+    const response = await apiClient.get(`/beneficiarios/buscar-publico?nombre=${encodeURIComponent(nombre)}`);
+    return response.data;
+  },
 };
