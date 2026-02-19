@@ -22,6 +22,18 @@ import {
   BookOpen
 } from 'lucide-react';
 
+const diasLabel: Record<string, string> = {
+  lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
+  jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo',
+};
+
+function getTurnoLabel(hora_inicio: string): string {
+  const hora = parseInt(hora_inicio.split(':')[0]);
+  if (hora < 12) return 'Mañana';
+  if (hora < 18) return 'Tarde';
+  return 'Noche';
+}
+
 export default function ClaseDetallePage() {
   const params = useParams();
   const router = useRouter();
@@ -179,7 +191,7 @@ export default function ClaseDetallePage() {
                   <div className="space-y-1">
                     {clase.horarios?.map((h, idx) => (
                       <p key={idx} className="text-gray-600">
-                        <span className="capitalize">{h.dia}</span> — {h.hora_inicio} - {h.hora_fin}
+                        {diasLabel[h.dia] || h.dia} — {getTurnoLabel(h.hora_inicio)}
                       </p>
                     ))}
                     {(!clase.horarios || clase.horarios.length === 0) && (
