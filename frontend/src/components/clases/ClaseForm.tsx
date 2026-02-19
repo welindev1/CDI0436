@@ -9,6 +9,18 @@ import { Clase } from '@/lib/types';
 import { tutoresApi } from '@/lib/api/tutores';
 import { horariosApi } from '@/lib/api/horarios';
 
+const diasLabel: Record<string, string> = {
+  lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
+  jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo',
+};
+
+function getTurnoLabel(hora_inicio: string): string {
+  const hora = parseInt(hora_inicio.split(':')[0]);
+  if (hora < 12) return 'Mañana';
+  if (hora < 18) return 'Tarde';
+  return 'Noche';
+}
+
 interface ClaseFormProps {
   clase?: Clase;
   onSubmit: (data: Partial<Clase>) => Promise<void>;
@@ -184,7 +196,7 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
                     <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'}`}>
-                      <span className="capitalize">{h.dia}</span> {h.hora_inicio} - {h.hora_fin}
+                      {diasLabel[h.dia] || h.dia} - {getTurnoLabel(h.hora_inicio)}
                     </span>
                   </label>
                 );

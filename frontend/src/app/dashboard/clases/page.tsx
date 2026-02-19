@@ -26,6 +26,18 @@ import {
   UserCircle
 } from 'lucide-react';
 
+const diasLabel: Record<string, string> = {
+  lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
+  jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo',
+};
+
+function getTurnoLabel(hora_inicio: string): string {
+  const hora = parseInt(hora_inicio.split(':')[0]);
+  if (hora < 12) return 'Mañana';
+  if (hora < 18) return 'Tarde';
+  return 'Noche';
+}
+
 export default function ClasesPage() {
   const { tienePermiso } = useAuth();
   const [clases, setClases] = useState<Clase[]>([]);
@@ -250,7 +262,7 @@ export default function ClasesPage() {
                         <div key={idx} className="flex items-center gap-2 text-sm">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <span className="text-gray-700">
-                            <span className="capitalize">{h.dia}</span> {h.hora_inicio} - {h.hora_fin}
+                            {diasLabel[h.dia] || h.dia} - {getTurnoLabel(h.hora_inicio)}
                           </span>
                         </div>
                       ))}

@@ -5,7 +5,8 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
-import { Upload, Download, FileSpreadsheet, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, FileDown } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ImportarExcelModalProps {
   isOpen: boolean;
@@ -105,6 +106,47 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleDescargarReporteErrores = () => {
+    if (!resultado?.errores || resultado.errores.length === 0) return;
+
+    const datosErrores = resultado.errores.map((err: any) => ({
+      FILA: err.fila,
+      ERROR: err.error,
+      CODIGO: err.datos?.CODIGO || '',
+      NOMBRE: err.datos?.NOMBRE || '',
+      APELLIDO: err.datos?.APELLIDO || '',
+      DIRECCION: err.datos?.DIRECCION || '',
+      TELEFONO: err.datos?.TELEFONO || '',
+      'PADRE O TUTOR': err.datos?.['PADRE O TUTOR'] || err.datos?.PADRE_TUTOR || '',
+      'FECHA DE NACIMIENTO': err.datos?.['FECHA DE NACIMIENTO'] || err.datos?.FECHA_NACIMIENTO || '',
+      CORREO: err.datos?.CORREO || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(datosErrores);
+    worksheet['!cols'] = [
+      { wch: 6 }, { wch: 40 }, { wch: 12 }, { wch: 15 },
+      { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 20 },
+      { wch: 20 }, { wch: 25 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Errores');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'errores_importacion.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -245,6 +287,13 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
                     </div>
                   ))}
                 </div>
+                <button
+                  onClick={handleDescargarReporteErrores}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm font-medium rounded-lg transition-colors border border-yellow-300"
+                >
+                  <FileDown className="w-4 h-4" />
+                  Descargar Reporte de Errores
+                </button>
               </div>
             )}
 
