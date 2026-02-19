@@ -80,7 +80,7 @@ export class AsistenciasService {
       .leftJoinAndSelect('asistencia.clase', 'clase')
       .leftJoinAndSelect('asistencia.beneficiario', 'beneficiario')
       .leftJoinAndSelect('clase.tutor', 'tutor')
-      .leftJoinAndSelect('clase.horario', 'horario')
+      .leftJoinAndSelect('clase.horarios', 'horario')
       .orderBy('asistencia.fecha', 'DESC')
       .addOrderBy('asistencia.hora_registro', 'DESC');
 
@@ -115,7 +115,7 @@ export class AsistenciasService {
   async findOne(id: string): Promise<Asistencia> {
     const asistencia = await this.asistenciasRepository.findOne({
       where: { id },
-      relations: ['clase', 'beneficiario', 'clase.tutor', 'clase.horario', 'registrado_por']
+      relations: ['clase', 'beneficiario', 'clase.tutor', 'clase.horarios', 'registrado_por']
     });
 
     if (!asistencia) {
@@ -263,7 +263,7 @@ export class AsistenciasService {
   async getReportePorClase(claseId: string, fechaInicio?: string, fechaFin?: string): Promise<any> {
     const clase = await this.clasesRepository.findOne({
       where: { id: claseId },
-      relations: ['tutor', 'horario', 'beneficiarios']
+      relations: ['tutor', 'horarios', 'beneficiarios']
     });
 
     if (!clase) {
@@ -299,7 +299,7 @@ export class AsistenciasService {
         nombre: clase.nombre,
         codigo: clase.codigo,
         tutor: `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim(),
-        horario: `${clase.horario.dia} ${clase.horario.hora_inicio} - ${clase.horario.hora_fin}`
+        horarios: clase.horarios?.map(h => `${h.dia} ${h.hora_inicio} - ${h.hora_fin}`).join(', ') || 'Sin horario'
       },
       periodo: {
         fechaInicio: fechaInicio || 'Desde el inicio',
@@ -439,7 +439,7 @@ export class AsistenciasService {
   async getResumenPorFecha(fecha: string): Promise<any[]> {
     const clases = await this.clasesRepository.find({
       where: { activo: true },
-      relations: ['beneficiarios', 'tutor', 'horario'],
+      relations: ['beneficiarios', 'tutor', 'horarios'],
       order: { nombre: 'ASC' },
     });
 

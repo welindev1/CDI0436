@@ -245,19 +245,15 @@ export default function ClasesPage() {
                         </span>
                       </div>
 
-                      {/* Horario */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700 capitalize">
-                          {clase.horario?.dia}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">
-                          {clase.horario?.hora_inicio} - {clase.horario?.hora_fin}
-                        </span>
-                      </div>
+                      {/* Horarios */}
+                      {clase.horarios?.map((h, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span className="text-gray-700">
+                            <span className="capitalize">{h.dia}</span> {h.hora_inicio} - {h.hora_fin}
+                          </span>
+                        </div>
+                      ))}
 
                       {/* Inscritos */}
                       <div className="flex items-center gap-2 text-sm">

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 
 export enum DiaSemana {
@@ -31,7 +31,7 @@ export class Horario {
   @Column({ type: 'text', nullable: true })
   descripcion: string;
 
-  @OneToMany(() => Clase, clase => clase.horario)
+  @ManyToMany(() => Clase, clase => clase.horarios)
   clases: Clase[];
 
   @Column({ default: true })

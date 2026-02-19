@@ -33,13 +33,13 @@ export class ClasesService {
       throw new NotFoundException(`Tutor con ID ${createClaseDto.tutorId} no encontrado o inactivo`);
     }
 
-    // Verificar que el horario existe
-    const horario = await this.horariosRepository.findOne({
-      where: { id: createClaseDto.horarioId, activo: true }
+    // Verificar que los horarios existen
+    const horarios = await this.horariosRepository.find({
+      where: { id: In(createClaseDto.horarioIds), activo: true }
     });
 
-    if (!horario) {
-      throw new NotFoundException(`Horario con ID ${createClaseDto.horarioId} no encontrado o inactivo`);
+    if (horarios.length !== createClaseDto.horarioIds.length) {
+      throw new NotFoundException('Uno o más horarios no fueron encontrados o están inactivos');
     }
 
     if (createClaseDto.codigo) {
@@ -55,7 +55,7 @@ export class ClasesService {
     const clase = this.clasesRepository.create({
       ...createClaseDto,
       tutor,
-      horario
+      horarios
     });
 
     return await this.clasesRepository.save(clase);
@@ -64,7 +64,7 @@ export class ClasesService {
   async findAll(filters?: FilterClaseDto): Promise<Clase[]> {
     const query = this.clasesRepository.createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
-      .leftJoinAndSelect('clase.horario', 'horario')
+      .leftJoinAndSelect('clase.horarios', 'horario')
       .leftJoinAndSelect('clase.beneficiarios', 'beneficiarios')
       .orderBy('clase.nombre', 'ASC');
 
@@ -96,7 +96,7 @@ export class ClasesService {
   async findOne(id: string): Promise<Clase> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['tutor', 'tutor.usuario', 'horario', 'beneficiarios', 'asistencias']
+      relations: ['tutor', 'tutor.usuario', 'horarios', 'beneficiarios', 'asistencias']
     });
 
     if (!clase) {
@@ -109,7 +109,7 @@ export class ClasesService {
   async findByCodigo(codigo: string): Promise<Clase> {
     const clase = await this.clasesRepository.findOne({
       where: { codigo },
-      relations: ['tutor', 'horario', 'beneficiarios']
+      relations: ['tutor', 'horarios', 'beneficiarios']
     });
 
     if (!clase) {
@@ -135,17 +135,17 @@ export class ClasesService {
       clase.tutor = tutor;
     }
 
-    // Si se cambia el horario, verificar que existe
-    if (updateClaseDto.horarioId && updateClaseDto.horarioId !== clase.horario.id) {
-      const horario = await this.horariosRepository.findOne({
-        where: { id: updateClaseDto.horarioId, activo: true }
+    // Si se cambian los horarios, verificar que existen
+    if (updateClaseDto.horarioIds && updateClaseDto.horarioIds.length > 0) {
+      const horarios = await this.horariosRepository.find({
+        where: { id: In(updateClaseDto.horarioIds), activo: true }
       });
 
-      if (!horario) {
-        throw new NotFoundException(`Horario con ID ${updateClaseDto.horarioId} no encontrado o inactivo`);
+      if (horarios.length !== updateClaseDto.horarioIds.length) {
+        throw new NotFoundException('Uno o más horarios no fueron encontrados o están inactivos');
       }
 
-      clase.horario = horario;
+      clase.horarios = horarios;
     }
 
     if (updateClaseDto.codigo && updateClaseDto.codigo !== clase.codigo) {
@@ -251,7 +251,7 @@ export class ClasesService {
   async getEstadisticas(id: string): Promise<any> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['beneficiarios', 'asistencias', 'tutor', 'horario']
+      relations: ['beneficiarios', 'asistencias', 'tutor', 'horarios']
     });
 
     if (!clase) {
@@ -277,12 +277,12 @@ export class ClasesService {
           id: clase.tutor.id,
           nombre: `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim()
         },
-        horario: {
-          id: clase.horario.id,
-          dia: clase.horario.dia,
-          hora_inicio: clase.horario.hora_inicio,
-          hora_fin: clase.horario.hora_fin
-        }
+        horarios: clase.horarios.map(h => ({
+          id: h.id,
+          dia: h.dia,
+          hora_inicio: h.hora_inicio,
+          hora_fin: h.hora_fin
+        }))
       },
       estadisticas: {
         totalBeneficiarios,
@@ -298,7 +298,7 @@ export class ClasesService {
   async findByTutor(tutorId: string): Promise<Clase[]> {
     return await this.clasesRepository.find({
       where: { tutor: { id: tutorId }, activo: true },
-      relations: ['horario', 'beneficiarios']
+      relations: ['horarios', 'beneficiarios']
     });
   }
 }

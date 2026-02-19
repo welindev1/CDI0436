@@ -174,19 +174,18 @@ export default function ClaseDetallePage() {
                 <div>
                   <p className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
                     <Calendar className="w-4 h-4" />
-                    Día
+                    Horarios
                   </p>
-                  <p className="text-gray-600 capitalize">{clase.horario?.dia}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-1">
-                    <Clock className="w-4 h-4" />
-                    Horario
-                  </p>
-                  <p className="text-gray-600">
-                    {clase.horario?.hora_inicio} - {clase.horario?.hora_fin}
-                  </p>
+                  <div className="space-y-1">
+                    {clase.horarios?.map((h, idx) => (
+                      <p key={idx} className="text-gray-600">
+                        <span className="capitalize">{h.dia}</span> — {h.hora_inicio} - {h.hora_fin}
+                      </p>
+                    ))}
+                    {(!clase.horarios || clase.horarios.length === 0) && (
+                      <p className="text-gray-400 italic">Sin horarios asignados</p>
+                    )}
+                  </div>
                 </div>
 
                 <div>

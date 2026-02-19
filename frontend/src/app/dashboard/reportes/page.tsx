@@ -70,7 +70,7 @@ export default function ReportesPage() {
 
     exportToPDF({
       titulo: `Reporte de Asistencia - ${data.clase.nombre}`,
-      subtitulo: `${data.clase.tutor} | ${data.clase.horario}`,
+      subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`,
       fecha: new Date().toLocaleDateString('es-DO'),
       datos: asistencias,
       columnas: ['beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],

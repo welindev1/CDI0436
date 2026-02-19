@@ -97,7 +97,7 @@ export interface Clase {
   descripcion?: string;
   codigo?: string;
   tutor: Tutor;
-  horario: Horario;
+  horarios: Horario[];
   beneficiarios: Beneficiario[];
   capacidad_maxima: number;
   activo: boolean;
@@ -141,7 +141,7 @@ export interface ReporteAsistenciaClase {
     nombre: string;
     codigo?: string;
     tutor: string;
-    horario: string;
+    horarios: string;
   };
   periodo: {
     fechaInicio: string;
