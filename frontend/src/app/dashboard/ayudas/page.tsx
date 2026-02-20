@@ -33,12 +33,8 @@ export default function AyudasPage() {
   const handleEstado = async (id: string, estado: 'aprobada' | 'rechazada') => {
     if (!confirm(`¿Estás seguro de ${estado === 'aprobada' ? 'aprobar' : 'rechazar'} esta solicitud?`)) return;
     try {
-      const result = await ayudasApi.updateEstado(id, estado);
+      await ayudasApi.updateEstado(id, estado);
       fetchAyudas();
-      // Si hay URL de WhatsApp, abrir para enviar mensaje
-      if (result.whatsappUrl) {
-        window.open(result.whatsappUrl, '_blank');
-      }
     } catch (err) {
       alert('Error al actualizar estado');
     }

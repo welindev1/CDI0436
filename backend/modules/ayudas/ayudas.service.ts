@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Ayuda, EstadoAyuda } from './ayuda.entity';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
+import { WhatsappService } from './whatsapp.service';
 import * as XLSX from 'xlsx';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AyudasService {
   constructor(
     @InjectRepository(Ayuda)
     private ayudasRepository: Repository<Ayuda>,
+    private whatsappService: WhatsappService,
   ) {}
 
   async create(createAyudaDto: CreateAyudaDto): Promise<Ayuda> {
@@ -32,20 +34,20 @@ export class AyudasService {
     return ayuda;
   }
 
-  async updateEstado(id: string, updateEstadoDto: UpdateEstadoAyudaDto): Promise<{ ayuda: Ayuda; whatsappUrl?: string }> {
+  async updateEstado(id: string, updateEstadoDto: UpdateEstadoAyudaDto): Promise<Ayuda> {
     const ayuda = await this.findOne(id);
     ayuda.estado = updateEstadoDto.estado;
     const saved = await this.ayudasRepository.save(ayuda);
 
-    let whatsappUrl: string | undefined;
+    // Enviar mensaje de WhatsApp automáticamente
     if (saved.telefono) {
-      const telefono = saved.telefono.replace(/[^0-9]/g, '');
       const estadoTexto = saved.estado === EstadoAyuda.APROBADA ? 'aprobada ✅' : 'rechazada ❌';
       const mensaje = `Hola ${saved.nombre_beneficiario}, le informamos que su solicitud de ayuda (${saved.tipo}) ha sido ${estadoTexto}. CDI - Centro de Desarrollo Integral.`;
-      whatsappUrl = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+      // Se envía de forma asíncrona sin bloquear la respuesta
+      this.whatsappService.enviarMensaje(saved.telefono, mensaje);
     }
 
-    return { ayuda: saved, whatsappUrl };
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
