@@ -329,6 +329,7 @@ export default function BeneficiariosPage() {
                     <TableCell isHeader>Edad</TableCell>
                     <TableCell isHeader>Padre/Tutor</TableCell>
                     <TableCell isHeader>Teléfono</TableCell>
+                    <TableCell isHeader>Dirección</TableCell>
                     <TableCell isHeader>Estado</TableCell>
                     <TableCell isHeader>Acciones</TableCell>
                   </TableRow>
@@ -359,6 +360,7 @@ export default function BeneficiariosPage() {
                       </TableCell>
                       <TableCell>{beneficiario.padre_tutor || '-'}</TableCell>
                       <TableCell>{beneficiario.telefono || '-'}</TableCell>
+                      <TableCell>{beneficiario.direccion || '-'}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           beneficiario.activo
