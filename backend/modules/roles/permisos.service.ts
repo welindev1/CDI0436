@@ -60,6 +60,12 @@ export const PERMISOS_SISTEMA = [
 
   // Nutrición
   { codigo: 'nutricion:ver', nombre: 'Ver nutrición', modulo: 'nutricion', accion: 'ver', descripcion: 'Permite ver el resumen de nutrición por clase y fecha' },
+
+  // Supervivencia
+  { codigo: 'supervivencia:ver', nombre: 'Ver supervivencia', modulo: 'supervivencia', accion: 'ver', descripcion: 'Permite ver los cursos de supervivencia' },
+  { codigo: 'supervivencia:crear', nombre: 'Crear supervivencia', modulo: 'supervivencia', accion: 'crear', descripcion: 'Permite crear nuevos cursos de supervivencia' },
+  { codigo: 'supervivencia:editar', nombre: 'Editar supervivencia', modulo: 'supervivencia', accion: 'editar', descripcion: 'Permite editar cursos de supervivencia existentes' },
+  { codigo: 'supervivencia:eliminar', nombre: 'Eliminar supervivencia', modulo: 'supervivencia', accion: 'eliminar', descripcion: 'Permite eliminar cursos de supervivencia' },
 ];
 
 @Injectable()

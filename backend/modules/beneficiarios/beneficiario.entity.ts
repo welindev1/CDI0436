@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 import { Asistencia } from '../asistencias/asistencia.entity';
+import { Supervivencia } from '../supervivencias/supervivencia.entity';
 
 @Entity('beneficiarios')
 export class Beneficiario {
@@ -36,6 +37,9 @@ export class Beneficiario {
 
   @ManyToMany(() => Clase, clase => clase.beneficiarios)
   clases: Clase[];
+
+  @ManyToMany(() => Supervivencia, supervivencia => supervivencia.beneficiarios)
+  supervivencias: Supervivencia[];
 
   @OneToMany(() => Asistencia, asistencia => asistencia.beneficiario)
   asistencias: Asistencia[];

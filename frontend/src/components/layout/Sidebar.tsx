@@ -20,6 +20,7 @@ import {
   Shield,
   UserCog,
   UtensilsCrossed,
+  Tent,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -53,6 +54,12 @@ const menuItems: MenuItem[] = [
     icon: BookOpen,
     href: '/dashboard/clases',
     permisos: ['clases:ver'],
+  },
+  {
+    title: 'Supervivencia',
+    icon: Tent,
+    href: '/dashboard/supervivencia',
+    permisos: ['supervivencia:ver'],
   },
   {
     title: 'Horarios',

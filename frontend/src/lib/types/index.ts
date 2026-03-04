@@ -105,6 +105,18 @@ export interface Clase {
   actualizado_en: string;
 }
 
+export interface Supervivencia {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  codigo?: string;
+  beneficiarios: Beneficiario[];
+  capacidad_maxima: number;
+  activo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
+
 export interface Asistencia {
   id: string;
   clase: Clase;
