@@ -12,6 +12,7 @@ import { Reporte } from '../modules/reportes/reporte.entity';
 import { Beneficiario } from '../modules/beneficiarios/beneficiario.entity';
 import { Rol } from '../modules/roles/entities/rol.entity';
 import { Permiso } from '../modules/roles/entities/permiso.entity';
+import { Supervivencia } from '../modules/supervivencias/supervivencia.entity';
 
 // Importar módulos
 import { AuthModule } from '../modules/auth/auth.module';
@@ -23,6 +24,7 @@ import { ClasesModule } from '../modules/clases/clases.module';
 import { AsistenciasModule } from '../modules/asistencias/asistencias.module';
 import { AyudasModule } from '../modules/ayudas/ayudas.module';
 import { RolesModule } from '../modules/roles/roles.module';
+import { SupervivenciasModule } from '../modules/supervivencias/supervivencias.module';
 
 @Module({
   imports: [
@@ -45,6 +47,7 @@ import { RolesModule } from '../modules/roles/roles.module';
           Reporte,
           Rol,
           Permiso,
+          Supervivencia,
         ],
         synchronize: true,
         ssl: {
@@ -66,6 +69,7 @@ import { RolesModule } from '../modules/roles/roles.module';
     ClasesModule,
     AsistenciasModule,
     AyudasModule,
+    SupervivenciasModule,
   ],
 })
 export class AppModule {}

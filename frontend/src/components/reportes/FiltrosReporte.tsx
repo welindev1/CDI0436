@@ -6,7 +6,7 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { clasesApi } from '@/lib/api/clases';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
-import { FileDown, FileSpreadsheet } from 'lucide-react';
+import { FileDown, FileSpreadsheet, Calendar } from 'lucide-react';
 
 interface FiltrosReporteProps {
   tipoReporte: 'clase' | 'beneficiario';
@@ -14,10 +14,16 @@ interface FiltrosReporteProps {
   isLoading?: boolean;
 }
 
+type TipoFiltroFecha = 'todo' | 'fecha' | 'rango' | 'mes';
+
 export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: FiltrosReporteProps) {
   const [filtros, setFiltros] = useState({
     id: '',
+    tipoFiltroFecha: 'todo' as TipoFiltroFecha,
     fecha: '',
+    fechaInicio: '',
+    fechaFin: '',
+    mes: '', // formato: YYYY-MM
   });
   const [opciones, setOpciones] = useState<{ value: string; label: string }[]>([]);
 
@@ -57,15 +63,57 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
       alert(`Por favor selecciona ${tipoReporte === 'clase' ? 'una clase' : 'un beneficiario'}`);
       return;
     }
-    // Si hay fecha, filtrar por esa fecha exacta (fechaInicio = fechaFin = fecha)
-    // Si no hay fecha, traer todo el historial (ambos vacíos)
+
+    let fechaInicio: string | undefined;
+    let fechaFin: string | undefined;
+    let fechaReporte: string | undefined;
+
+    switch (filtros.tipoFiltroFecha) {
+      case 'fecha':
+        fechaInicio = filtros.fecha || undefined;
+        fechaFin = filtros.fecha || undefined;
+        fechaReporte = filtros.fecha || undefined;
+        break;
+      case 'rango':
+        fechaInicio = filtros.fechaInicio || undefined;
+        fechaFin = filtros.fechaFin || undefined;
+        if (fechaInicio && fechaFin) {
+          fechaReporte = `${fechaInicio} al ${fechaFin}`;
+        }
+        break;
+      case 'mes':
+        if (filtros.mes) {
+          const [year, month] = filtros.mes.split('-');
+          const primerDia = new Date(parseInt(year), parseInt(month) - 1, 1);
+          const ultimoDia = new Date(parseInt(year), parseInt(month), 0);
+          fechaInicio = primerDia.toISOString().split('T')[0];
+          fechaFin = ultimoDia.toISOString().split('T')[0];
+          const nombreMes = primerDia.toLocaleDateString('es-DO', { month: 'long', year: 'numeric' });
+          fechaReporte = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+        }
+        break;
+      case 'todo':
+      default:
+        // Sin fechas, trae todo el historial
+        fechaReporte = 'Todo el historial';
+        break;
+    }
+
     const filtrosConFecha = {
       id: filtros.id,
-      fechaInicio: filtros.fecha || undefined,
-      fechaFin: filtros.fecha || undefined,
+      fechaInicio,
+      fechaFin,
+      fechaReporte, // Fecha para mostrar en el reporte
     };
     onGenerar(filtrosConFecha, formato);
   };
+
+  const tipoFiltroOpciones = [
+    { value: 'todo', label: 'Todo el historial' },
+    { value: 'fecha', label: 'Fecha específica' },
+    { value: 'rango', label: 'Rango de fechas' },
+    { value: 'mes', label: 'Mes completo' },
+  ];
 
   return (
     <div className="bg-white rounded-lg shadow p-6 space-y-4">
@@ -83,14 +131,58 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
           required
         />
 
-        <Input
-          label="Fecha (opcional — sin fecha trae todo el historial)"
-          name="fecha"
-          type="date"
-          value={filtros.fecha}
+        <Select
+          label="Filtrar por fecha"
+          name="tipoFiltroFecha"
+          value={filtros.tipoFiltroFecha}
           onChange={handleChange}
+          options={tipoFiltroOpciones}
         />
       </div>
+
+      {/* Campos de fecha según el tipo de filtro */}
+      {filtros.tipoFiltroFecha === 'fecha' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Fecha"
+            name="fecha"
+            type="date"
+            value={filtros.fecha}
+            onChange={handleChange}
+          />
+        </div>
+      )}
+
+      {filtros.tipoFiltroFecha === 'rango' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Fecha inicio"
+            name="fechaInicio"
+            type="date"
+            value={filtros.fechaInicio}
+            onChange={handleChange}
+          />
+          <Input
+            label="Fecha fin"
+            name="fechaFin"
+            type="date"
+            value={filtros.fechaFin}
+            onChange={handleChange}
+          />
+        </div>
+      )}
+
+      {filtros.tipoFiltroFecha === 'mes' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Seleccionar mes"
+            name="mes"
+            type="month"
+            value={filtros.mes}
+            onChange={handleChange}
+          />
+        </div>
+      )}
 
       <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
         <Button

@@ -22,6 +22,9 @@ export default function ReportesPage() {
       setError('');
       setSuccess('');
 
+      // Usar la fecha del reporte que viene de los filtros
+      const fechaReporte = filtros.fechaReporte || new Date().toLocaleDateString('es-DO');
+
       let data;
       if (tipoReporte === 'clase') {
         data = await asistenciasApi.getReportePorClase(
@@ -29,9 +32,9 @@ export default function ReportesPage() {
           filtros.fechaInicio,
           filtros.fechaFin
         );
-        
+
         if (formato === 'pdf') {
-          generarPDFClase(data);
+          generarPDFClase(data, fechaReporte);
         } else {
           generarExcelClase(data);
         }
@@ -41,9 +44,9 @@ export default function ReportesPage() {
           filtros.fechaInicio,
           filtros.fechaFin
         );
-        
+
         if (formato === 'pdf') {
-          generarPDFBeneficiario(data);
+          generarPDFBeneficiario(data, fechaReporte);
         } else {
           generarExcelBeneficiario(data);
         }
@@ -57,7 +60,7 @@ export default function ReportesPage() {
     }
   };
 
-  const generarPDFClase = (data: any) => {
+  const generarPDFClase = (data: any, fechaReporte: string) => {
     const asistencias = data.asistenciasPorBeneficiario.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
         beneficiario: item.beneficiario.nombre,
@@ -71,7 +74,7 @@ export default function ReportesPage() {
     exportToPDF({
       titulo: `Reporte de Asistencia - ${data.clase.nombre}`,
       subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`,
-      fecha: new Date().toLocaleDateString('es-DO'),
+      fecha: fechaReporte,
       datos: asistencias,
       columnas: ['beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
       headers: ['Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
@@ -115,7 +118,7 @@ export default function ReportesPage() {
     });
   };
 
-  const generarPDFBeneficiario = (data: any) => {
+  const generarPDFBeneficiario = (data: any, fechaReporte: string) => {
     const asistencias = data.asistenciasPorClase.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
         clase: item.clase.nombre,
@@ -129,7 +132,7 @@ export default function ReportesPage() {
     exportToPDF({
       titulo: `Reporte de Asistencia - ${data.beneficiario.nombre}`,
       subtitulo: `Código: ${data.beneficiario.codigo}${data.beneficiario.edad ? ` | Edad: ${data.beneficiario.edad} años` : ''}`,
-      fecha: new Date().toLocaleDateString('es-DO'),
+      fecha: fechaReporte,
       datos: asistencias,
       columnas: ['clase', 'codigo', 'fecha', 'estado', 'observaciones'],
       headers: ['Clase', 'Código', 'Fecha', 'Estado', 'Observaciones'],
