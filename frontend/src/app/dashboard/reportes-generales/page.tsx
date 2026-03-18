@@ -221,9 +221,8 @@ export default function ReportesGeneralesPage() {
         headers: ['Clase', 'Tutor', 'Inscritos', 'Registros', 'Presentes', 'Ausentes', '% Asist.'],
         totales: [
           { label: 'Total Clases', value: data.resumen.totalClases },
-          { label: 'Total Beneficiarios Únicos', value: data.resumen.totalBeneficiariosUnicos },
-          { label: 'Total Registros', value: data.estadisticasGlobales.totalRegistros },
-          { label: '% Asistencia Global', value: data.estadisticasGlobales.porcentajeAsistencia },
+          { label: 'Total Presentes', value: data.estadisticasGlobales.presentes },
+          { label: 'Total Ausentes', value: data.estadisticasGlobales.ausentes },
         ],
       });
     }
