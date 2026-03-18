@@ -414,28 +414,84 @@ export class AsistenciasService {
 
     const asistencias = await query.getMany();
 
-    // Estadísticas globales
+    // Estadísticas globales - contar beneficiarios únicos
     const totalRegistros = asistencias.length;
-    const presentes = asistencias.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
-    const ausentes = asistencias.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
-    const justificados = asistencias.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
-    const tardes = asistencias.filter(a => a.estado === EstadoAsistencia.TARDE).length;
 
-    const porcentajeAsistencia = totalRegistros > 0
-      ? (((presentes + tardes) / totalRegistros) * 100).toFixed(2)
+    // Agrupar asistencias por beneficiario para contar únicos
+    const asistenciasPorBeneficiarioMap = new Map<string, { presente: boolean, ausente: boolean }>();
+
+    asistencias.forEach(a => {
+      const benefId = a.beneficiario.id;
+      if (!asistenciasPorBeneficiarioMap.has(benefId)) {
+        asistenciasPorBeneficiarioMap.set(benefId, { presente: false, ausente: false });
+      }
+      const registro = asistenciasPorBeneficiarioMap.get(benefId)!;
+
+      // Si vino al menos una vez (presente o tarde), marcar como presente
+      if (a.estado === EstadoAsistencia.PRESENTE || a.estado === EstadoAsistencia.TARDE) {
+        registro.presente = true;
+      }
+      // Si tiene al menos un ausente o justificado
+      if (a.estado === EstadoAsistencia.AUSENTE || a.estado === EstadoAsistencia.JUSTIFICADO) {
+        registro.ausente = true;
+      }
+    });
+
+    // Contar beneficiarios únicos que asistieron al menos una vez
+    let beneficiariosPresentes = 0;
+    let beneficiariosAusentes = 0;
+
+    asistenciasPorBeneficiarioMap.forEach((registro) => {
+      if (registro.presente) {
+        beneficiariosPresentes++;
+      } else if (registro.ausente) {
+        // Solo cuenta como ausente si NUNCA vino (no tiene ningún presente/tarde)
+        beneficiariosAusentes++;
+      }
+    });
+
+    const totalBeneficiariosConRegistro = asistenciasPorBeneficiarioMap.size;
+    const porcentajeAsistencia = totalBeneficiariosConRegistro > 0
+      ? ((beneficiariosPresentes / totalBeneficiariosConRegistro) * 100).toFixed(2)
       : '0';
 
     // Agrupar por clase
     const asistenciasPorClase = clases.map(clase => {
       const asistenciasClase = asistencias.filter(a => a.clase.id === clase.id);
       const totalClase = asistenciasClase.length;
-      const presentesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
-      const ausentesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
-      const justificadosClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
-      const tardesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.TARDE).length;
 
-      const porcentajeClase = totalClase > 0
-        ? (((presentesClase + tardesClase) / totalClase) * 100).toFixed(2)
+      // Contar beneficiarios únicos por clase
+      const beneficiariosPorClaseMap = new Map<string, { presente: boolean, ausente: boolean }>();
+
+      asistenciasClase.forEach(a => {
+        const benefId = a.beneficiario.id;
+        if (!beneficiariosPorClaseMap.has(benefId)) {
+          beneficiariosPorClaseMap.set(benefId, { presente: false, ausente: false });
+        }
+        const registro = beneficiariosPorClaseMap.get(benefId)!;
+
+        if (a.estado === EstadoAsistencia.PRESENTE || a.estado === EstadoAsistencia.TARDE) {
+          registro.presente = true;
+        }
+        if (a.estado === EstadoAsistencia.AUSENTE || a.estado === EstadoAsistencia.JUSTIFICADO) {
+          registro.ausente = true;
+        }
+      });
+
+      let presentesClase = 0;
+      let ausentesClase = 0;
+
+      beneficiariosPorClaseMap.forEach((registro) => {
+        if (registro.presente) {
+          presentesClase++;
+        } else if (registro.ausente) {
+          ausentesClase++;
+        }
+      });
+
+      const totalBeneficiariosClase = beneficiariosPorClaseMap.size;
+      const porcentajeClase = totalBeneficiariosClase > 0
+        ? ((presentesClase / totalBeneficiariosClase) * 100).toFixed(2)
         : '0';
 
       const resultado: any = {
@@ -448,10 +504,8 @@ export class AsistenciasService {
         },
         estadisticas: {
           totalRegistros: totalClase,
-          presentes: presentesClase,
-          ausentes: ausentesClase,
-          justificados: justificadosClase,
-          tardes: tardesClase,
+          beneficiariosPresentes: presentesClase,
+          beneficiariosAusentes: ausentesClase,
           porcentajeAsistencia: `${porcentajeClase}%`
         }
       };
@@ -476,10 +530,8 @@ export class AsistenciasService {
       },
       estadisticasGlobales: {
         totalRegistros,
-        presentes,
-        ausentes,
-        justificados,
-        tardes,
+        beneficiariosPresentes,
+        beneficiariosAusentes,
         porcentajeAsistencia: `${porcentajeAsistencia}%`
       },
       detallado,

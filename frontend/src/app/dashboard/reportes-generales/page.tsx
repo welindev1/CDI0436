@@ -191,13 +191,8 @@ export default function ReportesGeneralesPage() {
         headers: ['Clase', 'Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
         totales: [
           { label: 'Total Clases', value: data.resumen.totalClases },
-          { label: 'Total Beneficiarios', value: data.resumen.totalBeneficiariosUnicos },
-          { label: 'Total Registros', value: data.estadisticasGlobales.totalRegistros },
-          { label: 'Presentes', value: data.estadisticasGlobales.presentes },
-          { label: 'Ausentes', value: data.estadisticasGlobales.ausentes },
-          { label: 'Justificados', value: data.estadisticasGlobales.justificados },
-          { label: 'Tardes', value: data.estadisticasGlobales.tardes },
-          { label: '% Asistencia Global', value: data.estadisticasGlobales.porcentajeAsistencia },
+          { label: 'Beneficiarios que Asistieron', value: data.estadisticasGlobales.beneficiariosPresentes },
+          { label: 'Beneficiarios que No Asistieron', value: data.estadisticasGlobales.beneficiariosAusentes },
         ],
       });
     } else {
@@ -205,10 +200,9 @@ export default function ReportesGeneralesPage() {
       const resumenClases = data.asistenciasPorClase.map((item: any) => ({
         clase: item.clase.nombre,
         tutor: item.clase.tutor,
-        beneficiarios: item.clase.totalBeneficiarios,
-        registros: item.estadisticas.totalRegistros,
-        presentes: item.estadisticas.presentes,
-        ausentes: item.estadisticas.ausentes,
+        inscritos: item.clase.totalBeneficiarios,
+        asistieron: item.estadisticas.beneficiariosPresentes,
+        noAsistieron: item.estadisticas.beneficiariosAusentes,
         porcentaje: item.estadisticas.porcentajeAsistencia
       }));
 
@@ -217,12 +211,12 @@ export default function ReportesGeneralesPage() {
         subtitulo: `Período: ${periodo}`,
         fecha: fechaReporte,
         datos: resumenClases,
-        columnas: ['clase', 'tutor', 'beneficiarios', 'registros', 'presentes', 'ausentes', 'porcentaje'],
-        headers: ['Clase', 'Tutor', 'Inscritos', 'Registros', 'Presentes', 'Ausentes', '% Asist.'],
+        columnas: ['clase', 'tutor', 'inscritos', 'asistieron', 'noAsistieron', 'porcentaje'],
+        headers: ['Clase', 'Tutor', 'Inscritos', 'Asistieron', 'No Asistieron', '% Asist.'],
         totales: [
           { label: 'Total Clases', value: data.resumen.totalClases },
-          { label: 'Total Presentes', value: data.estadisticasGlobales.presentes },
-          { label: 'Total Ausentes', value: data.estadisticasGlobales.ausentes },
+          { label: 'Beneficiarios que Asistieron', value: data.estadisticasGlobales.beneficiariosPresentes },
+          { label: 'Beneficiarios que No Asistieron', value: data.estadisticasGlobales.beneficiariosAusentes },
         ],
       });
     }
@@ -239,11 +233,8 @@ export default function ReportesGeneralesPage() {
         { Campo: 'Total Clases', Valor: data.resumen.totalClases },
         { Campo: 'Total Beneficiarios Inscritos', Valor: data.resumen.totalBeneficiariosInscritos },
         { Campo: 'Beneficiarios con Registros', Valor: data.resumen.totalBeneficiariosUnicos },
-        { Campo: 'Total Registros', Valor: data.estadisticasGlobales.totalRegistros },
-        { Campo: 'Presentes', Valor: data.estadisticasGlobales.presentes },
-        { Campo: 'Ausentes', Valor: data.estadisticasGlobales.ausentes },
-        { Campo: 'Justificados', Valor: data.estadisticasGlobales.justificados },
-        { Campo: 'Tardes', Valor: data.estadisticasGlobales.tardes },
+        { Campo: 'Beneficiarios que Asistieron', Valor: data.estadisticasGlobales.beneficiariosPresentes },
+        { Campo: 'Beneficiarios que No Asistieron', Valor: data.estadisticasGlobales.beneficiariosAusentes },
         { Campo: '% Asistencia Global', Valor: data.estadisticasGlobales.porcentajeAsistencia },
       ]
     });
@@ -256,11 +247,8 @@ export default function ReportesGeneralesPage() {
         Código: item.clase.codigo,
         Tutor: item.clase.tutor,
         'Beneficiarios Inscritos': item.clase.totalBeneficiarios,
-        'Total Registros': item.estadisticas.totalRegistros,
-        Presentes: item.estadisticas.presentes,
-        Ausentes: item.estadisticas.ausentes,
-        Justificados: item.estadisticas.justificados,
-        Tardes: item.estadisticas.tardes,
+        'Asistieron': item.estadisticas.beneficiariosPresentes,
+        'No Asistieron': item.estadisticas.beneficiariosAusentes,
         '% Asistencia': item.estadisticas.porcentajeAsistencia,
       }))
     });
