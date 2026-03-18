@@ -121,4 +121,32 @@ export const asistenciasApi = {
     const response = await apiClient.get(`/asistencias/reporte/global?${params}`);
     return response.data;
   },
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  // Subir foto de asistencia
+  subirFoto: async (claseId: string, fecha: string, foto: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('foto', foto);
+    formData.append('claseId', claseId);
+    formData.append('fecha', fecha);
+
+    const response = await apiClient.post('/asistencias/foto', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  // Obtener foto por clase y fecha
+  getFoto: async (claseId: string, fecha: string): Promise<any> => {
+    const response = await apiClient.get(`/asistencias/foto/${claseId}/${fecha}`);
+    return response.data;
+  },
+
+  // Eliminar foto
+  eliminarFoto: async (id: string): Promise<void> => {
+    await apiClient.delete(`/asistencias/foto/${id}`);
+  },
 };

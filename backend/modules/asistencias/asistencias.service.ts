@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { Asistencia, EstadoAsistencia } from './asistencia.entity';
+import { FotoAsistencia } from './foto-asistencia.entity';
 import { CreateAsistenciaDto } from './dto/create-asistencia.dto';
 import { UpdateAsistenciaDto } from './dto/update-asistencia.dto';
 import { FilterAsistenciaDto } from './dto/filter-asistencia.dto';
@@ -10,6 +11,8 @@ import { MarcarTodosDto } from './dto/marcar-todos.dto';
 import { JustificarMasivoDto } from './dto/justificar-masivo.dto';
 import { Clase } from '../clases/clase.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class AsistenciasService {
@@ -20,6 +23,8 @@ export class AsistenciasService {
     private clasesRepository: Repository<Clase>,
     @InjectRepository(Beneficiario)
     private beneficiariosRepository: Repository<Beneficiario>,
+    @InjectRepository(FotoAsistencia)
+    private fotosAsistenciaRepository: Repository<FotoAsistencia>,
   ) {}
 
   async create(createAsistenciaDto: CreateAsistenciaDto): Promise<Asistencia> {
@@ -661,5 +666,97 @@ export class AsistenciasService {
           : '0%'
       }
     };
+  }
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  // Subir foto de asistencia
+  async subirFotoAsistencia(
+    claseId: string,
+    fecha: string,
+    file: Express.Multer.File
+  ): Promise<FotoAsistencia> {
+    // Verificar que la clase existe
+    const clase = await this.clasesRepository.findOne({
+      where: { id: claseId, activo: true }
+    });
+
+    if (!clase) {
+      throw new NotFoundException(`Clase con ID ${claseId} no encontrada`);
+    }
+
+    const fechaDate = new Date(fecha);
+
+    // Verificar si ya existe una foto para esta clase y fecha
+    const fotoExistente = await this.fotosAsistenciaRepository.findOne({
+      where: {
+        clase: { id: claseId },
+        fecha: fechaDate
+      }
+    });
+
+    // Si existe, eliminar el archivo anterior
+    if (fotoExistente) {
+      const rutaAnterior = path.join(process.cwd(), fotoExistente.imagen_url);
+      if (fs.existsSync(rutaAnterior)) {
+        fs.unlinkSync(rutaAnterior);
+      }
+      await this.fotosAsistenciaRepository.remove(fotoExistente);
+    }
+
+    // Crear directorio si no existe
+    const uploadDir = path.join(process.cwd(), 'uploads', 'asistencias');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Generar nombre único para el archivo
+    const extension = path.extname(file.originalname);
+    const nombreArchivo = `${claseId}_${fecha}_${Date.now()}${extension}`;
+    const rutaArchivo = path.join(uploadDir, nombreArchivo);
+
+    // Guardar el archivo
+    fs.writeFileSync(rutaArchivo, file.buffer);
+
+    // Crear registro en la base de datos
+    const fotoAsistencia = this.fotosAsistenciaRepository.create({
+      clase,
+      fecha: fechaDate,
+      imagen_url: `uploads/asistencias/${nombreArchivo}`,
+      nombre_original: file.originalname
+    });
+
+    return await this.fotosAsistenciaRepository.save(fotoAsistencia);
+  }
+
+  // Obtener foto por clase y fecha
+  async getFotoAsistencia(claseId: string, fecha: string): Promise<FotoAsistencia | null> {
+    const fechaDate = new Date(fecha);
+
+    return await this.fotosAsistenciaRepository.findOne({
+      where: {
+        clase: { id: claseId },
+        fecha: fechaDate
+      }
+    });
+  }
+
+  // Eliminar foto de asistencia
+  async eliminarFotoAsistencia(id: string): Promise<void> {
+    const foto = await this.fotosAsistenciaRepository.findOne({
+      where: { id }
+    });
+
+    if (!foto) {
+      throw new NotFoundException(`Foto con ID ${id} no encontrada`);
+    }
+
+    // Eliminar archivo físico
+    const rutaArchivo = path.join(process.cwd(), foto.imagen_url);
+    if (fs.existsSync(rutaArchivo)) {
+      fs.unlinkSync(rutaArchivo);
+    }
+
+    await this.fotosAsistenciaRepository.remove(foto);
   }
 }

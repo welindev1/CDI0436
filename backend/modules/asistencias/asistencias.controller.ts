@@ -11,7 +11,11 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 import { AsistenciasService } from './asistencias.service';
 import { CreateAsistenciaDto } from './dto/create-asistencia.dto';
@@ -126,5 +130,48 @@ export class AsistenciasController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.asistenciasService.remove(id);
+  }
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  @Post('foto')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('foto'))
+  async subirFotoAsistencia(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('claseId') claseId: string,
+    @Body('fecha') fecha: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No se proporcionó ninguna imagen');
+    }
+
+    // Validar tipo de archivo
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedMimes.includes(file.mimetype)) {
+      throw new BadRequestException('Tipo de archivo no permitido. Use JPG, PNG o WEBP');
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('El archivo es demasiado grande. Máximo 5MB');
+    }
+
+    return this.asistenciasService.subirFotoAsistencia(claseId, fecha, file);
+  }
+
+  @Get('foto/:claseId/:fecha')
+  async getFotoAsistencia(
+    @Param('claseId', ParseUUIDPipe) claseId: string,
+    @Param('fecha') fecha: string,
+  ) {
+    return this.asistenciasService.getFotoAsistencia(claseId, fecha);
+  }
+
+  @Delete('foto/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async eliminarFotoAsistencia(@Param('id', ParseUUIDPipe) id: string) {
+    return this.asistenciasService.eliminarFotoAsistencia(id);
   }
 }
