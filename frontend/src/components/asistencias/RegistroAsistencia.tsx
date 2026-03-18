@@ -7,7 +7,7 @@ import EstadoBadge from './EstadoBadge';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
 import { EstadoAsistencia, Clase, Beneficiario } from '@/lib/types';
-import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search, MessageSquare } from 'lucide-react';
+import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search, MessageSquare, X } from 'lucide-react';
 
 interface RegistroAsistenciaProps {
   claseId: string;
@@ -26,6 +26,10 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [modalObservacion, setModalObservacion] = useState<{
+    nombre: string;
+    observacion: string;
+  } | null>(null);
 
   useEffect(() => {
     loadClaseYAsistencias();
@@ -414,24 +418,17 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                           className="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         {asistencia?.observaciones && asistencia.observaciones.length > 0 && (
-                          <div className="relative group">
-                            <button
-                              type="button"
-                              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                              title="Ver observación completa"
-                            >
-                              <MessageSquare className="w-4 h-4" />
-                            </button>
-                            <div className="absolute z-50 bottom-full right-0 mb-2 hidden group-hover:block">
-                              <div className="bg-gray-900 text-white text-sm rounded-lg py-2 px-3 max-w-xs shadow-lg">
-                                <p className="font-medium text-gray-300 text-xs mb-1">Observación:</p>
-                                <p className="whitespace-pre-wrap break-words">{asistencia.observaciones}</p>
-                              </div>
-                              <div className="absolute bottom-0 right-4 translate-y-full">
-                                <div className="border-8 border-transparent border-t-gray-900"></div>
-                              </div>
-                            </div>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setModalObservacion({
+                              nombre: `${beneficiario.nombre} ${beneficiario.apellido}`,
+                              observacion: asistencia.observaciones
+                            })}
+                            className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0"
+                            title="Ver observación completa"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -455,6 +452,40 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
           Guardar Asistencias
         </Button>
       </div>
+
+      {/* Modal de observación */}
+      {modalObservacion && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Observación</h3>
+                <p className="text-sm text-gray-500">{modalObservacion.nombre}</p>
+              </div>
+              <button
+                onClick={() => setModalObservacion(null)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <p className="text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                {modalObservacion.observacion}
+              </p>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <Button
+                variant="outline"
+                onClick={() => setModalObservacion(null)}
+                className="w-full"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
