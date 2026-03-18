@@ -435,6 +435,35 @@ export class BeneficiariosService {
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
+  async getCumpleanosPorMes(mes: number): Promise<any[]> {
+    if (mes < 1 || mes > 12) {
+      throw new BadRequestException('El mes debe estar entre 1 y 12');
+    }
+
+    const beneficiarios = await this.beneficiariosRepository
+      .createQueryBuilder('beneficiario')
+      .where('beneficiario.activo = :activo', { activo: true })
+      .andWhere('beneficiario.fecha_nacimiento IS NOT NULL')
+      .andWhere('EXTRACT(MONTH FROM beneficiario.fecha_nacimiento) = :mes', { mes })
+      .orderBy('EXTRACT(DAY FROM beneficiario.fecha_nacimiento)', 'ASC')
+      .addOrderBy('beneficiario.nombre', 'ASC')
+      .getMany();
+
+    return beneficiarios.map(b => {
+      const fechaNac = new Date(b.fecha_nacimiento!);
+      return {
+        id: b.id,
+        codigo: b.codigo,
+        nombre: `${b.nombre} ${b.apellido || ''}`.trim(),
+        dia: fechaNac.getDate(),
+        fecha_nacimiento: b.fecha_nacimiento,
+        edad: calcularEdad(b.fecha_nacimiento),
+        telefono: b.telefono,
+        padre_tutor: b.padre_tutor
+      };
+    });
+  }
+
   async exportarAExcel(filters?: FilterBeneficiarioDto): Promise<Buffer> {
     const beneficiarios = await this.findAll(filters);
 

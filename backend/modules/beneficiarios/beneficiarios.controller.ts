@@ -1,13 +1,14 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   ParseUUIDPipe,
+  ParseIntPipe,
   HttpCode,
   HttpStatus,
   UseInterceptors,
@@ -116,6 +117,11 @@ export class BeneficiariosController {
   @Get('codigo/:codigo')
   findByCodigo(@Param('codigo') codigo: string) {
     return this.beneficiariosService.findByCodigo(codigo);
+  }
+
+  @Get('cumpleanos/:mes')
+  getCumpleanosPorMes(@Param('mes', ParseIntPipe) mes: number) {
+    return this.beneficiariosService.getCumpleanosPorMes(mes);
   }
 
   // --- Dynamic :id routes come AFTER static routes ---
