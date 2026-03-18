@@ -21,6 +21,7 @@ import {
   UserCog,
   UtensilsCrossed,
   Tent,
+  BarChart3,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -84,6 +85,12 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     href: '/dashboard/reportes',
     permisos: ['reportes:ver'],
+  },
+  {
+    title: 'Reportes Generales',
+    icon: BarChart3,
+    href: '/dashboard/reportes-generales',
+    permisos: ['reportes_generales:ver'],
   },
 ];
 

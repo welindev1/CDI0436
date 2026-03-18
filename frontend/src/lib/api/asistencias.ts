@@ -107,4 +107,18 @@ export const asistenciasApi = {
     const response = await apiClient.get(`/asistencias/resumen/fecha/${fecha}`);
     return response.data;
   },
+
+  // Reporte global de todas las clases
+  getReporteGlobal: async (
+    fechaInicio?: string,
+    fechaFin?: string,
+    detallado: boolean = false
+  ): Promise<any> => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    params.append('detallado', detallado.toString());
+    const response = await apiClient.get(`/asistencias/reporte/global?${params}`);
+    return response.data;
+  },
 };

@@ -385,6 +385,108 @@ export class AsistenciasService {
     };
   }
 
+  // Obtener reporte global de todas las clases
+  async getReporteGlobal(fechaInicio?: string, fechaFin?: string, detallado: boolean = false): Promise<any> {
+    // Obtener todas las clases activas
+    const clases = await this.clasesRepository.find({
+      where: { activo: true },
+      relations: ['tutor', 'horarios', 'beneficiarios'],
+      order: { nombre: 'ASC' }
+    });
+
+    // Construir query de asistencias
+    const query = this.asistenciasRepository.createQueryBuilder('asistencia')
+      .leftJoinAndSelect('asistencia.clase', 'clase')
+      .leftJoinAndSelect('asistencia.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
+      .where('clase.activo = :activo', { activo: true });
+
+    if (fechaInicio && fechaFin) {
+      query.andWhere('asistencia.fecha BETWEEN :fechaInicio AND :fechaFin', {
+        fechaInicio,
+        fechaFin
+      });
+    } else if (fechaInicio) {
+      query.andWhere('asistencia.fecha >= :fechaInicio', { fechaInicio });
+    } else if (fechaFin) {
+      query.andWhere('asistencia.fecha <= :fechaFin', { fechaFin });
+    }
+
+    const asistencias = await query.getMany();
+
+    // Estadísticas globales
+    const totalRegistros = asistencias.length;
+    const presentes = asistencias.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
+    const ausentes = asistencias.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
+    const justificados = asistencias.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
+    const tardes = asistencias.filter(a => a.estado === EstadoAsistencia.TARDE).length;
+
+    const porcentajeAsistencia = totalRegistros > 0
+      ? (((presentes + tardes) / totalRegistros) * 100).toFixed(2)
+      : '0';
+
+    // Agrupar por clase
+    const asistenciasPorClase = clases.map(clase => {
+      const asistenciasClase = asistencias.filter(a => a.clase.id === clase.id);
+      const totalClase = asistenciasClase.length;
+      const presentesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
+      const ausentesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
+      const justificadosClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
+      const tardesClase = asistenciasClase.filter(a => a.estado === EstadoAsistencia.TARDE).length;
+
+      const porcentajeClase = totalClase > 0
+        ? (((presentesClase + tardesClase) / totalClase) * 100).toFixed(2)
+        : '0';
+
+      const resultado: any = {
+        clase: {
+          id: clase.id,
+          nombre: clase.nombre,
+          codigo: clase.codigo,
+          tutor: clase.tutor ? `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim() : 'Sin tutor',
+          totalBeneficiarios: clase.beneficiarios?.length || 0
+        },
+        estadisticas: {
+          totalRegistros: totalClase,
+          presentes: presentesClase,
+          ausentes: ausentesClase,
+          justificados: justificadosClase,
+          tardes: tardesClase,
+          porcentajeAsistencia: `${porcentajeClase}%`
+        }
+      };
+
+      // Si es detallado, incluir asistencias por beneficiario
+      if (detallado) {
+        resultado.asistenciasPorBeneficiario = this.agruparPorBeneficiario(asistenciasClase);
+      }
+
+      return resultado;
+    });
+
+    return {
+      periodo: {
+        fechaInicio: fechaInicio || 'Desde el inicio',
+        fechaFin: fechaFin || 'Hasta la fecha'
+      },
+      resumen: {
+        totalClases: clases.length,
+        totalBeneficiariosUnicos: new Set(asistencias.map(a => a.beneficiario.id)).size,
+        totalBeneficiariosInscritos: clases.reduce((acc, c) => acc + (c.beneficiarios?.length || 0), 0)
+      },
+      estadisticasGlobales: {
+        totalRegistros,
+        presentes,
+        ausentes,
+        justificados,
+        tardes,
+        porcentajeAsistencia: `${porcentajeAsistencia}%`
+      },
+      detallado,
+      asistenciasPorClase
+    };
+  }
+
   // Método auxiliar para agrupar por beneficiario
   private agruparPorBeneficiario(asistencias: Asistencia[]): any[] {
     const agrupado = asistencias.reduce((acc, asistencia) => {
