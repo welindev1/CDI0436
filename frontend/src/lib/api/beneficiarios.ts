@@ -102,4 +102,9 @@ export const beneficiariosApi = {
     const response = await apiClient.get(`/beneficiarios/buscar-publico?nombre=${encodeURIComponent(nombre)}`);
     return response.data;
   },
+
+  getCumpleanosPorMes: async (mes: number): Promise<any[]> => {
+    const response = await apiClient.get(`/beneficiarios/cumpleanos/${mes}`);
+    return response.data;
+  },
 };

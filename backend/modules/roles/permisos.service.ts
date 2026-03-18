@@ -70,6 +70,9 @@ export const PERMISOS_SISTEMA = [
   { codigo: 'supervivencia:crear', nombre: 'Crear supervivencia', modulo: 'supervivencia', accion: 'crear', descripcion: 'Permite crear nuevos cursos de supervivencia' },
   { codigo: 'supervivencia:editar', nombre: 'Editar supervivencia', modulo: 'supervivencia', accion: 'editar', descripcion: 'Permite editar cursos de supervivencia existentes' },
   { codigo: 'supervivencia:eliminar', nombre: 'Eliminar supervivencia', modulo: 'supervivencia', accion: 'eliminar', descripcion: 'Permite eliminar cursos de supervivencia' },
+
+  // Cumpleaños
+  { codigo: 'cumpleanos:ver', nombre: 'Ver cumpleaños', modulo: 'cumpleanos', accion: 'ver', descripcion: 'Permite ver los cumpleaños de los beneficiarios' },
 ];
 
 @Injectable()

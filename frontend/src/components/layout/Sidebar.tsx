@@ -22,6 +22,7 @@ import {
   UtensilsCrossed,
   Tent,
   BarChart3,
+  Cake,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -91,6 +92,12 @@ const menuItems: MenuItem[] = [
     icon: BarChart3,
     href: '/dashboard/reportes-generales',
     permisos: ['reportes_generales:ver'],
+  },
+  {
+    title: 'Cumpleaños',
+    icon: Cake,
+    href: '/dashboard/cumpleanos',
+    permisos: ['cumpleanos:ver'],
   },
 ];
 
