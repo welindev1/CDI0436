@@ -7,7 +7,7 @@ import EstadoBadge from './EstadoBadge';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
 import { EstadoAsistencia, Clase, Beneficiario } from '@/lib/types';
-import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search } from 'lucide-react';
+import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search, MessageSquare } from 'lucide-react';
 
 interface RegistroAsistenciaProps {
   claseId: string;
@@ -405,13 +405,35 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <input
-                        type="text"
-                        value={asistencia?.observaciones ?? ''}
-                        onChange={(e) => handleObservacionesChange(beneficiario.id, e.target.value)}
-                        placeholder="Observaciones..."
-                        className="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={asistencia?.observaciones ?? ''}
+                          onChange={(e) => handleObservacionesChange(beneficiario.id, e.target.value)}
+                          placeholder="Observaciones..."
+                          className="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {asistencia?.observaciones && asistencia.observaciones.length > 0 && (
+                          <div className="relative group">
+                            <button
+                              type="button"
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title="Ver observación completa"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </button>
+                            <div className="absolute z-50 bottom-full right-0 mb-2 hidden group-hover:block">
+                              <div className="bg-gray-900 text-white text-sm rounded-lg py-2 px-3 max-w-xs shadow-lg">
+                                <p className="font-medium text-gray-300 text-xs mb-1">Observación:</p>
+                                <p className="whitespace-pre-wrap break-words">{asistencia.observaciones}</p>
+                              </div>
+                              <div className="absolute bottom-0 right-4 translate-y-full">
+                                <div className="border-8 border-transparent border-t-gray-900"></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
