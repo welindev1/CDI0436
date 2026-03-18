@@ -58,6 +58,10 @@ export const PERMISOS_SISTEMA = [
   { codigo: 'reportes:generar', nombre: 'Generar reportes', modulo: 'reportes', accion: 'generar', descripcion: 'Permite generar reportes' },
   { codigo: 'reportes:exportar', nombre: 'Exportar reportes', modulo: 'reportes', accion: 'exportar', descripcion: 'Permite exportar reportes' },
 
+  // Reportes Generales
+  { codigo: 'reportes_generales:ver', nombre: 'Ver reportes generales', modulo: 'reportes_generales', accion: 'ver', descripcion: 'Permite ver reportes generales de todas las clases' },
+  { codigo: 'reportes_generales:exportar', nombre: 'Exportar reportes generales', modulo: 'reportes_generales', accion: 'exportar', descripcion: 'Permite exportar reportes generales' },
+
   // Nutrición
   { codigo: 'nutricion:ver', nombre: 'Ver nutrición', modulo: 'nutricion', accion: 'ver', descripcion: 'Permite ver el resumen de nutrición por clase y fecha' },
 

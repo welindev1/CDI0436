@@ -83,6 +83,19 @@ export class AsistenciasController {
     );
   }
 
+  @Get('reporte/global')
+  getReporteGlobal(
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+    @Query('detallado') detallado?: string,
+  ) {
+    return this.asistenciasService.getReporteGlobal(
+      fechaInicio,
+      fechaFin,
+      detallado === 'true',
+    );
+  }
+
   @Get('estadisticas/mensuales/:mes/:anio')
   getEstadisticasMensuales(
     @Param('mes', ParseIntPipe) mes: number,
