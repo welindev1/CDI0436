@@ -115,7 +115,7 @@ export class SupervivenciasService {
 
     if (tutor_id !== undefined) {
       if (tutor_id === null || tutor_id === '') {
-        supervivencia.tutor = null;
+        supervivencia.tutor = null as any;
       } else {
         const tutor = await this.tutoresRepository.findOne({ where: { id: tutor_id } });
         if (!tutor) {
@@ -286,7 +286,7 @@ export class SupervivenciasService {
       if (asistencia) {
         // Actualizar asistencia existente
         asistencia.presente = asistenciaDto.presente;
-        asistencia.observaciones = asistenciaDto.observaciones || null;
+        asistencia.observaciones = asistenciaDto.observaciones || undefined;
       } else {
         // Crear nueva asistencia
         asistencia = this.asistenciasRepository.create({
@@ -294,7 +294,7 @@ export class SupervivenciasService {
           beneficiario: { id: asistenciaDto.beneficiario_id } as Beneficiario,
           fecha: fecha,
           presente: asistenciaDto.presente,
-          observaciones: asistenciaDto.observaciones || null
+          observaciones: asistenciaDto.observaciones || undefined
         });
       }
 
