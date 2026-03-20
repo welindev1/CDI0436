@@ -18,7 +18,8 @@ import {
   Trash2,
   Shield,
   Users,
-  Eye
+  Eye,
+  User
 } from 'lucide-react';
 
 export default function SupervivenciaPage() {
@@ -221,6 +222,14 @@ export default function SupervivenciaPage() {
 
                     {/* Info */}
                     <div className="space-y-2 mb-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-700">
+                          {supervivencia.tutor
+                            ? `${supervivencia.tutor.nombre} ${supervivencia.tutor.apellido || ''}`
+                            : 'Sin profesor'}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Users className="w-4 h-4 text-gray-400" />
                         <span className="text-gray-700">

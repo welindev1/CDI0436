@@ -110,11 +110,51 @@ export interface Supervivencia {
   nombre: string;
   descripcion?: string;
   codigo?: string;
+  tutor?: Tutor;
   beneficiarios: Beneficiario[];
   capacidad_maxima: number;
   activo: boolean;
   creado_en: string;
   actualizado_en: string;
+}
+
+export interface AsistenciaSupervivencia {
+  id: string;
+  supervivencia: Supervivencia;
+  beneficiario: Beneficiario;
+  fecha: string;
+  presente: boolean;
+  observaciones?: string;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface AsistenciaSupervivenciaBeneficiario {
+  beneficiario: {
+    id: string;
+    nombre: string;
+    apellido?: string;
+    codigo: string;
+  };
+  presente: boolean | null;
+  observaciones?: string | null;
+  asistencia_id?: string | null;
+}
+
+export interface AsistenciaSupervivenciaResponse {
+  fecha: string;
+  supervivencia: {
+    id: string;
+    nombre: string;
+    codigo?: string;
+  };
+  asistencias: AsistenciaSupervivenciaBeneficiario[];
+  estadisticas: {
+    total: number;
+    presentes: number;
+    ausentes: number;
+    sinRegistrar: number;
+  };
 }
 
 export interface Asistencia {

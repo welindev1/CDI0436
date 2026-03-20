@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, ManyToOne, JoinTable, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
+import { Tutor } from '../tutores/tutor.entity';
 
 @Entity('supervivencias')
 export class Supervivencia {
@@ -14,6 +15,10 @@ export class Supervivencia {
 
   @Column({ length: 50, nullable: true })
   codigo: string;
+
+  @ManyToOne(() => Tutor, { nullable: true, eager: true })
+  @JoinColumn({ name: 'tutor_id' })
+  tutor: Tutor;
 
   @ManyToMany(() => Beneficiario, beneficiario => beneficiario.supervivencias)
   @JoinTable({
