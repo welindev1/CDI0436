@@ -23,7 +23,10 @@ import {
   Filter,
   Download,
   Upload,
-  Users
+  Users,
+  Baby,
+  Home,
+  Building
 } from 'lucide-react';
 
 function calcularEdad(fechaNacimiento: string | undefined): number | null {
@@ -38,6 +41,64 @@ function calcularEdad(fechaNacimiento: string | undefined): number | null {
     edad--;
   }
   return edad;
+}
+
+function calcularEdadEnMeses(fechaNacimiento: string | undefined): number | null {
+  if (!fechaNacimiento) return null;
+  const nacimiento = new Date(fechaNacimiento);
+  if (isNaN(nacimiento.getTime())) return null;
+  const hoy = new Date();
+
+  const años = hoy.getFullYear() - nacimiento.getFullYear();
+  const meses = hoy.getMonth() - nacimiento.getMonth();
+  const dias = hoy.getDate() - nacimiento.getDate();
+
+  let totalMeses = años * 12 + meses;
+  if (dias < 0) {
+    totalMeses--;
+  }
+
+  return totalMeses;
+}
+
+type ClasificacionBeneficiario = 'Supervivencia' | 'Basado en Casa' | 'Basado en Centro' | 'Sin clasificar';
+
+function clasificarBeneficiario(fechaNacimiento: string | undefined): ClasificacionBeneficiario {
+  const edadMeses = calcularEdadEnMeses(fechaNacimiento);
+  if (edadMeses === null) return 'Sin clasificar';
+
+  // Supervivencia: 0 a 11 meses
+  if (edadMeses >= 0 && edadMeses <= 11) {
+    return 'Supervivencia';
+  }
+  // Basado en Casa: 12 meses (1 año) a 35 meses (2 años y 11 meses)
+  if (edadMeses >= 12 && edadMeses <= 35) {
+    return 'Basado en Casa';
+  }
+  // Basado en Centro: 36 meses (3 años) en adelante
+  if (edadMeses >= 36) {
+    return 'Basado en Centro';
+  }
+
+  return 'Sin clasificar';
+}
+
+function formatearEdad(fechaNacimiento: string | undefined): string {
+  const edadMeses = calcularEdadEnMeses(fechaNacimiento);
+  if (edadMeses === null) return '-';
+
+  if (edadMeses < 12) {
+    return `${edadMeses} ${edadMeses === 1 ? 'mes' : 'meses'}`;
+  }
+
+  const años = Math.floor(edadMeses / 12);
+  const mesesRestantes = edadMeses % 12;
+
+  if (mesesRestantes === 0) {
+    return `${años} ${años === 1 ? 'año' : 'años'}`;
+  }
+
+  return `${años} ${años === 1 ? 'año' : 'años'}, ${mesesRestantes} ${mesesRestantes === 1 ? 'mes' : 'meses'}`;
 }
 
 export default function BeneficiariosPage() {
@@ -209,7 +270,7 @@ export default function BeneficiariosPage() {
             )}
           </div>
 
-          {/* Stats */}
+          {/* Stats - Primera fila */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-4">
               <div className="flex items-center justify-between">
@@ -258,6 +319,46 @@ export default function BeneficiariosPage() {
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-purple-500" />
+              </div>
+            </div>
+          </div>
+
+          {/* Stats - Segunda fila: Clasificación por edad */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-pink-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Supervivencia</p>
+                  <p className="text-xs text-gray-400 mb-1">0 - 11 meses</p>
+                  <p className="text-2xl font-bold text-pink-600">
+                    {beneficiarios.filter(b => b.activo && clasificarBeneficiario(b.fecha_nacimiento) === 'Supervivencia').length}
+                  </p>
+                </div>
+                <Baby className="w-8 h-8 text-pink-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Basado en Casa</p>
+                  <p className="text-xs text-gray-400 mb-1">1 año - 2 años 11 meses</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {beneficiarios.filter(b => b.activo && clasificarBeneficiario(b.fecha_nacimiento) === 'Basado en Casa').length}
+                  </p>
+                </div>
+                <Home className="w-8 h-8 text-orange-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Basado en Centro</p>
+                  <p className="text-xs text-gray-400 mb-1">3 años en adelante</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {beneficiarios.filter(b => b.activo && clasificarBeneficiario(b.fecha_nacimiento) === 'Basado en Centro').length}
+                  </p>
+                </div>
+                <Building className="w-8 h-8 text-blue-500" />
               </div>
             </div>
           </div>
@@ -327,9 +428,9 @@ export default function BeneficiariosPage() {
                     <TableCell isHeader>Código</TableCell>
                     <TableCell isHeader>Nombre</TableCell>
                     <TableCell isHeader>Edad</TableCell>
+                    <TableCell isHeader>Clasificación</TableCell>
                     <TableCell isHeader>Padre/Tutor</TableCell>
                     <TableCell isHeader>Teléfono</TableCell>
-                    <TableCell isHeader>Dirección</TableCell>
                     <TableCell isHeader>Estado</TableCell>
                     <TableCell isHeader>Acciones</TableCell>
                   </TableRow>
@@ -353,14 +454,26 @@ export default function BeneficiariosPage() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        {formatearEdad(beneficiario.fecha_nacimiento)}
+                      </TableCell>
+                      <TableCell>
                         {(() => {
-                          const edad = calcularEdad(beneficiario.fecha_nacimiento);
-                          return edad !== null ? `${edad} años` : '-';
+                          const clasificacion = clasificarBeneficiario(beneficiario.fecha_nacimiento);
+                          const estilos: Record<ClasificacionBeneficiario, string> = {
+                            'Supervivencia': 'bg-pink-100 text-pink-800 border-pink-200',
+                            'Basado en Casa': 'bg-orange-100 text-orange-800 border-orange-200',
+                            'Basado en Centro': 'bg-blue-100 text-blue-800 border-blue-200',
+                            'Sin clasificar': 'bg-gray-100 text-gray-800 border-gray-200'
+                          };
+                          return (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${estilos[clasificacion]}`}>
+                              {clasificacion}
+                            </span>
+                          );
                         })()}
                       </TableCell>
                       <TableCell>{beneficiario.padre_tutor || '-'}</TableCell>
                       <TableCell>{beneficiario.telefono || '-'}</TableCell>
-                      <TableCell>{beneficiario.direccion || '-'}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           beneficiario.activo

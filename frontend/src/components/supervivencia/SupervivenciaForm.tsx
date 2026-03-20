@@ -4,23 +4,31 @@ import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
-import { Supervivencia } from '@/lib/types';
+import { Supervivencia, Tutor } from '@/lib/types';
+import { tutoresApi } from '@/lib/api/tutores';
 
 interface SupervivenciaFormProps {
   supervivencia?: Supervivencia;
-  onSubmit: (data: Partial<Supervivencia>) => Promise<void>;
+  onSubmit: (data: Partial<Supervivencia> & { tutor_id?: string }) => Promise<void>;
   onCancel: () => void;
 }
 
 export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }: SupervivenciaFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tutores, setTutores] = useState<Tutor[]>([]);
+  const [loadingTutores, setLoadingTutores] = useState(true);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
     codigo: '',
     capacidad_maxima: '',
+    tutor_id: '',
   });
+
+  useEffect(() => {
+    loadTutores();
+  }, []);
 
   useEffect(() => {
     if (supervivencia) {
@@ -29,9 +37,22 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
         descripcion: supervivencia.descripcion || '',
         codigo: supervivencia.codigo || '',
         capacidad_maxima: supervivencia.capacidad_maxima?.toString() || '',
+        tutor_id: supervivencia.tutor?.id || '',
       });
     }
   }, [supervivencia]);
+
+  const loadTutores = async () => {
+    try {
+      setLoadingTutores(true);
+      const data = await tutoresApi.getAll({ activo: true });
+      setTutores(data);
+    } catch (err) {
+      console.error('Error al cargar tutores:', err);
+    } finally {
+      setLoadingTutores(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +61,16 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
 
     try {
       const data: any = {
-        ...formData,
+        nombre: formData.nombre,
+        descripcion: formData.descripcion,
+        codigo: formData.codigo,
         capacidad_maxima: formData.capacidad_maxima ? parseInt(formData.capacidad_maxima) : 0,
+        tutor_id: formData.tutor_id || null,
       };
 
-      // Remover campos vacíos
+      // Remover campos vacíos excepto tutor_id (puede ser null para quitar tutor)
       Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === undefined) {
+        if (key !== 'tutor_id' && (data[key] === '' || data[key] === undefined)) {
           delete data[key];
         }
       });
@@ -102,6 +126,29 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
           placeholder="20"
           min="0"
         />
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Profesor/Tutor
+          </label>
+          <select
+            name="tutor_id"
+            value={formData.tutor_id}
+            onChange={(e) => setFormData(prev => ({ ...prev, tutor_id: e.target.value }))}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={loadingTutores}
+          >
+            <option value="">Sin profesor asignado</option>
+            {tutores.map((tutor) => (
+              <option key={tutor.id} value={tutor.id}>
+                {tutor.nombre} {tutor.apellido || ''} {tutor.especialidad ? `- ${tutor.especialidad}` : ''}
+              </option>
+            ))}
+          </select>
+          {loadingTutores && (
+            <p className="text-xs text-gray-500 mt-1">Cargando tutores...</p>
+          )}
+        </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">

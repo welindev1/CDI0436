@@ -16,6 +16,7 @@ import { CreateSupervivenciaDto } from './dto/create-supervivencia.dto';
 import { UpdateSupervivenciaDto } from './dto/update-supervivencia.dto';
 import { FilterSupervivenciaDto } from './dto/filter-supervivencia.dto';
 import { AgregarBeneficiariosSupervivenciaDto } from './dto/agregar-beneficiarios.dto';
+import { RegistrarAsistenciaSupervivenciaDto } from './dto/registrar-asistencia.dto';
 
 @Controller('supervivencias')
 export class SupervivenciasController {
@@ -81,5 +82,37 @@ export class SupervivenciasController {
   @Patch(':id/desactivar')
   softDelete(@Param('id', ParseUUIDPipe) id: string) {
     return this.supervivenciasService.softDelete(id);
+  }
+
+  // Endpoints de asistencia
+  @Post(':id/asistencias')
+  @HttpCode(HttpStatus.CREATED)
+  registrarAsistencia(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() registrarAsistenciaDto: RegistrarAsistenciaSupervivenciaDto
+  ) {
+    return this.supervivenciasService.registrarAsistencia(id, registrarAsistenciaDto);
+  }
+
+  @Get(':id/asistencias')
+  getAsistenciasPorFecha(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('fecha') fecha: string
+  ) {
+    return this.supervivenciasService.getAsistenciasPorFecha(id, fecha);
+  }
+
+  @Get(':id/asistencias/historial')
+  getHistorialAsistencias(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string
+  ) {
+    return this.supervivenciasService.getHistorialAsistencias(id, fechaInicio, fechaFin);
+  }
+
+  @Get(':id/asistencias/fechas')
+  getFechasConAsistencia(@Param('id', ParseUUIDPipe) id: string) {
+    return this.supervivenciasService.getFechasConAsistencia(id);
   }
 }

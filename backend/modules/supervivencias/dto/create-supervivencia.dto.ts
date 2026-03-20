@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, MaxLength, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, MaxLength, IsBoolean, IsUUID } from 'class-validator';
 
 export class CreateSupervivenciaDto {
   @IsString()
@@ -13,6 +13,10 @@ export class CreateSupervivenciaDto {
   @MaxLength(50)
   @IsOptional()
   codigo?: string;
+
+  @IsUUID()
+  @IsOptional()
+  tutor_id?: string;
 
   @IsInt()
   @Min(0)

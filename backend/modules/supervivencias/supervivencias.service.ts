@@ -1,12 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, Between } from 'typeorm';
 import { Supervivencia } from './supervivencia.entity';
+import { AsistenciaSupervivencia } from './asistencia-supervivencia.entity';
 import { CreateSupervivenciaDto } from './dto/create-supervivencia.dto';
 import { UpdateSupervivenciaDto } from './dto/update-supervivencia.dto';
 import { FilterSupervivenciaDto } from './dto/filter-supervivencia.dto';
 import { AgregarBeneficiariosSupervivenciaDto } from './dto/agregar-beneficiarios.dto';
+import { RegistrarAsistenciaSupervivenciaDto } from './dto/registrar-asistencia.dto';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
+import { Tutor } from '../tutores/tutor.entity';
 
 @Injectable()
 export class SupervivenciasService {
@@ -15,6 +18,10 @@ export class SupervivenciasService {
     private supervivenciasRepository: Repository<Supervivencia>,
     @InjectRepository(Beneficiario)
     private beneficiariosRepository: Repository<Beneficiario>,
+    @InjectRepository(AsistenciaSupervivencia)
+    private asistenciasRepository: Repository<AsistenciaSupervivencia>,
+    @InjectRepository(Tutor)
+    private tutoresRepository: Repository<Tutor>,
   ) {}
 
   async create(createSupervivenciaDto: CreateSupervivenciaDto): Promise<Supervivencia> {
@@ -28,7 +35,17 @@ export class SupervivenciasService {
       }
     }
 
-    const supervivencia = this.supervivenciasRepository.create(createSupervivenciaDto);
+    const { tutor_id, ...supervivenciaData } = createSupervivenciaDto;
+    const supervivencia = this.supervivenciasRepository.create(supervivenciaData);
+
+    if (tutor_id) {
+      const tutor = await this.tutoresRepository.findOne({ where: { id: tutor_id } });
+      if (!tutor) {
+        throw new NotFoundException(`Tutor con ID ${tutor_id} no encontrado`);
+      }
+      supervivencia.tutor = tutor;
+    }
+
     return await this.supervivenciasRepository.save(supervivencia);
   }
 
@@ -93,7 +110,21 @@ export class SupervivenciasService {
       }
     }
 
-    Object.assign(supervivencia, updateSupervivenciaDto);
+    const { tutor_id, ...supervivenciaData } = updateSupervivenciaDto as any;
+    Object.assign(supervivencia, supervivenciaData);
+
+    if (tutor_id !== undefined) {
+      if (tutor_id === null || tutor_id === '') {
+        supervivencia.tutor = null;
+      } else {
+        const tutor = await this.tutoresRepository.findOne({ where: { id: tutor_id } });
+        if (!tutor) {
+          throw new NotFoundException(`Tutor con ID ${tutor_id} no encontrado`);
+        }
+        supervivencia.tutor = tutor;
+      }
+    }
+
     return await this.supervivenciasRepository.save(supervivencia);
   }
 
@@ -215,5 +246,182 @@ export class SupervivenciasService {
         porcentajeOcupacion: porcentajeOcupacion ? `${porcentajeOcupacion}%` : 'N/A',
       }
     };
+  }
+
+  // Registrar asistencia para un curso de supervivencia
+  async registrarAsistencia(id: string, registrarAsistenciaDto: RegistrarAsistenciaSupervivenciaDto): Promise<AsistenciaSupervivencia[]> {
+    const supervivencia = await this.supervivenciasRepository.findOne({
+      where: { id },
+      relations: ['beneficiarios']
+    });
+
+    if (!supervivencia) {
+      throw new NotFoundException(`Curso de supervivencia con ID ${id} no encontrado`);
+    }
+
+    const fecha = new Date(registrarAsistenciaDto.fecha);
+    const asistenciasGuardadas: AsistenciaSupervivencia[] = [];
+
+    for (const asistenciaDto of registrarAsistenciaDto.asistencias) {
+      // Verificar que el beneficiario esté inscrito en el curso
+      const beneficiarioInscrito = supervivencia.beneficiarios?.find(
+        b => b.id === asistenciaDto.beneficiario_id
+      );
+
+      if (!beneficiarioInscrito) {
+        throw new BadRequestException(
+          `El beneficiario con ID ${asistenciaDto.beneficiario_id} no está inscrito en este curso`
+        );
+      }
+
+      // Buscar si ya existe asistencia para ese día
+      let asistencia = await this.asistenciasRepository.findOne({
+        where: {
+          supervivencia: { id },
+          beneficiario: { id: asistenciaDto.beneficiario_id },
+          fecha: fecha
+        }
+      });
+
+      if (asistencia) {
+        // Actualizar asistencia existente
+        asistencia.presente = asistenciaDto.presente;
+        asistencia.observaciones = asistenciaDto.observaciones || null;
+      } else {
+        // Crear nueva asistencia
+        asistencia = this.asistenciasRepository.create({
+          supervivencia: { id } as Supervivencia,
+          beneficiario: { id: asistenciaDto.beneficiario_id } as Beneficiario,
+          fecha: fecha,
+          presente: asistenciaDto.presente,
+          observaciones: asistenciaDto.observaciones || null
+        });
+      }
+
+      asistenciasGuardadas.push(await this.asistenciasRepository.save(asistencia));
+    }
+
+    return asistenciasGuardadas;
+  }
+
+  // Obtener asistencias de un curso por fecha
+  async getAsistenciasPorFecha(id: string, fecha: string): Promise<any> {
+    const supervivencia = await this.supervivenciasRepository.findOne({
+      where: { id },
+      relations: ['beneficiarios']
+    });
+
+    if (!supervivencia) {
+      throw new NotFoundException(`Curso de supervivencia con ID ${id} no encontrado`);
+    }
+
+    const fechaDate = new Date(fecha);
+
+    const asistencias = await this.asistenciasRepository.find({
+      where: {
+        supervivencia: { id },
+        fecha: fechaDate
+      },
+      relations: ['beneficiario']
+    });
+
+    // Mapear beneficiarios con sus asistencias
+    const beneficiariosConAsistencia = supervivencia.beneficiarios?.map(beneficiario => {
+      const asistencia = asistencias.find(a => a.beneficiario.id === beneficiario.id);
+      return {
+        beneficiario: {
+          id: beneficiario.id,
+          nombre: beneficiario.nombre,
+          apellido: beneficiario.apellido,
+          codigo: beneficiario.codigo
+        },
+        presente: asistencia?.presente ?? null,
+        observaciones: asistencia?.observaciones ?? null,
+        asistencia_id: asistencia?.id ?? null
+      };
+    }) || [];
+
+    return {
+      fecha,
+      supervivencia: {
+        id: supervivencia.id,
+        nombre: supervivencia.nombre,
+        codigo: supervivencia.codigo
+      },
+      asistencias: beneficiariosConAsistencia,
+      estadisticas: {
+        total: beneficiariosConAsistencia.length,
+        presentes: beneficiariosConAsistencia.filter(a => a.presente === true).length,
+        ausentes: beneficiariosConAsistencia.filter(a => a.presente === false).length,
+        sinRegistrar: beneficiariosConAsistencia.filter(a => a.presente === null).length
+      }
+    };
+  }
+
+  // Obtener historial de asistencias de un curso
+  async getHistorialAsistencias(id: string, fechaInicio?: string, fechaFin?: string): Promise<any> {
+    const supervivencia = await this.findOne(id);
+
+    const whereCondition: any = { supervivencia: { id } };
+
+    if (fechaInicio && fechaFin) {
+      whereCondition.fecha = Between(new Date(fechaInicio), new Date(fechaFin));
+    }
+
+    const asistencias = await this.asistenciasRepository.find({
+      where: whereCondition,
+      relations: ['beneficiario'],
+      order: { fecha: 'DESC' }
+    });
+
+    // Agrupar por fecha
+    const asistenciasPorFecha: Record<string, any[]> = {};
+    asistencias.forEach(asistencia => {
+      const fechaKey = asistencia.fecha.toISOString().split('T')[0];
+      if (!asistenciasPorFecha[fechaKey]) {
+        asistenciasPorFecha[fechaKey] = [];
+      }
+      asistenciasPorFecha[fechaKey].push({
+        beneficiario: {
+          id: asistencia.beneficiario.id,
+          nombre: asistencia.beneficiario.nombre,
+          apellido: asistencia.beneficiario.apellido,
+          codigo: asistencia.beneficiario.codigo
+        },
+        presente: asistencia.presente,
+        observaciones: asistencia.observaciones
+      });
+    });
+
+    return {
+      supervivencia: {
+        id: supervivencia.id,
+        nombre: supervivencia.nombre,
+        codigo: supervivencia.codigo
+      },
+      historial: Object.entries(asistenciasPorFecha).map(([fecha, registros]) => ({
+        fecha,
+        registros,
+        estadisticas: {
+          total: registros.length,
+          presentes: registros.filter(r => r.presente === true).length,
+          ausentes: registros.filter(r => r.presente === false).length
+        }
+      }))
+    };
+  }
+
+  // Obtener fechas con asistencias registradas para un curso
+  async getFechasConAsistencia(id: string): Promise<string[]> {
+    const supervivencia = await this.findOne(id);
+
+    const result = await this.asistenciasRepository
+      .createQueryBuilder('asistencia')
+      .select('DISTINCT DATE(asistencia.fecha)', 'fecha')
+      .where('asistencia.supervivencia_id = :id', { id })
+      .orderBy('fecha', 'DESC')
+      .getRawMany();
+
+    return result.map(r => r.fecha);
   }
 }
