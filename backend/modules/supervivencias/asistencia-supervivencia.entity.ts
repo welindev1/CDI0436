@@ -22,7 +22,7 @@ export class AsistenciaSupervivencia {
   presente: boolean;
 
   @Column({ type: 'text', nullable: true })
-  observaciones: string;
+  observaciones?: string;
 
   @CreateDateColumn()
   creado_en: Date;
