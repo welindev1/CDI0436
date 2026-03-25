@@ -15,6 +15,14 @@ export interface Ayuda {
   creado_en: string;
 }
 
+export interface ComentarioAyuda {
+  id: string;
+  contenido: string;
+  autor: string;
+  ayuda_id: string;
+  creado_en: string;
+}
+
 export const ayudasApi = {
   create: async (data: Omit<Ayuda, 'id' | 'estado' | 'creado_en'>) => {
     const response = await apiClient.post('/ayudas', data);
@@ -37,6 +45,17 @@ export const ayudasApi = {
 
   exportar: async () => {
     const response = await apiClient.get('/ayudas/exportar', { responseType: 'blob' });
+    return response.data;
+  },
+
+  // Comentarios
+  getComentarios: async (ayudaId: string) => {
+    const response = await apiClient.get<ComentarioAyuda[]>(`/ayudas/${ayudaId}/comentarios`);
+    return response.data;
+  },
+
+  createComentario: async (ayudaId: string, data: { contenido: string; autor: string }) => {
+    const response = await apiClient.post<ComentarioAyuda>(`/ayudas/${ayudaId}/comentarios`, data);
     return response.data;
   },
 };
