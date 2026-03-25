@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Res, ParseUUIDPipe }
 import { AyudasService } from './ayudas.service';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
+import { CreateComentarioDto } from './dto/create-comentario.dto';
 import type { Response } from 'express';
 
 @Controller('ayudas')
@@ -45,5 +46,19 @@ export class AyudasController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.ayudasService.remove(id);
+  }
+
+  // Endpoints para comentarios
+  @Post(':id/comentarios')
+  createComentario(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() createComentarioDto: CreateComentarioDto,
+  ) {
+    return this.ayudasService.createComentario(id, createComentarioDto);
+  }
+
+  @Get(':id/comentarios')
+  getComentarios(@Param('id', ParseUUIDPipe) id: string) {
+    return this.ayudasService.getComentarios(id);
   }
 }

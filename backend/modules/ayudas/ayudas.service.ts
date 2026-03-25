@@ -2,8 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ayuda, EstadoAyuda } from './ayuda.entity';
+import { ComentarioAyuda } from './comentario-ayuda.entity';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
+import { CreateComentarioDto } from './dto/create-comentario.dto';
 import { WhatsappService } from './whatsapp.service';
 import { WebhookService } from './webhook.service';
 import * as XLSX from 'xlsx';
@@ -13,6 +15,8 @@ export class AyudasService {
   constructor(
     @InjectRepository(Ayuda)
     private ayudasRepository: Repository<Ayuda>,
+    @InjectRepository(ComentarioAyuda)
+    private comentariosRepository: Repository<ComentarioAyuda>,
     private whatsappService: WhatsappService,
     private webhookService: WebhookService,
   ) {}
@@ -110,5 +114,24 @@ export class AyudasService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitudes de Ayuda');
 
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
+
+  // Métodos para comentarios
+  async createComentario(ayudaId: string, createComentarioDto: CreateComentarioDto): Promise<ComentarioAyuda> {
+    await this.findOne(ayudaId); // Verificar que la ayuda existe
+
+    const comentario = this.comentariosRepository.create({
+      ...createComentarioDto,
+      ayuda_id: ayudaId,
+    });
+
+    return await this.comentariosRepository.save(comentario);
+  }
+
+  async getComentarios(ayudaId: string): Promise<ComentarioAyuda[]> {
+    return await this.comentariosRepository.find({
+      where: { ayuda_id: ayudaId },
+      order: { creado_en: 'DESC' },
+    });
   }
 }
