@@ -7,7 +7,7 @@ import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi } from '@/lib/api/ayudas';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
-import { FileText, LogIn, Search, User } from 'lucide-react';
+import { FileText, LogIn, Search, User, Upload, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface BeneficiarioSugerido {
@@ -17,6 +17,7 @@ interface BeneficiarioSugerido {
   apellido?: string;
   padre_tutor?: string;
   telefono?: string;
+  profesor_nombre?: string;
 }
 
 export default function AyudasPage() {
@@ -30,8 +31,11 @@ export default function AyudasPage() {
   const [showSugerencias, setShowSugerencias] = useState(false);
   const [buscando, setBuscando] = useState(false);
   const [beneficiarioSeleccionado, setBeneficiarioSeleccionado] = useState<BeneficiarioSugerido | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [fotoBase64, setFotoBase64] = useState<string | null>(null);
   const sugerenciasRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<any>();
 
@@ -93,10 +97,46 @@ export default function AyudasPage() {
     setValue('codigo_beneficiario', b.codigo);
     if (b.padre_tutor) {
       setValue('nombre_madre', b.padre_tutor);
-      setValue('nombre_tutor', b.padre_tutor);
+    }
+    // Usar el profesor de clase como tutor
+    if (b.profesor_nombre) {
+      setValue('nombre_tutor', b.profesor_nombre);
     }
     if (b.telefono) {
       setValue('telefono', b.telefono);
+    }
+  };
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamano (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('La imagen no puede ser mayor a 5MB');
+        return;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        setError('Solo se permiten imagenes');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setFotoPreview(base64);
+        setFotoBase64(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFoto = () => {
+    setFotoPreview(null);
+    setFotoBase64(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -105,11 +145,20 @@ export default function AyudasPage() {
       setLoading(true);
       setError('');
       setSuccess('');
-      await ayudasApi.create(data);
-      setSuccess('¡Solicitud registrada correctamente! Pronto recibirás una respuesta.');
+
+      // Incluir foto si existe y el tipo no es alimentos
+      const submitData = { ...data };
+      if (fotoBase64 && data.tipo !== 'alimentos') {
+        submitData.foto_url = fotoBase64;
+      }
+
+      await ayudasApi.create(submitData);
+      setSuccess('Solicitud registrada correctamente! Pronto recibiras una respuesta.');
       reset();
       setSearchQuery('');
       setBeneficiarioSeleccionado(null);
+      setFotoPreview(null);
+      setFotoBase64(null);
     } catch (err: any) {
       setError('Error al registrar la solicitud. Por favor intenta nuevamente.');
     } finally {
@@ -234,20 +283,45 @@ export default function AyudasPage() {
                 placeholder="Nombre completo de la madre"
               />
               <Input
-                label="Nombre del Tutor"
+                label="Profesor"
                 type="text"
                 {...register('nombre_tutor', { required: true })}
                 error={errors.nombre_tutor ? 'Este campo es requerido' : ''}
-                placeholder="Nombre completo del tutor"
+                placeholder="Profesor que le da clase"
               />
             </div>
 
-            <Input
-              label="Número de Teléfono (WhatsApp)"
-              type="tel"
-              {...register('telefono')}
-              placeholder="Ej: 18095551234"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Numero de Telefono (WhatsApp)
+              </label>
+              <input
+                type="tel"
+                {...register('telefono', {
+                  pattern: {
+                    value: /^[0-9]*$/,
+                    message: 'Solo se permiten numeros'
+                  },
+                  maxLength: {
+                    value: 10,
+                    message: 'Maximo 10 digitos'
+                  }
+                })}
+                maxLength={10}
+                onKeyPress={(e) => {
+                  if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                placeholder="Ej: 8095551234"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.telefono ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.telefono && (
+                <p className="mt-1 text-sm text-red-600">{errors.telefono.message as string}</p>
+              )}
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -258,8 +332,10 @@ export default function AyudasPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Seleccione el tipo de ayuda...</option>
-                <option value="medica">Ayuda Médica</option>
                 <option value="alimentos">Alimentos</option>
+                <option value="medica">Ayuda Medica</option>
+                <option value="pequeno_negocio">Pequenos Negocios</option>
+                <option value="educacion">Educacion</option>
                 <option value="otros">Otros</option>
               </select>
               {errors.tipo && (
@@ -293,6 +369,49 @@ export default function AyudasPage() {
                 <p className="mt-1 text-sm text-red-600">Este campo es requerido</p>
               )}
             </div>
+
+            {/* Campo de foto - solo para tipos que no son alimentos */}
+            {tipoSeleccionado && tipoSeleccionado !== 'alimentos' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Foto (Opcional)
+                </label>
+                <div className="mt-1">
+                  {!fotoPreview ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                    >
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500">Haz clic para subir una foto</p>
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG hasta 5MB</p>
+                    </div>
+                  ) : (
+                    <div className="relative inline-block">
+                      <img
+                        src={fotoPreview}
+                        alt="Preview"
+                        className="max-h-48 rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeFoto}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFotoChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"

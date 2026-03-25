@@ -6,13 +6,14 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi, Ayuda } from '@/lib/api/ayudas';
-import { Download, CheckCircle, XCircle, Trash2, Search, Phone } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X } from 'lucide-react';
 
 export default function AyudasPage() {
   const [ayudas, setAyudas] = useState<Ayuda[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [fotoModal, setFotoModal] = useState<string | null>(null);
 
   const fetchAyudas = async () => {
     try {
@@ -155,12 +156,25 @@ export default function AyudasPage() {
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           ayuda.tipo === 'medica' ? 'bg-red-100 text-red-800' :
                           ayuda.tipo === 'alimentos' ? 'bg-green-100 text-green-800' :
+                          ayuda.tipo === 'pequeno_negocio' ? 'bg-purple-100 text-purple-800' :
+                          ayuda.tipo === 'educacion' ? 'bg-blue-100 text-blue-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-{ayuda.tipo === 'medica' ? 'Médica' : 
-                          ayuda.tipo === 'alimentos' ? 'Alimentos' : 
+                          {ayuda.tipo === 'medica' ? 'Medica' :
+                          ayuda.tipo === 'alimentos' ? 'Alimentos' :
+                          ayuda.tipo === 'pequeno_negocio' ? 'Peq. Negocio' :
+                          ayuda.tipo === 'educacion' ? 'Educacion' :
                           ayuda.tipo_especificacion ? `Otros: ${ayuda.tipo_especificacion}` : 'Otros'}
                         </span>
+                        {ayuda.foto_url && (
+                          <button
+                            onClick={() => setFotoModal(ayuda.foto_url!)}
+                            className="ml-2 text-blue-600 hover:text-blue-800"
+                            title="Ver foto"
+                          >
+                            <Image className="w-4 h-4 inline" />
+                          </button>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={ayuda.detalle}>
                         {ayuda.detalle}
@@ -217,6 +231,25 @@ export default function AyudasPage() {
             </div>
           </div>
         </div>
+
+        {/* Modal para ver foto */}
+        {fotoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="relative bg-white rounded-lg max-w-3xl max-h-[90vh] overflow-auto">
+              <button
+                onClick={() => setFotoModal(null)}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={fotoModal}
+                alt="Foto de la solicitud"
+                className="max-w-full h-auto rounded-lg"
+              />
+            </div>
+          </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );

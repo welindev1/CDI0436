@@ -148,7 +148,7 @@ export default function Sidebar() {
           'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
           isActive
             ? 'bg-blue-50 text-blue-600 font-medium'
-            : 'text-gray-700 hover:bg-gray-50'
+            : 'text-gray-700 hover:bg-gray-50',
         )}
       >
         <Icon className="w-5 h-5" />
@@ -180,7 +180,7 @@ export default function Sidebar() {
         className={cn(
           'fixed top-0 left-0 z-40 h-screen transition-transform bg-white border-r border-gray-200',
           isOpen ? 'translate-x-0' : '-translate-x-full',
-          'lg:translate-x-0 w-64'
+          'lg:translate-x-0 w-64',
         )}
       >
         <div className="flex flex-col h-full">
@@ -188,17 +188,17 @@ export default function Sidebar() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <div className="relative w-12 h-12 flex items-center justify-center">
-                <Image 
-                  src="/logo.svg" 
-                  alt="CDI Logo" 
-                  width={48} 
-                  height={48} 
+                <Image
+                  src="/logo.svg"
+                  alt="CDI Logo"
+                  width={48}
+                  height={48}
                   className="object-contain"
                 />
               </div>
               <div>
                 <h1 className="font-bold text-gray-900">Sistema CDI</h1>
-                <p className="text-xs text-gray-500">Gestión de Asistencia</p>
+                <p className="text-xs text-gray-500">Gestión de Programa</p>
               </div>
             </div>
           </div>

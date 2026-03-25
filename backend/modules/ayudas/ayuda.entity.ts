@@ -3,6 +3,8 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 export enum TipoAyuda {
   MEDICA = 'medica',
   ALIMENTOS = 'alimentos',
+  PEQUENO_NEGOCIO = 'pequeno_negocio',
+  EDUCACION = 'educacion',
   OTROS = 'otros',
 }
 
@@ -43,6 +45,9 @@ export class Ayuda {
 
   @Column({ type: 'text' })
   detalle: string;
+
+  @Column({ type: 'text', nullable: true })
+  foto_url: string;
 
   @Column({
     type: 'enum',

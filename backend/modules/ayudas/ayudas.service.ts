@@ -5,6 +5,7 @@ import { Ayuda, EstadoAyuda } from './ayuda.entity';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
 import { WhatsappService } from './whatsapp.service';
+import { WebhookService } from './webhook.service';
 import * as XLSX from 'xlsx';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class AyudasService {
     @InjectRepository(Ayuda)
     private ayudasRepository: Repository<Ayuda>,
     private whatsappService: WhatsappService,
+    private webhookService: WebhookService,
   ) {}
 
   async create(createAyudaDto: CreateAyudaDto): Promise<Ayuda> {
@@ -39,7 +41,13 @@ export class AyudasService {
     ayuda.estado = updateEstadoDto.estado;
     const saved = await this.ayudasRepository.save(ayuda);
 
-    // Enviar mensaje de WhatsApp automáticamente
+    // Enviar webhook a n8n para procesar la notificación de WhatsApp
+    if (saved.estado === EstadoAyuda.APROBADA || saved.estado === EstadoAyuda.RECHAZADA) {
+      this.webhookService.notificarCambioEstado(saved, saved.estado);
+    }
+
+    // También mantener envío directo de WhatsApp como respaldo (opcional)
+    // Si prefieres usar solo n8n, puedes comentar o eliminar este bloque
     if (saved.telefono) {
       const estadoTexto = saved.estado === EstadoAyuda.APROBADA ? 'aprobada ✅' : 'rechazada ❌';
       const mensaje = `Hola ${saved.nombre_beneficiario}, le informamos que su solicitud de ayuda (${saved.tipo}) ha sido ${estadoTexto}. CDI - Centro de Desarrollo Integral.`;
@@ -58,15 +66,27 @@ export class AyudasService {
   async exportarAExcel(): Promise<Buffer> {
     const ayudas = await this.findAll();
 
+    const getTipoLabel = (tipo: string, especificacion?: string) => {
+      switch (tipo) {
+        case 'medica': return 'MEDICA';
+        case 'alimentos': return 'ALIMENTOS';
+        case 'pequeno_negocio': return 'PEQUENO NEGOCIO';
+        case 'educacion': return 'EDUCACION';
+        case 'otros': return especificacion ? `OTROS: ${especificacion}` : 'OTROS';
+        default: return tipo.toUpperCase();
+      }
+    };
+
     const data = ayudas.map((a) => ({
       CODIGO: a.codigo_beneficiario,
       BENEFICIARIO: a.nombre_beneficiario,
       TELEFONO: a.telefono || '',
-      MADRE: a.nombre_madre,
-      TUTOR: a.nombre_tutor,
-      TIPO: a.tipo.toUpperCase(),
+      'PADRE/TUTOR': a.nombre_madre,
+      PROFESOR: a.nombre_tutor,
+      TIPO: getTipoLabel(a.tipo, a.tipo_especificacion),
       ESTADO: a.estado.toUpperCase(),
       DETALLE: a.detalle,
+      'TIENE FOTO': a.foto_url ? 'SI' : 'NO',
       'FECHA SOLICITUD': new Date(a.creado_en).toLocaleString('es-DO'),
     }));
 
@@ -76,11 +96,12 @@ export class AyudasService {
       { wch: 15 }, // CODIGO
       { wch: 25 }, // BENEFICIARIO
       { wch: 15 }, // TELEFONO
-      { wch: 25 }, // MADRE
-      { wch: 25 }, // TUTOR
-      { wch: 15 }, // TIPO
+      { wch: 25 }, // PADRE/TUTOR
+      { wch: 25 }, // PROFESOR
+      { wch: 20 }, // TIPO
       { wch: 15 }, // ESTADO
       { wch: 40 }, // DETALLE
+      { wch: 12 }, // TIENE FOTO
       { wch: 20 }, // FECHA
     ];
     worksheet['!cols'] = columnWidths;
