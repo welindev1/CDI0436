@@ -298,22 +298,21 @@ export default function AyudasPage() {
               <input
                 type="tel"
                 {...register('telefono', {
-                  pattern: {
-                    value: /^[0-9]*$/,
-                    message: 'Solo se permiten numeros'
-                  },
-                  maxLength: {
-                    value: 10,
-                    message: 'Maximo 10 digitos'
+                  validate: (value) => {
+                    if (!value) return true;
+                    const soloNumeros = value.replace(/[^0-9]/g, '');
+                    if (soloNumeros.length > 10) {
+                      return 'Maximo 10 digitos';
+                    }
+                    return true;
                   }
                 })}
-                maxLength={10}
                 onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
+                  if (!/[0-9\-]/.test(e.key)) {
                     e.preventDefault();
                   }
                 }}
-                placeholder="Ej: 8095551234"
+                placeholder="Ej: 809-555-1234"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.telefono ? 'border-red-500' : 'border-gray-300'
                 }`}
