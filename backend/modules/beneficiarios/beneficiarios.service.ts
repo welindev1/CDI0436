@@ -105,9 +105,10 @@ export class BeneficiariosService {
     return await query.getMany();
   }
 
-  async buscarPublico(nombre: string): Promise<Partial<Beneficiario>[]> {
+  async buscarPublico(nombre: string): Promise<any[]> {
     const beneficiarios = await this.beneficiariosRepository.createQueryBuilder('beneficiario')
-      .select(['beneficiario.id', 'beneficiario.codigo', 'beneficiario.nombre', 'beneficiario.apellido', 'beneficiario.padre_tutor', 'beneficiario.telefono'])
+      .leftJoinAndSelect('beneficiario.clases', 'clase')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
       .where('beneficiario.activo = :activo', { activo: true })
       .andWhere(
         '(beneficiario.nombre ILIKE :nombre OR beneficiario.apellido ILIKE :nombre OR CONCAT(beneficiario.nombre, \' \', beneficiario.apellido) ILIKE :nombre)',
@@ -117,7 +118,21 @@ export class BeneficiariosService {
       .take(10)
       .getMany();
 
-    return beneficiarios;
+    return beneficiarios.map(b => {
+      // Obtener el profesor de la primera clase activa
+      const clase = b.clases?.find(c => c.activo);
+      const profesor = clase?.tutor;
+
+      return {
+        id: b.id,
+        codigo: b.codigo,
+        nombre: b.nombre,
+        apellido: b.apellido,
+        padre_tutor: b.padre_tutor,
+        telefono: b.telefono,
+        profesor_nombre: profesor ? `${profesor.nombre} ${profesor.apellido || ''}`.trim() : null,
+      };
+    });
   }
 
   async findOne(id: string): Promise<Beneficiario> {

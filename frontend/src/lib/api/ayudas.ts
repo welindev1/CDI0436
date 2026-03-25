@@ -7,9 +7,10 @@ export interface Ayuda {
   nombre_madre: string;
   nombre_tutor: string;
   telefono?: string;
-  tipo: 'medica' | 'alimentos' | 'otros';
+  tipo: 'medica' | 'alimentos' | 'pequeno_negocio' | 'educacion' | 'otros';
   tipo_especificacion?: string;
   detalle: string;
+  foto_url?: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   creado_en: string;
 }
