@@ -11,6 +11,7 @@ export interface Ayuda {
   tipo_especificacion?: string;
   detalle: string;
   foto_url?: string;
+  foto_entrega_url?: string;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
   creado_en: string;
 }
@@ -56,6 +57,11 @@ export const ayudasApi = {
 
   createComentario: async (ayudaId: string, data: { contenido: string; autor: string }) => {
     const response = await apiClient.post<ComentarioAyuda>(`/ayudas/${ayudaId}/comentarios`, data);
+    return response.data;
+  },
+
+  updateFotoEntrega: async (id: string, foto_entrega_url: string) => {
+    const response = await apiClient.patch<Ayuda>(`/ayudas/${id}/foto-entrega`, { foto_entrega_url });
     return response.data;
   },
 };

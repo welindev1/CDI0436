@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi, Ayuda, ComentarioAyuda } from '@/lib/api/ayudas';
-import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X, MessageSquare, Send, Filter } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X, MessageSquare, Send, Filter, Upload, ImagePlus } from 'lucide-react';
 
 type EstadoFiltro = 'pendiente' | 'aprobada' | 'rechazada' | 'todos';
 
@@ -27,6 +27,12 @@ export default function AyudasPage() {
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [loadingComentarios, setLoadingComentarios] = useState(false);
   const [comentarioHover, setComentarioHover] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  // Estado para subir foto de entrega
+  const [fotoEntregaModal, setFotoEntregaModal] = useState<Ayuda | null>(null);
+  const [fotoEntregaPreview, setFotoEntregaPreview] = useState<string | null>(null);
+  const [loadingFotoEntrega, setLoadingFotoEntrega] = useState(false);
+  const [fotoEntregaModalView, setFotoEntregaModalView] = useState<string | null>(null);
 
   const fetchAyudas = async () => {
     try {
@@ -105,6 +111,45 @@ export default function AyudasPage() {
       setNuevoComentario('');
     } catch (err) {
       alert('Error al agregar comentario');
+    }
+  };
+
+  // Manejar seleccion de foto de entrega
+  const handleFotoEntregaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona una imagen valida');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede ser mayor a 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFotoEntregaPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Subir foto de entrega
+  const handleSubirFotoEntrega = async () => {
+    if (!fotoEntregaPreview || !fotoEntregaModal) return;
+
+    setLoadingFotoEntrega(true);
+    try {
+      await ayudasApi.updateFotoEntrega(fotoEntregaModal.id, fotoEntregaPreview);
+      setFotoEntregaModal(null);
+      setFotoEntregaPreview(null);
+      fetchAyudas();
+    } catch (err) {
+      alert('Error al subir la foto de entrega');
+    } finally {
+      setLoadingFotoEntrega(false);
     }
   };
 
@@ -304,6 +349,28 @@ export default function AyudasPage() {
                           >
                             <MessageSquare className="w-5 h-5" />
                           </button>
+                          {/* Botones para foto de entrega - solo en pendiente o aprobada */}
+                          {(ayuda.estado === 'pendiente' || ayuda.estado === 'aprobada') && (
+                            <>
+                              {ayuda.foto_entrega_url ? (
+                                <button
+                                  onClick={() => setFotoEntregaModalView(ayuda.foto_entrega_url!)}
+                                  title="Ver foto de entrega"
+                                  className="text-emerald-600 hover:text-emerald-900 bg-emerald-50 p-2 rounded-full hover:bg-emerald-100 transition"
+                                >
+                                  <ImagePlus className="w-5 h-5" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setFotoEntregaModal(ayuda)}
+                                  title="Subir foto de entrega"
+                                  className="text-orange-600 hover:text-orange-900 bg-orange-50 p-2 rounded-full hover:bg-orange-100 transition"
+                                >
+                                  <Upload className="w-5 h-5" />
+                                </button>
+                              )}
+                            </>
+                          )}
                           {ayuda.estado === 'pendiente' && (
                             <>
                               <button
@@ -479,6 +546,111 @@ export default function AyudasPage() {
             <p className="whitespace-pre-wrap">
               {comentarios.find(c => c.id === comentarioHover.id)?.contenido}
             </p>
+          </div>
+        )}
+
+        {/* Modal para subir foto de entrega */}
+        {fotoEntregaModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-md">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <h3 className="text-lg font-semibold">Subir Foto de Entrega</h3>
+                  <p className="text-sm text-gray-500">
+                    {fotoEntregaModal.nombre_beneficiario} - {fotoEntregaModal.codigo_beneficiario}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setFotoEntregaModal(null);
+                    setFotoEntregaPreview(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Contenido */}
+              <div className="p-4 space-y-4">
+                <p className="text-sm text-gray-600">
+                  Sube una foto como evidencia de que la ayuda fue entregada al beneficiario.
+                </p>
+
+                {fotoEntregaPreview ? (
+                  <div className="relative">
+                    <img
+                      src={fotoEntregaPreview}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => setFotoEntregaPreview(null)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
+                    <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Haz clic para seleccionar una imagen</span>
+                    <span className="text-xs text-gray-400 mt-1">PNG, JPG (max. 5MB)</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFotoEntregaSelect}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 p-4 border-t">
+                <button
+                  onClick={() => {
+                    setFotoEntregaModal(null);
+                    setFotoEntregaPreview(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubirFotoEntrega}
+                  disabled={!fotoEntregaPreview || loadingFotoEntrega}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loadingFotoEntrega ? 'Subiendo...' : 'Subir Foto'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal para ver foto de entrega */}
+        {fotoEntregaModalView && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="relative bg-white rounded-lg max-w-3xl max-h-[90vh] overflow-auto">
+              <div className="absolute top-2 right-2 flex gap-2 z-10">
+                <span className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
+                  Foto de Entrega
+                </span>
+                <button
+                  onClick={() => setFotoEntregaModalView(null)}
+                  className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <img
+                src={fotoEntregaModalView}
+                alt="Foto de entrega"
+                className="max-w-full h-auto rounded-lg"
+              />
+            </div>
           </div>
         )}
       </DashboardLayout>
