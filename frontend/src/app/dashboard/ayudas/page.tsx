@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi, Ayuda, ComentarioAyuda } from '@/lib/api/ayudas';
 import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X, MessageSquare, Send, Filter, Upload, ImagePlus } from 'lucide-react';
@@ -430,109 +431,91 @@ export default function AyudasPage() {
         )}
 
         {/* Modal para ver foto */}
-        {fotoModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="relative bg-white rounded-lg max-w-3xl max-h-[90vh] overflow-auto">
-              <button
-                onClick={() => setFotoModal(null)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <img
-                src={fotoModal}
-                alt="Foto de la solicitud"
-                className="max-w-full h-auto rounded-lg"
-              />
-            </div>
+        <Modal
+          isOpen={!!fotoModal}
+          onClose={() => setFotoModal(null)}
+          title="Foto de la Solicitud"
+          size="lg"
+        >
+          <div className="flex justify-center">
+            <img
+              src={fotoModal || ''}
+              alt="Foto de la solicitud"
+              className="max-w-full max-h-[60vh] object-contain rounded-lg"
+            />
           </div>
-        )}
+        </Modal>
 
         {/* Modal para comentarios */}
-        {comentariosModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                  <h3 className="text-lg font-semibold">Comentarios</h3>
-                  <p className="text-sm text-gray-500">
-                    {comentariosModal.nombre_beneficiario} - {comentariosModal.codigo_beneficiario}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setComentariosModal(null);
-                    setComentarios([]);
-                    setNuevoComentario('');
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+        <Modal
+          isOpen={!!comentariosModal}
+          onClose={() => {
+            setComentariosModal(null);
+            setComentarios([]);
+            setNuevoComentario('');
+          }}
+          title={comentariosModal ? `Comentarios - ${comentariosModal.nombre_beneficiario}` : 'Comentarios'}
+          size="md"
+        >
+          <div className="space-y-4">
+            {/* Agregar nuevo comentario */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={nuevoComentario}
+                onChange={(e) => setNuevoComentario(e.target.value)}
+                placeholder="Escribe un comentario..."
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                onKeyPress={(e) => e.key === 'Enter' && handleAddComentario()}
+              />
+              <button
+                onClick={handleAddComentario}
+                disabled={!nuevoComentario.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Agregar nuevo comentario */}
-              <div className="p-4 border-b bg-gray-50">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={nuevoComentario}
-                    onChange={(e) => setNuevoComentario(e.target.value)}
-                    placeholder="Escribe un comentario..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddComentario()}
-                  />
-                  <button
-                    onClick={handleAddComentario}
-                    disabled={!nuevoComentario.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            {/* Lista de comentarios */}
+            <div className="max-h-80 overflow-y-auto space-y-3">
+              {loadingComentarios ? (
+                <div className="text-center py-8 text-gray-500">Cargando comentarios...</div>
+              ) : comentarios.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">No hay comentarios aun</div>
+              ) : (
+                comentarios.map((comentario) => (
+                  <div
+                    key={comentario.id}
+                    className="bg-gray-50 rounded-lg p-3 relative"
+                    onMouseEnter={(e) => {
+                      if (comentario.contenido.length > 100) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setComentarioHover({ id: comentario.id, x: rect.left, y: rect.bottom });
+                      }
+                    }}
+                    onMouseLeave={() => setComentarioHover(null)}
                   >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista de comentarios */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {loadingComentarios ? (
-                  <div className="text-center py-8 text-gray-500">Cargando comentarios...</div>
-                ) : comentarios.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">No hay comentarios aun</div>
-                ) : (
-                  comentarios.map((comentario) => (
-                    <div
-                      key={comentario.id}
-                      className="bg-gray-50 rounded-lg p-3 relative"
-                      onMouseEnter={(e) => {
-                        if (comentario.contenido.length > 100) {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          setComentarioHover({ id: comentario.id, x: rect.left, y: rect.bottom });
-                        }
-                      }}
-                      onMouseLeave={() => setComentarioHover(null)}
-                    >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-medium text-sm text-gray-900">{comentario.autor}</span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(comentario.creado_en).toLocaleString('es-DO')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {comentario.contenido.length > 100
-                          ? comentario.contenido.substring(0, 100) + '...'
-                          : comentario.contenido}
-                      </p>
-                      {comentario.contenido.length > 100 && (
-                        <span className="text-xs text-blue-600 cursor-pointer">Pasa el mouse para ver mas</span>
-                      )}
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-sm text-gray-900">{comentario.autor}</span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(comentario.creado_en).toLocaleString('es-DO')}
+                      </span>
                     </div>
-                  ))
-                )}
-              </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {comentario.contenido.length > 100
+                        ? comentario.contenido.substring(0, 100) + '...'
+                        : comentario.contenido}
+                    </p>
+                    {comentario.contenido.length > 100 && (
+                      <span className="text-xs text-blue-600 cursor-pointer">Pasa el mouse para ver mas</span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        )}
+        </Modal>
 
         {/* Tooltip para comentario largo */}
         {comentarioHover && (
@@ -550,109 +533,83 @@ export default function AyudasPage() {
         )}
 
         {/* Modal para subir foto de entrega */}
-        {fotoEntregaModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-md">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                  <h3 className="text-lg font-semibold">Subir Foto de Entrega</h3>
-                  <p className="text-sm text-gray-500">
-                    {fotoEntregaModal.nombre_beneficiario} - {fotoEntregaModal.codigo_beneficiario}
-                  </p>
-                </div>
+        <Modal
+          isOpen={!!fotoEntregaModal}
+          onClose={() => {
+            setFotoEntregaModal(null);
+            setFotoEntregaPreview(null);
+          }}
+          title={fotoEntregaModal ? `Subir Foto de Entrega - ${fotoEntregaModal.nombre_beneficiario}` : 'Subir Foto de Entrega'}
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sube una foto como evidencia de que la ayuda fue entregada al beneficiario.
+            </p>
+
+            {fotoEntregaPreview ? (
+              <div className="relative">
+                <img
+                  src={fotoEntregaPreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
                 <button
-                  onClick={() => {
-                    setFotoEntregaModal(null);
-                    setFotoEntregaPreview(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => setFotoEntregaPreview(null)}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
+                <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-500">Haz clic para seleccionar una imagen</span>
+                <span className="text-xs text-gray-400 mt-1">PNG, JPG (max. 5MB)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFotoEntregaSelect}
+                />
+              </label>
+            )}
 
-              {/* Contenido */}
-              <div className="p-4 space-y-4">
-                <p className="text-sm text-gray-600">
-                  Sube una foto como evidencia de que la ayuda fue entregada al beneficiario.
-                </p>
-
-                {fotoEntregaPreview ? (
-                  <div className="relative">
-                    <img
-                      src={fotoEntregaPreview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      onClick={() => setFotoEntregaPreview(null)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
-                    <Upload className="w-10 h-10 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-500">Haz clic para seleccionar una imagen</span>
-                    <span className="text-xs text-gray-400 mt-1">PNG, JPG (max. 5MB)</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFotoEntregaSelect}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="flex justify-end gap-2 p-4 border-t">
-                <button
-                  onClick={() => {
-                    setFotoEntregaModal(null);
-                    setFotoEntregaPreview(null);
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSubirFotoEntrega}
-                  disabled={!fotoEntregaPreview || loadingFotoEntrega}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loadingFotoEntrega ? 'Subiendo...' : 'Subir Foto'}
-                </button>
-              </div>
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFotoEntregaModal(null);
+                  setFotoEntregaPreview(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSubirFotoEntrega}
+                disabled={!fotoEntregaPreview || loadingFotoEntrega}
+              >
+                {loadingFotoEntrega ? 'Subiendo...' : 'Subir Foto'}
+              </Button>
             </div>
           </div>
-        )}
+        </Modal>
 
         {/* Modal para ver foto de entrega */}
-        {fotoEntregaModalView && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="relative bg-white rounded-lg max-w-3xl max-h-[90vh] overflow-auto">
-              <div className="absolute top-2 right-2 flex gap-2 z-10">
-                <span className="bg-emerald-500 text-white text-xs px-2 py-1 rounded-full">
-                  Foto de Entrega
-                </span>
-                <button
-                  onClick={() => setFotoEntregaModalView(null)}
-                  className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <img
-                src={fotoEntregaModalView}
-                alt="Foto de entrega"
-                className="max-w-full h-auto rounded-lg"
-              />
-            </div>
+        <Modal
+          isOpen={!!fotoEntregaModalView}
+          onClose={() => setFotoEntregaModalView(null)}
+          title="Foto de Entrega"
+          size="lg"
+        >
+          <div className="flex justify-center">
+            <img
+              src={fotoEntregaModalView || ''}
+              alt="Foto de entrega"
+              className="max-w-full max-h-[60vh] object-contain rounded-lg"
+            />
           </div>
-        )}
+        </Modal>
       </DashboardLayout>
     </ProtectedRoute>
   );
