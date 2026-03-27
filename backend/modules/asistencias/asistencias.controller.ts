@@ -11,11 +11,8 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
-  UseInterceptors,
-  UploadedFile,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 import { AsistenciasService } from './asistencias.service';
 import { CreateAsistenciaDto } from './dto/create-asistencia.dto';
@@ -136,29 +133,25 @@ export class AsistenciasController {
 
   @Post('foto')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FileInterceptor('foto'))
   async subirFotoAsistencia(
-    @UploadedFile() file: Express.Multer.File,
     @Body('claseId') claseId: string,
     @Body('fecha') fecha: string,
+    @Body('imagen') imagen: string,
   ) {
-    if (!file) {
+    if (!imagen) {
       throw new BadRequestException('No se proporcionó ninguna imagen');
     }
 
-    // Validar tipo de archivo
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    if (!allowedMimes.includes(file.mimetype)) {
-      throw new BadRequestException('Tipo de archivo no permitido. Use JPG, PNG o WEBP');
+    if (!claseId || !fecha) {
+      throw new BadRequestException('Debe proporcionar claseId y fecha');
     }
 
-    // Validar tamaño (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      throw new BadRequestException('El archivo es demasiado grande. Máximo 5MB');
+    // Validar que sea una imagen Base64 válida
+    if (!imagen.startsWith('data:image/')) {
+      throw new BadRequestException('Formato de imagen inválido. Debe ser Base64');
     }
 
-    return this.asistenciasService.subirFotoAsistencia(claseId, fecha, file);
+    return this.asistenciasService.subirFotoAsistencia(claseId, fecha, imagen);
   }
 
   @Get('foto/:claseId/:fecha')

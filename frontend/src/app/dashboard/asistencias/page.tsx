@@ -53,9 +53,30 @@ export default function AsistenciasPage() {
     const file = e.target.files?.[0];
     if (!file || !selectedClase || !selectedFecha) return;
 
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede ser mayor a 5MB');
+      return;
+    }
+
     try {
       setUploadingFoto(true);
-      await asistenciasApi.subirFoto(selectedClase, selectedFecha, file);
+
+      // Convertir archivo a Base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      await asistenciasApi.subirFoto(selectedClase, selectedFecha, base64);
       await cargarFoto();
     } catch (err: any) {
       console.error('Error al subir foto:', err);
@@ -81,11 +102,6 @@ export default function AsistenciasPage() {
     } finally {
       setLoadingFoto(false);
     }
-  };
-
-  const getImageUrl = (imagenUrl: string) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
-    return `${baseUrl}/${imagenUrl}`;
   };
 
   return (
@@ -164,7 +180,7 @@ export default function AsistenciasPage() {
                     onClick={() => setShowLightbox(true)}
                   >
                     <img
-                      src={getImageUrl(foto.imagen_url)}
+                      src={foto.imagen_url}
                       alt="Foto de asistencia"
                       className="w-full max-h-48 object-cover hover:opacity-90 transition-opacity"
                     />
@@ -251,7 +267,7 @@ export default function AsistenciasPage() {
             </button>
 
             <img
-              src={getImageUrl(foto.imagen_url)}
+              src={foto.imagen_url}
               alt="Foto de asistencia"
               className="max-w-full max-h-[90vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
