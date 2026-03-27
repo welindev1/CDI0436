@@ -26,7 +26,8 @@ import {
   Users,
   Baby,
   Home,
-  Building
+  Building,
+  HeartPulse
 } from 'lucide-react';
 
 function calcularEdad(fechaNacimiento: string | undefined): number | null {
@@ -61,11 +62,11 @@ function calcularEdadEnMeses(fechaNacimiento: string | undefined): number | null
   return totalMeses;
 }
 
-type ClasificacionBeneficiario = 'Supervivencia' | 'Basado en Casa' | 'Basado en Centro' | 'Sin clasificar';
+type ClasificacionBeneficiario = 'Supervivencia' | 'Basado en Casa' | 'Basado en Centro' | 'Mujeres Embarazadas';
 
 function clasificarBeneficiario(fechaNacimiento: string | undefined): ClasificacionBeneficiario {
   const edadMeses = calcularEdadEnMeses(fechaNacimiento);
-  if (edadMeses === null) return 'Sin clasificar';
+  if (edadMeses === null) return 'Mujeres Embarazadas';
 
   // Supervivencia: 0 a 11 meses
   if (edadMeses >= 0 && edadMeses <= 11) {
@@ -80,7 +81,7 @@ function clasificarBeneficiario(fechaNacimiento: string | undefined): Clasificac
     return 'Basado en Centro';
   }
 
-  return 'Sin clasificar';
+  return 'Mujeres Embarazadas';
 }
 
 function formatearEdad(fechaNacimiento: string | undefined): string {
@@ -324,7 +325,7 @@ export default function BeneficiariosPage() {
           </div>
 
           {/* Stats - Segunda fila: Clasificación por edad */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow p-4 border-l-4 border-pink-500">
               <div className="flex items-center justify-between">
                 <div>
@@ -359,6 +360,18 @@ export default function BeneficiariosPage() {
                   </p>
                 </div>
                 <Building className="w-8 h-8 text-blue-500" />
+              </div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4 border-l-4 border-rose-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Mujeres Embarazadas</p>
+                  <p className="text-xs text-gray-400 mb-1">Sin fecha de nacimiento</p>
+                  <p className="text-2xl font-bold text-rose-600">
+                    {beneficiarios.filter(b => b.activo && !b.fecha_nacimiento).length}
+                  </p>
+                </div>
+                <HeartPulse className="w-8 h-8 text-rose-500" />
               </div>
             </div>
           </div>
@@ -463,7 +476,7 @@ export default function BeneficiariosPage() {
                             'Supervivencia': 'bg-pink-100 text-pink-800 border-pink-200',
                             'Basado en Casa': 'bg-orange-100 text-orange-800 border-orange-200',
                             'Basado en Centro': 'bg-blue-100 text-blue-800 border-blue-200',
-                            'Sin clasificar': 'bg-gray-100 text-gray-800 border-gray-200'
+                            'Mujeres Embarazadas': 'bg-rose-100 text-rose-800 border-rose-200'
                           };
                           return (
                             <span className={`px-2 py-1 rounded-full text-xs font-medium border ${estilos[clasificacion]}`}>
