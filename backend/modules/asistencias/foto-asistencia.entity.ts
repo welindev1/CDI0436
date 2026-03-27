@@ -13,8 +13,8 @@ export class FotoAsistencia {
   @Column({ type: 'date' })
   fecha: Date;
 
-  @Column({ type: 'varchar', length: 500 })
-  imagen_url: string;
+  @Column({ type: 'text' })
+  imagen_url: string; // Ahora guarda Base64 en lugar de URL de archivo
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   nombre_original: string;

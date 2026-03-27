@@ -124,17 +124,12 @@ export const asistenciasApi = {
 
   // ===================== FOTOS DE ASISTENCIA =====================
 
-  // Subir foto de asistencia
-  subirFoto: async (claseId: string, fecha: string, foto: File): Promise<any> => {
-    const formData = new FormData();
-    formData.append('foto', foto);
-    formData.append('claseId', claseId);
-    formData.append('fecha', fecha);
-
-    const response = await apiClient.post('/asistencias/foto', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  // Subir foto de asistencia (Base64)
+  subirFoto: async (claseId: string, fecha: string, imagenBase64: string): Promise<any> => {
+    const response = await apiClient.post('/asistencias/foto', {
+      claseId,
+      fecha,
+      imagen: imagenBase64,
     });
     return response.data;
   },

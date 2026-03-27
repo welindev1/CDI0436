@@ -11,8 +11,6 @@ import { MarcarTodosDto } from './dto/marcar-todos.dto';
 import { JustificarMasivoDto } from './dto/justificar-masivo.dto';
 import { Clase } from '../clases/clase.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class AsistenciasService {
@@ -670,11 +668,11 @@ export class AsistenciasService {
 
   // ===================== FOTOS DE ASISTENCIA =====================
 
-  // Subir foto de asistencia
+  // Subir foto de asistencia (Base64)
   async subirFotoAsistencia(
     claseId: string,
     fecha: string,
-    file: Express.Multer.File
+    imagenBase64: string
   ): Promise<FotoAsistencia> {
     // Verificar que la clase existe
     const clase = await this.clasesRepository.findOne({
@@ -686,10 +684,9 @@ export class AsistenciasService {
     }
 
     // Crear fecha correctamente para evitar problemas de zona horaria
-    // Agregamos T12:00:00 para que quede en medio del día y no haya problemas de offset
     const fechaDate = new Date(`${fecha}T12:00:00`);
 
-    // Verificar si ya existe una foto para esta clase y fecha usando DATE() para comparar
+    // Verificar si ya existe una foto para esta clase y fecha
     const fotoExistente = await this.fotosAsistenciaRepository
       .createQueryBuilder('foto')
       .leftJoinAndSelect('foto.clase', 'clase')
@@ -697,35 +694,16 @@ export class AsistenciasService {
       .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
       .getOne();
 
-    // Si existe, eliminar el archivo anterior
+    // Si existe, eliminarla
     if (fotoExistente) {
-      const rutaAnterior = path.join(process.cwd(), fotoExistente.imagen_url);
-      if (fs.existsSync(rutaAnterior)) {
-        fs.unlinkSync(rutaAnterior);
-      }
       await this.fotosAsistenciaRepository.remove(fotoExistente);
     }
 
-    // Crear directorio si no existe
-    const uploadDir = path.join(process.cwd(), 'uploads', 'asistencias');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    // Generar nombre único para el archivo
-    const extension = path.extname(file.originalname);
-    const nombreArchivo = `${claseId}_${fecha}_${Date.now()}${extension}`;
-    const rutaArchivo = path.join(uploadDir, nombreArchivo);
-
-    // Guardar el archivo
-    fs.writeFileSync(rutaArchivo, file.buffer);
-
-    // Crear registro en la base de datos
+    // Crear registro en la base de datos con Base64
     const fotoAsistencia = this.fotosAsistenciaRepository.create({
       clase,
       fecha: fechaDate,
-      imagen_url: `uploads/asistencias/${nombreArchivo}`,
-      nombre_original: file.originalname
+      imagen_url: imagenBase64, // Guardamos el Base64 directamente
     });
 
     return await this.fotosAsistenciaRepository.save(fotoAsistencia);
@@ -751,12 +729,6 @@ export class AsistenciasService {
 
     if (!foto) {
       throw new NotFoundException(`Foto con ID ${id} no encontrada`);
-    }
-
-    // Eliminar archivo físico
-    const rutaArchivo = path.join(process.cwd(), foto.imagen_url);
-    if (fs.existsSync(rutaArchivo)) {
-      fs.unlinkSync(rutaArchivo);
     }
 
     await this.fotosAsistenciaRepository.remove(foto);
