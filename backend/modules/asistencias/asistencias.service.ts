@@ -685,15 +685,17 @@ export class AsistenciasService {
       throw new NotFoundException(`Clase con ID ${claseId} no encontrada`);
     }
 
-    const fechaDate = new Date(fecha);
+    // Crear fecha correctamente para evitar problemas de zona horaria
+    // Agregamos T12:00:00 para que quede en medio del día y no haya problemas de offset
+    const fechaDate = new Date(`${fecha}T12:00:00`);
 
-    // Verificar si ya existe una foto para esta clase y fecha
-    const fotoExistente = await this.fotosAsistenciaRepository.findOne({
-      where: {
-        clase: { id: claseId },
-        fecha: fechaDate
-      }
-    });
+    // Verificar si ya existe una foto para esta clase y fecha usando DATE() para comparar
+    const fotoExistente = await this.fotosAsistenciaRepository
+      .createQueryBuilder('foto')
+      .leftJoinAndSelect('foto.clase', 'clase')
+      .where('clase.id = :claseId', { claseId })
+      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
+      .getOne();
 
     // Si existe, eliminar el archivo anterior
     if (fotoExistente) {
@@ -731,14 +733,14 @@ export class AsistenciasService {
 
   // Obtener foto por clase y fecha
   async getFotoAsistencia(claseId: string, fecha: string): Promise<FotoAsistencia | null> {
-    const fechaDate = new Date(fecha);
-
-    return await this.fotosAsistenciaRepository.findOne({
-      where: {
-        clase: { id: claseId },
-        fecha: fechaDate
-      }
-    });
+    // Usar query builder para comparar solo la parte de la fecha (YYYY-MM-DD)
+    // Esto evita problemas de zona horaria
+    return await this.fotosAsistenciaRepository
+      .createQueryBuilder('foto')
+      .leftJoinAndSelect('foto.clase', 'clase')
+      .where('clase.id = :claseId', { claseId })
+      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
+      .getOne();
   }
 
   // Eliminar foto de asistencia
