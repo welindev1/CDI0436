@@ -3,6 +3,7 @@ import { AyudasService } from './ayudas.service';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
 import { CreateComentarioDto } from './dto/create-comentario.dto';
+import { UpdateFotoEntregaDto } from './dto/update-foto-entrega.dto';
 import type { Response } from 'express';
 
 @Controller('ayudas')
@@ -41,6 +42,11 @@ export class AyudasController {
   @Patch(':id/estado')
   updateEstado(@Param('id', ParseUUIDPipe) id: string, @Body() updateEstadoDto: UpdateEstadoAyudaDto) {
     return this.ayudasService.updateEstado(id, updateEstadoDto);
+  }
+
+  @Patch(':id/foto-entrega')
+  updateFotoEntrega(@Param('id', ParseUUIDPipe) id: string, @Body() updateFotoEntregaDto: UpdateFotoEntregaDto) {
+    return this.ayudasService.updateFotoEntrega(id, updateFotoEntregaDto);
   }
 
   @Delete(':id')

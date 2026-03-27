@@ -5,6 +5,7 @@ import { Ayuda, EstadoAyuda } from './ayuda.entity';
 import { ComentarioAyuda } from './comentario-ayuda.entity';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
+import { UpdateFotoEntregaDto } from './dto/update-foto-entrega.dto';
 import { CreateComentarioDto } from './dto/create-comentario.dto';
 import { WhatsappService } from './whatsapp.service';
 import { WebhookService } from './webhook.service';
@@ -65,6 +66,12 @@ export class AyudasService {
   async remove(id: string): Promise<void> {
     const ayuda = await this.findOne(id);
     await this.ayudasRepository.remove(ayuda);
+  }
+
+  async updateFotoEntrega(id: string, updateFotoEntregaDto: UpdateFotoEntregaDto): Promise<Ayuda> {
+    const ayuda = await this.findOne(id);
+    ayuda.foto_entrega_url = updateFotoEntregaDto.foto_entrega_url;
+    return await this.ayudasRepository.save(ayuda);
   }
 
   async exportarAExcel(): Promise<Buffer> {

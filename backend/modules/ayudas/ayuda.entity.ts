@@ -49,6 +49,9 @@ export class Ayuda {
   @Column({ type: 'text', nullable: true })
   foto_url: string;
 
+  @Column({ type: 'text', nullable: true })
+  foto_entrega_url: string;
+
   @Column({
     type: 'enum',
     enum: EstadoAyuda,
