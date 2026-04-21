@@ -109,14 +109,16 @@ export default function AsistenciasPage() {
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ClipboardCheck className="w-8 h-8 text-blue-600" />
-              Registro de Asistencias
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Selecciona una clase y fecha para registrar la asistencia
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <ClipboardCheck className="w-7 h-7 text-blue-600" />
+                Registro de Asistencias
+              </h1>
+              <p className="text-gray-500 mt-1 text-sm">
+                Selecciona una clase y luego la fecha para registrar asistencia
+              </p>
+            </div>
           </div>
 
           {/* Selector de clase y fecha */}
@@ -126,12 +128,12 @@ export default function AsistenciasPage() {
             initialFecha={selectedFecha || undefined}
           />
 
-          {/* Sección de foto - Solo mostrar cuando hay clase y fecha seleccionadas */}
+          {/* Sección de foto */}
           {selectedClase && selectedFecha && (
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <Camera className="w-4 h-4" />
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-blue-500" />
                   Foto del día
                 </h3>
 
@@ -174,9 +176,9 @@ export default function AsistenciasPage() {
 
               {/* Preview de la foto */}
               {foto && !loadingFoto && (
-                <div className="relative group">
+                <div className="relative group mx-5 my-4">
                   <div
-                    className="relative cursor-pointer overflow-hidden rounded-lg border border-gray-200"
+                    className="relative cursor-pointer overflow-hidden rounded-xl border border-gray-200"
                     onClick={() => setShowLightbox(true)}
                   >
                     <img
@@ -194,10 +196,7 @@ export default function AsistenciasPage() {
                   {/* Botones de acción */}
                   <div className="absolute top-2 right-2 flex gap-2">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                       disabled={uploadingFoto}
                       className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
                       title="Cambiar foto"
@@ -205,10 +204,7 @@ export default function AsistenciasPage() {
                       <Camera className="w-4 h-4 text-gray-600" />
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEliminarFoto();
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleEliminarFoto(); }}
                       className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
                       title="Eliminar foto"
                     >
@@ -220,9 +216,9 @@ export default function AsistenciasPage() {
 
               {/* Mensaje cuando no hay foto */}
               {!foto && !loadingFoto && !uploadingFoto && (
-                <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
-                  <Camera className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm">No hay foto para esta fecha</p>
+                <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl mx-5 mb-5">
+                  <Camera className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm font-medium">No hay foto para esta fecha</p>
                   <p className="text-xs text-gray-400 mt-1">Haz click en "Subir Foto" para agregar una</p>
                 </div>
               )}
@@ -240,15 +236,14 @@ export default function AsistenciasPage() {
             />
           )}
 
+          {/* Estado vacío */}
           {!selectedClase && (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <ClipboardCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Selecciona una clase y fecha
-              </h3>
-              <p className="text-gray-600">
-                Usa el selector de arriba para comenzar a registrar asistencias
-              </p>
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ClipboardCheck className="w-10 h-10 text-blue-300" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-1">Selecciona una clase</h3>
+              <p className="text-gray-400 text-sm">Elige la clase y la fecha para comenzar el registro de asistencia</p>
             </div>
           )}
         </div>

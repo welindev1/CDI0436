@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
-import EstadoBadge from './EstadoBadge';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
-import { EstadoAsistencia, Clase, Beneficiario } from '@/lib/types';
-import { Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search, MessageSquare, X } from 'lucide-react';
+import { EstadoAsistencia, Clase } from '@/lib/types';
+import {
+  Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search,
+  MessageSquare, X, Loader2
+} from 'lucide-react';
 
 interface RegistroAsistenciaProps {
   claseId: string;
@@ -15,48 +16,36 @@ interface RegistroAsistenciaProps {
   onSaved?: () => void;
 }
 
+const ESTADOS = [
+  { valor: EstadoAsistencia.PRESENTE,   label: 'Presente',    icon: CheckCircle,  bg: 'bg-green-100',  text: 'text-green-700',  ring: 'ring-green-500',  dot: 'bg-green-500' },
+  { valor: EstadoAsistencia.AUSENTE,    label: 'Ausente',     icon: XCircle,      bg: 'bg-red-100',    text: 'text-red-700',    ring: 'ring-red-500',    dot: 'bg-red-500' },
+  { valor: EstadoAsistencia.TARDE,      label: 'Tarde',       icon: Clock,        bg: 'bg-amber-100',  text: 'text-amber-700',  ring: 'ring-amber-500',  dot: 'bg-amber-500' },
+  { valor: EstadoAsistencia.JUSTIFICADO,label: 'Justificado', icon: AlertCircle,  bg: 'bg-blue-100',   text: 'text-blue-700',   ring: 'ring-blue-500',   dot: 'bg-blue-500' },
+];
+
 export default function RegistroAsistencia({ claseId, fecha, onSaved }: RegistroAsistenciaProps) {
   const [clase, setClase] = useState<Clase | null>(null);
-  const [asistencias, setAsistencias] = useState<Map<string, {
-    estado: EstadoAsistencia;
-    observaciones: string;
-  }>>(new Map());
+  const [asistencias, setAsistencias] = useState<Map<string, { estado: EstadoAsistencia; observaciones: string }>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [modalObservacion, setModalObservacion] = useState<{
-    nombre: string;
-    observacion: string;
-  } | null>(null);
+  const [modalObservacion, setModalObservacion] = useState<{ nombre: string; observacion: string } | null>(null);
 
-  useEffect(() => {
-    loadClaseYAsistencias();
-  }, [claseId, fecha]);
+  useEffect(() => { loadClaseYAsistencias(); }, [claseId, fecha]);
 
   const loadClaseYAsistencias = async () => {
     try {
       setIsLoading(true);
       setError('');
-
-      // Cargar clase con beneficiarios
       const claseData = await clasesApi.getById(claseId);
       setClase(claseData);
-
-      // Cargar asistencias existentes
       const asistenciasExistentes = await asistenciasApi.getByClaseYFecha(claseId, fecha);
-
-      // Mapear SOLO las asistencias que ya existen en BD
-      // Los beneficiarios sin registro NO se inicializan (quedan fuera del mapa)
-      const map = new Map();
+      const map = new Map<string, { estado: EstadoAsistencia; observaciones: string }>();
       asistenciasExistentes.forEach(a => {
-        map.set(a.beneficiario.id, {
-          estado: a.estado,
-          observaciones: a.observaciones || ''
-        });
+        map.set(a.beneficiario.id, { estado: a.estado, observaciones: a.observaciones || '' });
       });
-
       setAsistencias(map);
     } catch (err: any) {
       setError(err.message || 'Error al cargar datos');
@@ -67,33 +56,28 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
 
   const handleEstadoChange = (beneficiarioId: string, estado: EstadoAsistencia) => {
     setAsistencias(prev => {
-      const newMap = new Map(prev);
-      const current = newMap.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
-      newMap.set(beneficiarioId, { ...current, estado });
-      return newMap;
+      const m = new Map(prev);
+      const current = m.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
+      m.set(beneficiarioId, { ...current, estado });
+      return m;
     });
   };
 
   const handleObservacionesChange = (beneficiarioId: string, observaciones: string) => {
     setAsistencias(prev => {
-      const newMap = new Map(prev);
-      const current = newMap.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
-      newMap.set(beneficiarioId, { ...current, observaciones });
-      return newMap;
+      const m = new Map(prev);
+      const current = m.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
+      m.set(beneficiarioId, { ...current, observaciones });
+      return m;
     });
   };
 
   const handleMarcarTodos = async (estado: EstadoAsistencia) => {
     if (!confirm(`¿Marcar a todos como ${estado}?`)) return;
-
     try {
       setIsSaving(true);
       setError('');
-      await asistenciasApi.marcarTodos({
-        claseId,
-        fecha,
-        estado
-      });
+      await asistenciasApi.marcarTodos({ claseId, fecha, estado });
       setSuccess(`Todos marcados como ${estado}`);
       loadClaseYAsistencias();
     } catch (err: any) {
@@ -108,26 +92,17 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       setIsSaving(true);
       setError('');
       setSuccess('');
-
-      // Solo guardar los beneficiarios que tienen un estado seleccionado
       const asistenciasArray = Array.from(asistencias.entries()).map(([beneficiarioId, data]) => ({
         beneficiarioId,
         estado: data.estado,
-        observaciones: data.observaciones || undefined
+        observaciones: data.observaciones || undefined,
       }));
-
       if (asistenciasArray.length === 0) {
         setError('Debes marcar al menos un beneficiario antes de guardar');
         setIsSaving(false);
         return;
       }
-
-      await asistenciasApi.registrarAsistenciaMasiva({
-        claseId,
-        fecha,
-        asistencias: asistenciasArray
-      });
-
+      await asistenciasApi.registrarAsistenciaMasiva({ claseId, fecha, asistencias: asistenciasArray });
       setSuccess('Asistencias guardadas correctamente');
       if (onSaved) onSaved();
     } catch (err: any) {
@@ -137,295 +112,216 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
     }
   };
 
-  const getEstadisticas = () => {
-    const stats = {
-      total: clase?.beneficiarios?.length || 0,
-      sinMarcar: 0,
-      presentes: 0,
-      ausentes: 0,
-      justificados: 0,
-      tardes: 0
-    };
-
-    stats.sinMarcar = stats.total - asistencias.size;
-
+  const getStats = () => {
+    const total = clase?.beneficiarios?.length || 0;
+    let presentes = 0, ausentes = 0, tardos = 0, justificados = 0;
     asistencias.forEach(({ estado }) => {
-      if (estado === EstadoAsistencia.PRESENTE) stats.presentes++;
-      else if (estado === EstadoAsistencia.AUSENTE) stats.ausentes++;
-      else if (estado === EstadoAsistencia.JUSTIFICADO) stats.justificados++;
-      else if (estado === EstadoAsistencia.TARDE) stats.tardes++;
+      if (estado === EstadoAsistencia.PRESENTE) presentes++;
+      else if (estado === EstadoAsistencia.AUSENTE) ausentes++;
+      else if (estado === EstadoAsistencia.TARDE) tardos++;
+      else if (estado === EstadoAsistencia.JUSTIFICADO) justificados++;
     });
-
-    return stats;
+    return { total, sinMarcar: total - asistencias.size, presentes, ausentes, tardes: tardos, justificados };
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl border border-gray-100">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-3" />
+        <p className="text-gray-500 text-sm">Cargando lista de asistencia...</p>
       </div>
     );
   }
 
   if (!clase) {
-    return (
-      <Alert variant="error">
-        No se pudo cargar la clase
-      </Alert>
-    );
+    return <Alert variant="error">No se pudo cargar la clase</Alert>;
   }
 
-  const stats = getEstadisticas();
+  const stats = getStats();
+  const fechaFormateada = new Date(fecha + 'T12:00:00').toLocaleDateString('es-DO', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
+  const beneficiariosFiltrados = (clase.beneficiarios || []).filter(b => {
+    if (!searchTerm.trim()) return true;
+    const t = searchTerm.toLowerCase();
+    return (
+      b.nombre?.toLowerCase().includes(t) ||
+      b.apellido?.toLowerCase().includes(t) ||
+      b.codigo?.toLowerCase().includes(t) ||
+      `${b.nombre} ${b.apellido}`.toLowerCase().includes(t)
+    );
+  });
 
   return (
-    <div className="space-y-6">
-      {/* Header con info de la clase */}
-      <div className="bg-white rounded-lg shadow p-6">
+    <div className="space-y-5">
+      {/* ── Header de clase ───────────────────────────────────── */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{clase.nombre}</h2>
-            {clase.codigo && (
-              <p className="text-sm text-gray-500 mt-1">Código: {clase.codigo}</p>
-            )}
-            <div className="mt-2 flex items-center gap-4 text-sm text-gray-600">
-              <span>Tutor: {clase.tutor?.nombre} {clase.tutor?.apellido}</span>
-              <span>•</span>
-              <span>Fecha: {new Date(fecha).toLocaleDateString('es-DO', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}</span>
-            </div>
+            <h2 className="text-xl font-bold">{clase.nombre}</h2>
+            {clase.codigo && <span className="text-blue-200 text-xs">{clase.codigo}</span>}
+            <p className="text-blue-100 text-sm mt-1">
+              {clase.tutor ? `${clase.tutor.nombre} ${clase.tutor.apellido ?? ''}`.trim() : 'Sin tutor'}
+            </p>
+            <p className="text-blue-200 text-xs mt-1 capitalize">{fechaFormateada}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-gray-400" />
-            <span className="text-2xl font-bold text-gray-900">{stats.total}</span>
+          <div className="text-right">
+            <p className="text-4xl font-black">{stats.total}</p>
+            <p className="text-blue-200 text-xs">beneficiarios</p>
           </div>
         </div>
+
+        {/* Barra de progreso */}
+        {stats.total > 0 && (
+          <div className="mt-4">
+            <div className="flex h-2 rounded-full overflow-hidden bg-blue-800/50 gap-px">
+              <div className="bg-green-400 transition-all" style={{ width: `${(stats.presentes / stats.total) * 100}%` }} />
+              <div className="bg-red-400 transition-all" style={{ width: `${(stats.ausentes / stats.total) * 100}%` }} />
+              <div className="bg-amber-400 transition-all" style={{ width: `${(stats.tardes / stats.total) * 100}%` }} />
+              <div className="bg-sky-400 transition-all" style={{ width: `${(stats.justificados / stats.total) * 100}%` }} />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+      {/* ── Stats ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: 'Sin marcar', value: stats.sinMarcar, bg: 'bg-gray-50',   text: 'text-gray-700',   border: 'border-gray-200',  icon: <Users className="w-5 h-5 text-gray-400" /> },
+          { label: 'Presentes',  value: stats.presentes, bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200', icon: <CheckCircle className="w-5 h-5 text-green-500" /> },
+          { label: 'Ausentes',   value: stats.ausentes,  bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',   icon: <XCircle className="w-5 h-5 text-red-500" /> },
+          { label: 'Tardes',     value: stats.tardes,    bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200', icon: <Clock className="w-5 h-5 text-amber-500" /> },
+          { label: 'Justificados',value: stats.justificados, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200',  icon: <AlertCircle className="w-5 h-5 text-blue-500" /> },
+        ].map(s => (
+          <div key={s.label} className={`${s.bg} border ${s.border} rounded-xl p-3 flex items-center justify-between`}>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Sin Marcar</p>
-              <p className="text-2xl font-bold text-gray-600">{stats.sinMarcar}</p>
+              <p className="text-[11px] font-medium text-gray-500">{s.label}</p>
+              <p className={`text-2xl font-bold ${s.text}`}>{s.value}</p>
             </div>
-            <Users className="w-8 h-8 text-gray-400" />
+            {s.icon}
           </div>
-        </div>
-
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-green-600 font-medium">Presentes</p>
-              <p className="text-2xl font-bold text-green-700">{stats.presentes}</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-red-600 font-medium">Ausentes</p>
-              <p className="text-2xl font-bold text-red-700">{stats.ausentes}</p>
-            </div>
-            <XCircle className="w-8 h-8 text-red-500" />
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-yellow-600 font-medium">Tardes</p>
-              <p className="text-2xl font-bold text-yellow-700">{stats.tardes}</p>
-            </div>
-            <Clock className="w-8 h-8 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-blue-600 font-medium">Justificados</p>
-              <p className="text-2xl font-bold text-blue-700">{stats.justificados}</p>
-            </div>
-            <AlertCircle className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Acciones rápidas */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Acciones Rápidas</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleMarcarTodos(EstadoAsistencia.PRESENTE)}
-            disabled={isSaving}
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Marcar Todos Presentes
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleMarcarTodos(EstadoAsistencia.AUSENTE)}
-            disabled={isSaving}
-          >
-            <XCircle className="w-4 h-4 mr-2" />
-            Marcar Todos Ausentes
-          </Button>
-        </div>
+      {/* ── Acciones rápidas ──────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-2">Marcar todos:</span>
+        {ESTADOS.map(e => {
+          const Icon = e.icon;
+          return (
+            <button
+              key={e.valor}
+              onClick={() => handleMarcarTodos(e.valor)}
+              disabled={isSaving}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border
+                ${e.bg} ${e.text} border-transparent hover:ring-2 hover:${e.ring} disabled:opacity-50`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {e.label}
+            </button>
+          );
+        })}
       </div>
 
-      {error && (
-        <Alert variant="error">
-          {error}
-        </Alert>
-      )}
+      {error && <Alert variant="error">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
 
-      {success && (
-        <Alert variant="success">
-          {success}
-        </Alert>
-      )}
-
-      {/* Lista de beneficiarios */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* ── Lista de beneficiarios ────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
         {/* Buscador */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-100">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar beneficiario por nombre, apellido o código..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
+
+        {/* Tabla */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Beneficiario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Observaciones
-                </th>
+          <table className="min-w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Beneficiario</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Estado</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Observaciones</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {clase.beneficiarios?.filter((b) => {
-                if (!searchTerm.trim()) return true;
-                const term = searchTerm.toLowerCase();
-                return (
-                  b.nombre?.toLowerCase().includes(term) ||
-                  b.apellido?.toLowerCase().includes(term) ||
-                  b.codigo?.toLowerCase().includes(term) ||
-                  `${b.nombre} ${b.apellido}`.toLowerCase().includes(term)
-                );
-              }).map((beneficiario, index) => {
-                const asistencia = asistencias.get(beneficiario.id);
+            <tbody className="divide-y divide-gray-50">
+              {beneficiariosFiltrados.map((b, idx) => {
+                const asistencia = asistencias.get(b.id);
                 const estadoActual = asistencia?.estado ?? null;
+                const estadoInfo = ESTADOS.find(e => e.valor === estadoActual);
 
                 return (
-                  <tr key={beneficiario.id} className={`hover:bg-gray-50 ${estadoActual === null ? 'bg-amber-50/30' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {index + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {beneficiario.nombre} {beneficiario.apellido}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {beneficiario.codigo}
-                        </p>
+                  <tr
+                    key={b.id}
+                    className={`transition-colors ${estadoActual === null ? 'bg-amber-50/40' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-5 py-3 text-sm text-gray-400 font-medium">{idx + 1}</td>
+
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          {b.nombre?.charAt(0)}{b.apellido?.charAt(0) ?? ''}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {b.nombre} {b.apellido}
+                          </p>
+                          <p className="text-xs text-gray-400">{b.codigo}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2 items-center">
+
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-1.5">
                         {estadoActual === null && (
-                          <span className="text-xs text-amber-600 font-medium mr-1">Sin marcar</span>
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 mr-1">
+                            Sin marcar
+                          </span>
                         )}
-                        <button
-                          onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.PRESENTE)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            estadoActual === EstadoAsistencia.PRESENTE
-                              ? 'bg-green-100 text-green-700 ring-2 ring-green-500'
-                              : 'bg-gray-100 text-gray-500 hover:bg-green-50'
-                          }`}
-                          title="Presente"
-                        >
-                          <CheckCircle className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.AUSENTE)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            estadoActual === EstadoAsistencia.AUSENTE
-                              ? 'bg-red-100 text-red-700 ring-2 ring-red-500'
-                              : 'bg-gray-100 text-gray-500 hover:bg-red-50'
-                          }`}
-                          title="Ausente"
-                        >
-                          <XCircle className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.TARDE)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            estadoActual === EstadoAsistencia.TARDE
-                              ? 'bg-yellow-100 text-yellow-700 ring-2 ring-yellow-500'
-                              : 'bg-gray-100 text-gray-500 hover:bg-yellow-50'
-                          }`}
-                          title="Tarde"
-                        >
-                          <Clock className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleEstadoChange(beneficiario.id, EstadoAsistencia.JUSTIFICADO)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            estadoActual === EstadoAsistencia.JUSTIFICADO
-                              ? 'bg-blue-100 text-blue-700 ring-2 ring-blue-500'
-                              : 'bg-gray-100 text-gray-500 hover:bg-blue-50'
-                          }`}
-                          title="Justificado"
-                        >
-                          <AlertCircle className="w-5 h-5" />
-                        </button>
+                        {ESTADOS.map(e => {
+                          const Icon = e.icon;
+                          const activo = estadoActual === e.valor;
+                          return (
+                            <button
+                              key={e.valor}
+                              onClick={() => handleEstadoChange(b.id, e.valor)}
+                              title={e.label}
+                              className={`p-2 rounded-lg transition-all
+                                ${activo
+                                  ? `${e.bg} ${e.text} ring-2 ${e.ring} shadow-sm`
+                                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+
+                    <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
                           value={asistencia?.observaciones ?? ''}
-                          onChange={(e) => handleObservacionesChange(beneficiario.id, e.target.value)}
+                          onChange={e => handleObservacionesChange(b.id, e.target.value)}
                           placeholder="Observaciones..."
-                          className="w-full px-3 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                         />
                         {asistencia?.observaciones && asistencia.observaciones.length > 0 && (
                           <button
-                            type="button"
-                            onClick={() => setModalObservacion({
-                              nombre: `${beneficiario.nombre} ${beneficiario.apellido}`,
-                              observacion: asistencia.observaciones
-                            })}
+                            onClick={() => setModalObservacion({ nombre: `${b.nombre} ${b.apellido}`, observacion: asistencia.observaciones })}
                             className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex-shrink-0"
-                            title="Ver observación completa"
                           >
                             <MessageSquare className="w-4 h-4" />
                           </button>
@@ -435,53 +331,56 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
                   </tr>
                 );
               })}
+
+              {beneficiariosFiltrados.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-12 text-center text-gray-400 text-sm">
+                    No se encontraron beneficiarios
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Botón guardar */}
+      {/* ── Botón guardar ─────────────────────────────────────── */}
       <div className="flex justify-end">
-        <Button
+        <button
           onClick={handleGuardar}
-          isLoading={isSaving}
-          size="lg"
-          className="min-w-[200px]"
+          disabled={isSaving}
+          className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors shadow-sm text-sm"
         >
-          <Save className="w-5 h-5 mr-2" />
-          Guardar Asistencias
-        </Button>
+          {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+          {isSaving ? 'Guardando...' : 'Guardar Asistencias'}
+        </button>
       </div>
 
-      {/* Modal de observación */}
+      {/* ── Modal de observación ──────────────────────────────── */}
       {modalObservacion && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Observación</h3>
-                <p className="text-sm text-gray-500">{modalObservacion.nombre}</p>
+                <h3 className="font-bold text-gray-900">Observación</h3>
+                <p className="text-xs text-gray-400">{modalObservacion.nombre}</p>
               </div>
-              <button
-                onClick={() => setModalObservacion(null)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              >
+              <button onClick={() => setModalObservacion(null)} className="p-2 hover:bg-gray-100 rounded-lg">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-6">
               <p className="text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
                 {modalObservacion.observacion}
               </p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <Button
-                variant="outline"
+            <div className="px-6 pb-5">
+              <button
                 onClick={() => setModalObservacion(null)}
-                className="w-full"
+                className="w-full py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
               >
                 Cerrar
-              </Button>
+              </button>
             </div>
           </div>
         </div>
