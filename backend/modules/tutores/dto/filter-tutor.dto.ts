@@ -1,4 +1,5 @@
 import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class FilterTutorDto {
   @IsOptional()
@@ -10,6 +11,11 @@ export class FilterTutorDto {
   correo?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   @IsBoolean()
   activo?: boolean;
 
