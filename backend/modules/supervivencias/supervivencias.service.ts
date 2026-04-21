@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between } from 'typeorm';
 import { Supervivencia } from './supervivencia.entity';
 import { AsistenciaSupervivencia } from './asistencia-supervivencia.entity';
+import { FotoAsistenciaSupervivencia } from './foto-asistencia-supervivencia.entity';
 import { CreateSupervivenciaDto } from './dto/create-supervivencia.dto';
 import { UpdateSupervivenciaDto } from './dto/update-supervivencia.dto';
 import { FilterSupervivenciaDto } from './dto/filter-supervivencia.dto';
@@ -20,6 +21,8 @@ export class SupervivenciasService {
     private beneficiariosRepository: Repository<Beneficiario>,
     @InjectRepository(AsistenciaSupervivencia)
     private asistenciasRepository: Repository<AsistenciaSupervivencia>,
+    @InjectRepository(FotoAsistenciaSupervivencia)
+    private fotosRepository: Repository<FotoAsistenciaSupervivencia>,
     @InjectRepository(Tutor)
     private tutoresRepository: Repository<Tutor>,
   ) {}
@@ -423,5 +426,65 @@ export class SupervivenciasService {
       .getRawMany();
 
     return result.map(r => r.fecha);
+  }
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  async subirFotoAsistencia(
+    supervivenciaId: string,
+    fecha: string,
+    imagenBase64: string
+  ): Promise<FotoAsistenciaSupervivencia> {
+    const supervivencia = await this.supervivenciasRepository.findOne({
+      where: { id: supervivenciaId }
+    });
+
+    if (!supervivencia) {
+      throw new NotFoundException(`Curso de supervivencia con ID ${supervivenciaId} no encontrado`);
+    }
+
+    const fechaDate = new Date(`${fecha}T12:00:00`);
+
+    // Si ya existe una foto para esta fecha, eliminarla
+    const fotoExistente = await this.fotosRepository
+      .createQueryBuilder('foto')
+      .leftJoinAndSelect('foto.supervivencia', 'supervivencia')
+      .where('supervivencia.id = :supervivenciaId', { supervivenciaId })
+      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
+      .getOne();
+
+    if (fotoExistente) {
+      await this.fotosRepository.remove(fotoExistente);
+    }
+
+    const foto = this.fotosRepository.create({
+      supervivencia,
+      fecha: fechaDate,
+      imagen_url: imagenBase64,
+    });
+
+    return await this.fotosRepository.save(foto);
+  }
+
+  async getFotoAsistencia(
+    supervivenciaId: string,
+    fecha: string
+  ): Promise<FotoAsistenciaSupervivencia | null> {
+    return await this.fotosRepository
+      .createQueryBuilder('foto')
+      .leftJoinAndSelect('foto.supervivencia', 'supervivencia')
+      .where('supervivencia.id = :supervivenciaId', { supervivenciaId })
+      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
+      .getOne();
+  }
+
+  async eliminarFotoAsistencia(id: string): Promise<void> {
+    const foto = await this.fotosRepository.findOne({ where: { id } });
+
+    if (!foto) {
+      throw new NotFoundException(`Foto con ID ${id} no encontrada`);
+    }
+
+    await this.fotosRepository.remove(foto);
   }
 }

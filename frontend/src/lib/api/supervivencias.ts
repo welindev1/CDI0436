@@ -92,4 +92,23 @@ export const supervivenciasApi = {
     const response = await apiClient.get(`/supervivencias/${id}/asistencias/fechas`);
     return response.data;
   },
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  subirFoto: async (supervivenciaId: string, fecha: string, imagenBase64: string): Promise<any> => {
+    const response = await apiClient.post(`/supervivencias/${supervivenciaId}/asistencias/foto`, {
+      fecha,
+      imagen: imagenBase64,
+    });
+    return response.data;
+  },
+
+  getFoto: async (supervivenciaId: string, fecha: string): Promise<any> => {
+    const response = await apiClient.get(`/supervivencias/${supervivenciaId}/asistencias/foto/${fecha}`);
+    return response.data;
+  },
+
+  eliminarFoto: async (supervivenciaId: string, fotoId: string): Promise<void> => {
+    await apiClient.delete(`/supervivencias/${supervivenciaId}/asistencias/foto/${fotoId}`);
+  },
 };

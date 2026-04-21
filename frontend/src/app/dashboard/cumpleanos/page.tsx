@@ -175,6 +175,9 @@ export default function CumpleanosPage() {
                         Código
                       </th>
                       <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
+                        Edad Actual
+                      </th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
                         Cumple
                       </th>
                       <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase">
@@ -226,6 +229,11 @@ export default function CumpleanosPage() {
                           {item.codigo}
                         </td>
                         <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+                            {item.edad} años
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
                             {item.edad + 1} años
                           </span>
@@ -261,7 +269,8 @@ export default function CumpleanosPage() {
                   <li>• Los cumpleaños están ordenados por día del mes</li>
                   <li>• El mes actual está resaltado en el selector</li>
                   <li>• Los cumpleaños de hoy se muestran con un fondo especial</li>
-                  <li>• La edad mostrada es la que cumplirán en esa fecha</li>
+                  <li>• <strong>Edad Actual</strong>: años que el beneficiario tiene hoy</li>
+                  <li>• <strong>Cumple</strong>: edad que cumplirá en su próximo cumpleaños</li>
                 </ul>
               </div>
             </div>

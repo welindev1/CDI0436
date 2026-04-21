@@ -9,7 +9,8 @@ import {
   Query,
   ParseUUIDPipe,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { SupervivenciasService } from './supervivencias.service';
 import { CreateSupervivenciaDto } from './dto/create-supervivencia.dto';
@@ -114,5 +115,37 @@ export class SupervivenciasController {
   @Get(':id/asistencias/fechas')
   getFechasConAsistencia(@Param('id', ParseUUIDPipe) id: string) {
     return this.supervivenciasService.getFechasConAsistencia(id);
+  }
+
+  // ===================== FOTOS DE ASISTENCIA =====================
+
+  @Post(':id/asistencias/foto')
+  @HttpCode(HttpStatus.CREATED)
+  async subirFotoAsistencia(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('fecha') fecha: string,
+    @Body('imagen') imagen: string,
+  ) {
+    if (!imagen) throw new BadRequestException('No se proporcionó ninguna imagen');
+    if (!fecha) throw new BadRequestException('Debe proporcionar la fecha');
+    if (!imagen.startsWith('data:image/')) throw new BadRequestException('Formato de imagen inválido. Debe ser Base64');
+
+    return this.supervivenciasService.subirFotoAsistencia(id, fecha, imagen);
+  }
+
+  @Get(':id/asistencias/foto/:fecha')
+  async getFotoAsistencia(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('fecha') fecha: string,
+  ) {
+    return this.supervivenciasService.getFotoAsistencia(id, fecha);
+  }
+
+  @Delete(':id/asistencias/foto/:fotoId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async eliminarFotoAsistencia(
+    @Param('fotoId', ParseUUIDPipe) fotoId: string,
+  ) {
+    return this.supervivenciasService.eliminarFotoAsistencia(fotoId);
   }
 }
