@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Supervivencia, AsistenciaSupervivenciaResponse } from '@/lib/types';
 import {
   ArrowLeft,
-  Edit,
   UserPlus,
   Users,
   Trash2,
@@ -24,7 +23,10 @@ import {
   Check,
   X,
   Clock,
-  Save
+  Save,
+  Camera,
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 type TabType = 'beneficiarios' | 'asistencia';
@@ -57,6 +59,13 @@ export default function SupervivenciaDetallePage() {
   const [savingAsistencia, setSavingAsistencia] = useState(false);
   const [fechasConAsistencia, setFechasConAsistencia] = useState<string[]>([]);
 
+  // Foto del día
+  const [foto, setFoto] = useState<any>(null);
+  const [loadingFoto, setLoadingFoto] = useState(false);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Verificar permisos para editar
   const puedeEditar = tienePermiso('supervivencia:editar');
 
@@ -68,6 +77,9 @@ export default function SupervivenciaDetallePage() {
   useEffect(() => {
     if (activeTab === 'asistencia' && supervivencia) {
       loadAsistenciasPorFecha();
+      cargarFoto();
+    } else {
+      setFoto(null);
     }
   }, [activeTab, fechaAsistencia, supervivencia]);
 
@@ -155,6 +167,56 @@ export default function SupervivenciaDetallePage() {
     setAsistenciasLocales(prev =>
       prev.map(a => ({ ...a, presente }))
     );
+  };
+
+  const cargarFoto = async () => {
+    if (!supervivenciaId || !fechaAsistencia) return;
+    try {
+      setLoadingFoto(true);
+      const data = await supervivenciasApi.getFoto(supervivenciaId, fechaAsistencia);
+      setFoto(data);
+    } catch (err: any) {
+      if (err.response?.status !== 404) console.error('Error al cargar foto:', err);
+      setFoto(null);
+    } finally {
+      setLoadingFoto(false);
+    }
+  };
+
+  const handleSubirFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Por favor selecciona una imagen válida'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('La imagen no puede ser mayor a 5MB'); return; }
+    try {
+      setUploadingFoto(true);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await supervivenciasApi.subirFoto(supervivenciaId, fechaAsistencia, base64);
+      await cargarFoto();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al subir la foto');
+    } finally {
+      setUploadingFoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEliminarFoto = async () => {
+    if (!foto?.id || !confirm('¿Estás seguro de eliminar esta foto?')) return;
+    try {
+      setLoadingFoto(true);
+      await supervivenciasApi.eliminarFoto(supervivenciaId, foto.id);
+      setFoto(null);
+    } catch {
+      alert('Error al eliminar la foto');
+    } finally {
+      setLoadingFoto(false);
+    }
   };
 
   const handleAgregarBeneficiarios = async (beneficiarioIds: string[]) => {
@@ -519,6 +581,85 @@ export default function SupervivenciaDetallePage() {
                 </div>
               </div>
 
+              {/* Foto del día */}
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Foto del día
+                  </h3>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleSubirFoto}
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                  />
+                  {!foto && !loadingFoto && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFoto}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingFoto ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Subiendo...</>
+                      ) : (
+                        <><Upload className="w-4 h-4" />Subir Foto</>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {loadingFoto && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+                  </div>
+                )}
+
+                {foto && !loadingFoto && (
+                  <div className="relative group">
+                    <div
+                      className="relative cursor-pointer overflow-hidden rounded-lg border border-gray-200"
+                      onClick={() => setShowLightbox(true)}
+                    >
+                      <img
+                        src={foto.imagen_url}
+                        alt="Foto de asistencia"
+                        className="w-full max-h-40 object-cover hover:opacity-90 transition-opacity"
+                      />
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">Click para ampliar</span>
+                      </div>
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        disabled={uploadingFoto}
+                        className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                        title="Cambiar foto"
+                      >
+                        <Camera className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleEliminarFoto(); }}
+                        className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!foto && !loadingFoto && !uploadingFoto && (
+                  <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                    <Camera className="w-8 h-8 mx-auto mb-1 text-gray-400" />
+                    <p className="text-sm">No hay foto para esta fecha</p>
+                    <p className="text-xs text-gray-400 mt-1">Haz click en "Subir Foto" para agregar una</p>
+                  </div>
+                )}
+              </div>
+
               {/* Estadísticas rápidas */}
               {asistenciasData && (
                 <div className="px-6 py-3 bg-gray-50 border-b flex items-center gap-6 text-sm">
@@ -648,6 +789,27 @@ export default function SupervivenciaDetallePage() {
             </div>
           </div>
         </Modal>
+
+        {/* Lightbox foto */}
+        {showLightbox && foto && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowLightbox(false)}
+          >
+            <button
+              onClick={() => setShowLightbox(false)}
+              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            <img
+              src={foto.imagen_url}
+              alt="Foto de asistencia"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );
