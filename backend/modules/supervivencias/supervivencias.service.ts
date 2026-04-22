@@ -55,6 +55,7 @@ export class SupervivenciasService {
   async findAll(filters?: FilterSupervivenciaDto): Promise<Supervivencia[]> {
     const query = this.supervivenciasRepository.createQueryBuilder('supervivencia')
       .leftJoinAndSelect('supervivencia.beneficiarios', 'beneficiarios')
+      .leftJoinAndSelect('supervivencia.tutor', 'tutor')
       .orderBy('supervivencia.nombre', 'ASC');
 
     if (filters) {
@@ -77,7 +78,7 @@ export class SupervivenciasService {
   async findOne(id: string): Promise<Supervivencia> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -90,7 +91,7 @@ export class SupervivenciasService {
   async findByCodigo(codigo: string): Promise<Supervivencia> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { codigo },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -134,7 +135,7 @@ export class SupervivenciasService {
   async remove(id: string): Promise<void> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -161,7 +162,7 @@ export class SupervivenciasService {
   async agregarBeneficiarios(id: string, agregarBeneficiariosDto: AgregarBeneficiariosSupervivenciaDto): Promise<Supervivencia> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -205,7 +206,7 @@ export class SupervivenciasService {
   async removerBeneficiario(id: string, beneficiarioId: string): Promise<Supervivencia> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -220,7 +221,7 @@ export class SupervivenciasService {
   async getEstadisticas(id: string): Promise<any> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -255,7 +256,7 @@ export class SupervivenciasService {
   async registrarAsistencia(id: string, registrarAsistenciaDto: RegistrarAsistenciaSupervivenciaDto): Promise<AsistenciaSupervivencia[]> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
@@ -311,7 +312,7 @@ export class SupervivenciasService {
   async getAsistenciasPorFecha(id: string, fecha: string): Promise<any> {
     const supervivencia = await this.supervivenciasRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios', 'tutor']
     });
 
     if (!supervivencia) {
