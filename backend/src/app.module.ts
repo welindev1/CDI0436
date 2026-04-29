@@ -13,6 +13,8 @@ import { Beneficiario } from '../modules/beneficiarios/beneficiario.entity';
 import { Rol } from '../modules/roles/entities/rol.entity';
 import { Permiso } from '../modules/roles/entities/permiso.entity';
 import { Supervivencia } from '../modules/supervivencias/supervivencia.entity';
+import { AsistenciaSupervivencia } from '../modules/supervivencias/asistencia-supervivencia.entity';
+import { FotoAsistenciaSupervivencia } from '../modules/supervivencias/foto-asistencia-supervivencia.entity';
 import { MenuNutricion } from '../modules/nutricion/menu-nutricion.entity';
 
 // Importar módulos
@@ -50,6 +52,8 @@ import { NutricionModule } from '../modules/nutricion/nutricion.module';
           Rol,
           Permiso,
           Supervivencia,
+          AsistenciaSupervivencia,
+          FotoAsistenciaSupervivencia,
           MenuNutricion,
         ],
         synchronize: true,
