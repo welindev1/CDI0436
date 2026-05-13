@@ -10,12 +10,15 @@ import { Clase } from '../modules/clases/clase.entity';
 import { Asistencia } from '../modules/asistencias/asistencia.entity';
 import { Reporte } from '../modules/reportes/reporte.entity';
 import { Beneficiario } from '../modules/beneficiarios/beneficiario.entity';
+import { BeneficiarioExpediente } from '../modules/beneficiarios/beneficiario-expediente.entity';
 import { Rol } from '../modules/roles/entities/rol.entity';
 import { Permiso } from '../modules/roles/entities/permiso.entity';
 import { Supervivencia } from '../modules/supervivencias/supervivencia.entity';
 import { AsistenciaSupervivencia } from '../modules/supervivencias/asistencia-supervivencia.entity';
 import { FotoAsistenciaSupervivencia } from '../modules/supervivencias/foto-asistencia-supervivencia.entity';
 import { MenuNutricion } from '../modules/nutricion/menu-nutricion.entity';
+import { PeriodoMerito } from '../modules/merito/periodo-merito.entity';
+import { NotaMerito } from '../modules/merito/nota-merito.entity';
 
 // Importar módulos
 import { AuthModule } from '../modules/auth/auth.module';
@@ -29,6 +32,7 @@ import { AyudasModule } from '../modules/ayudas/ayudas.module';
 import { RolesModule } from '../modules/roles/roles.module';
 import { SupervivenciasModule } from '../modules/supervivencias/supervivencias.module';
 import { NutricionModule } from '../modules/nutricion/nutricion.module';
+import { MeritoModule } from '../modules/merito/merito.module';
 
 @Module({
   imports: [
@@ -46,6 +50,7 @@ import { NutricionModule } from '../modules/nutricion/nutricion.module';
           Tutor,
           Horario,
           Beneficiario,
+          BeneficiarioExpediente,
           Clase,
           Asistencia,
           Reporte,
@@ -55,6 +60,8 @@ import { NutricionModule } from '../modules/nutricion/nutricion.module';
           AsistenciaSupervivencia,
           FotoAsistenciaSupervivencia,
           MenuNutricion,
+          PeriodoMerito,
+          NotaMerito,
         ],
         synchronize: true,
         ssl: {
@@ -78,6 +85,7 @@ import { NutricionModule } from '../modules/nutricion/nutricion.module';
     AyudasModule,
     SupervivenciasModule,
     NutricionModule,
+    MeritoModule,
   ],
 })
 export class AppModule {}

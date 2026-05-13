@@ -10,7 +10,7 @@ import { FileDown, FileSpreadsheet, Calendar } from 'lucide-react';
 
 interface FiltrosReporteProps {
   tipoReporte: 'clase' | 'beneficiario';
-  onGenerar: (filtros: any, formato: 'pdf' | 'excel') => void;
+  onGenerar: (filtros: any) => void;
   isLoading?: boolean;
 }
 
@@ -58,7 +58,7 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
     }));
   };
 
-  const handleGenerar = (formato: 'pdf' | 'excel') => {
+  const handleGenerar = () => {
     if (!filtros.id) {
       alert(`Por favor selecciona ${tipoReporte === 'clase' ? 'una clase' : 'un beneficiario'}`);
       return;
@@ -105,7 +105,7 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
       fechaFin,
       fechaReporte, // Fecha para mostrar en el reporte
     };
-    onGenerar(filtrosConFecha, formato);
+    onGenerar(filtrosConFecha);
   };
 
   const tipoFiltroOpciones = [
@@ -186,21 +186,12 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
 
       <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
         <Button
-          onClick={() => handleGenerar('pdf')}
+          onClick={() => handleGenerar()}
           disabled={isLoading || !filtros.id}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 px-8"
         >
-          <FileDown className="w-4 h-4" />
-          Exportar PDF
-        </Button>
-        <Button
-          onClick={() => handleGenerar('excel')}
-          disabled={isLoading || !filtros.id}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          Exportar Excel
+          <Calendar className="w-4 h-4" />
+          Ver Reporte
         </Button>
       </div>
     </div>

@@ -29,22 +29,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   // Verificar token al cargar — soporta localStorage y sessionStorage (Recordarme)
+  // Estrategia: cargar del cache de inmediato (UI visible al instante),
+  // luego validar el token con el backend en segundo plano.
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token =
           localStorage.getItem('token') || sessionStorage.getItem('token');
-        if (token) {
+
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+
+        // 1️⃣ Cargar del cache para mostrar la UI de inmediato
+        const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+        const cachedUser = storage.getItem('usuario');
+        if (cachedUser) {
+          try {
+            const parsed = JSON.parse(cachedUser);
+            setUsuario(parsed);
+            setPrimerLogin(!!(parsed as any).primer_login);
+          } catch {
+            // cache corrupto, ignorar
+          }
+        }
+
+        // Terminar loading de inmediato (UI ya es visible)
+        setIsLoading(false);
+
+        // 2️⃣ Validar el token con el backend en segundo plano
+        try {
           const { usuario } = await authApi.validateToken();
           setUsuario(usuario);
           setPrimerLogin(!!(usuario as any).primer_login);
+          // Actualizar el cache con datos frescos del servidor
+          storage.setItem('usuario', JSON.stringify(usuario));
+        } catch {
+          // Token inválido → limpiar sesión
+          localStorage.removeItem('token');
+          localStorage.removeItem('usuario');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('usuario');
+          setUsuario(null);
+          setPrimerLogin(false);
         }
       } catch (error) {
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('usuario');
-      } finally {
         setIsLoading(false);
       }
     };

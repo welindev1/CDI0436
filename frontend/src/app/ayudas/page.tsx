@@ -142,6 +142,12 @@ export default function AyudasPage() {
 
   const onSubmit = async (data: any) => {
     try {
+      if (!beneficiarioSeleccionado) {
+        setError('Por favor, busca y selecciona un beneficiario válido de la lista.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       setLoading(true);
       setError('');
       setSuccess('');
@@ -266,11 +272,13 @@ export default function AyudasPage() {
               </div>
 
               <Input
-                label="Código Beneficiario"
+                label="Código Beneficiario (Autocompletado)"
                 type="text"
                 {...register('codigo_beneficiario', { required: true })}
                 error={errors.codigo_beneficiario ? 'Este campo es requerido' : ''}
-                placeholder="Ej: BEN001"
+                placeholder="DR0436..."
+                readOnly
+                className="bg-gray-100 text-gray-500 cursor-not-allowed border-gray-200"
               />
             </div>
 

@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       
-      <div className="lg:pl-64">
+      <div className="lg:pl-[280px] transition-all duration-300">
         <Header />
         
         <main className="p-4 sm:p-6 pt-16 lg:pt-6">

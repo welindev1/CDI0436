@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Alert from '@/components/ui/Alert';
 import { ayudasApi, Ayuda, ComentarioAyuda } from '@/lib/api/ayudas';
-import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X, MessageSquare, Send, Filter, Upload, ImagePlus } from 'lucide-react';
+import { Download, CheckCircle, XCircle, Trash2, Search, Phone, Image, X, MessageSquare, Send, Filter, Upload, ImagePlus, Loader2 } from 'lucide-react';
 
 type EstadoFiltro = 'pendiente' | 'aprobada' | 'rechazada' | 'todos';
 
@@ -411,13 +411,22 @@ export default function AyudasPage() {
                       </td>
                     </tr>
                   ))}
-                  {filteredAyudas.length === 0 && (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center text-gray-500">
+                          <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                          <p>Cargando solicitudes...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredAyudas.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                         No se encontraron solicitudes {estadoFiltro !== 'todos' ? estadoFiltro + 's' : ''}.
                       </td>
                     </tr>
-                  )}
+                  ) : null}
                 </tbody>
               </table>
             </div>

@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, OneToMany, CreateDa
 import { Clase } from '../clases/clase.entity';
 import { Asistencia } from '../asistencias/asistencia.entity';
 import { Supervivencia } from '../supervivencias/supervivencia.entity';
+import { BeneficiarioExpediente } from './beneficiario-expediente.entity';
 
 @Entity('beneficiarios')
 export class Beneficiario {
@@ -43,6 +44,12 @@ export class Beneficiario {
 
   @OneToMany(() => Asistencia, asistencia => asistencia.beneficiario)
   asistencias: Asistencia[];
+
+  @OneToMany(() => BeneficiarioExpediente, expediente => expediente.beneficiario)
+  expedientes: BeneficiarioExpediente[];
+
+  @OneToMany('NotaMerito', 'beneficiario')
+  notas_merito: any[]; // Using string/any to avoid circular dependency loop if not strictly needed, or we can just import NotaMerito.
 
   @Column({ default: true })
   activo: boolean;

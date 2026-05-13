@@ -155,35 +155,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
 
   return (
     <div className="space-y-5">
-      {/* ── Header de clase ───────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-bold">{clase.nombre}</h2>
-            {clase.codigo && <span className="text-blue-200 text-xs">{clase.codigo}</span>}
-            <p className="text-blue-100 text-sm mt-1">
-              {clase.tutor ? `${clase.tutor.nombre} ${clase.tutor.apellido ?? ''}`.trim() : 'Sin tutor'}
-            </p>
-            <p className="text-blue-200 text-xs mt-1 capitalize">{fechaFormateada}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-4xl font-black">{stats.total}</p>
-            <p className="text-blue-200 text-xs">beneficiarios</p>
-          </div>
-        </div>
-
-        {/* Barra de progreso */}
-        {stats.total > 0 && (
-          <div className="mt-4">
-            <div className="flex h-2 rounded-full overflow-hidden bg-blue-800/50 gap-px">
-              <div className="bg-green-400 transition-all" style={{ width: `${(stats.presentes / stats.total) * 100}%` }} />
-              <div className="bg-red-400 transition-all" style={{ width: `${(stats.ausentes / stats.total) * 100}%` }} />
-              <div className="bg-amber-400 transition-all" style={{ width: `${(stats.tardes / stats.total) * 100}%` }} />
-              <div className="bg-sky-400 transition-all" style={{ width: `${(stats.justificados / stats.total) * 100}%` }} />
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Header removido porque ahora está integrado en el perfil de la clase */}
 
       {/* ── Stats ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
