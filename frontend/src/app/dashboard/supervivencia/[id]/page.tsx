@@ -247,34 +247,17 @@ export default function SupervivenciaDetallePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-          </div>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  if (!supervivencia) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <Alert variant="error">
-            Curso de supervivencia no encontrado
-          </Alert>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
   return (
     <ProtectedRoute requiredPermisos={['supervivencia:ver']}>
       <DashboardLayout>
-        <div className="space-y-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          </div>
+        ) : !supervivencia ? (
+          <Alert variant="error">Curso de supervivencia no encontrado</Alert>
+        ) : (
+          <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -752,14 +735,14 @@ export default function SupervivenciaDetallePage() {
               )}
             </div>
           )}
-        </div>
+        )}
 
         {/* Modal Agregar Beneficiarios */}
         <AgregarBeneficiariosSupervivenciaModal
           isOpen={showAgregarModal}
           onClose={() => setShowAgregarModal(false)}
           onAgregar={handleAgregarBeneficiarios}
-          beneficiariosActuales={supervivencia.beneficiarios?.map(b => b.id) || []}
+          beneficiariosActuales={supervivencia?.beneficiarios?.map(b => b.id) || []}
         />
 
         {/* Modal Confirmar Eliminación */}

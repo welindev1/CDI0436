@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -8,20 +8,19 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import Modal from '@/components/ui/Modal';
 import AgregarBeneficiariosModal from '@/components/clases/AgregarBeneficiariosModal';
+import RegistroAsistencia from '@/components/asistencias/RegistroAsistencia';
 import { clasesApi } from '@/lib/api/clases';
+import { asistenciasApi } from '@/lib/api/asistencias';
 import { Clase } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  ArrowLeft, 
-  Edit, 
-  UserPlus,
-  Users,
-  Calendar,
-  Clock,
-  UserCircle,
-  Trash2,
-  BookOpen
+  ArrowLeft, Edit, UserPlus, Users, Calendar, Clock, UserCircle, 
+  Trash2, BookOpen, ClipboardCheck, Camera, X, Upload, Loader2, Info, ChevronLeft, ChevronRight
 } from 'lucide-react';
+
+const mapeoDias: Record<string, number> = {
+  domingo: 0, lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6
+};
 
 const diasLabel: Record<string, string> = {
   lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
@@ -47,6 +46,106 @@ export default function ClaseDetallePage() {
   const [showAgregarModal, setShowAgregarModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<string | null>(null);
+
+  // Tabs state
+  const [activeTab, setActiveTab] = useState<'estudiantes' | 'asistencia' | 'info'>('estudiantes');
+
+  // Asistencia state
+  const [selectedFecha, setSelectedFecha] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+  const [foto, setFoto] = useState<any>(null);
+  const [loadingFoto, setLoadingFoto] = useState(false);
+  const [uploadingFoto, setUploadingFoto] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Generar fechas válidas del mes actual
+  const fechasValidasMes = import('react').then(() => []); // dummy for structure, actually we will use a normal useMemo
+  // Let's use standard react useMemo
+  const fechasDelMes = import('react').then(() => []); // I will fix this immediately by importing useMemo. Wait, I can just use a function inside render.
+
+  useEffect(() => {
+    if (activeTab === 'asistencia') {
+      cargarFoto();
+    }
+  }, [selectedFecha, activeTab]);
+
+  useEffect(() => {
+    if (!clase || activeTab !== 'asistencia') return;
+    const validDays = (clase.horarios || []).map(h => mapeoDias[h.dia]);
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const fechas = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month - 1, i);
+      if (validDays.length === 0 || validDays.includes(d.getDay())) {
+        const mStr = String(month).padStart(2, '0');
+        const dStr = String(i).padStart(2, '0');
+        fechas.push(`${year}-${mStr}-${dStr}`);
+      }
+    }
+    
+    if (fechas.length > 0 && !fechas.includes(selectedFecha)) {
+      const hoyStr = new Date().toISOString().split('T')[0];
+      if (hoyStr.startsWith(selectedMonth)) {
+         let idx = fechas.findIndex(f => f >= hoyStr);
+         if (idx === -1) idx = fechas.length - 1;
+         setSelectedFecha(fechas[idx]);
+      } else {
+         setSelectedFecha(fechas[0]);
+      }
+    }
+  }, [selectedMonth, clase, activeTab]);
+
+  const cargarFoto = async () => {
+    try {
+      setLoadingFoto(true);
+      const data = await asistenciasApi.getFoto(claseId, selectedFecha);
+      setFoto(data);
+    } catch (err: any) {
+      if (err.response?.status !== 404) console.error('Error al cargar foto:', err);
+      setFoto(null);
+    } finally {
+      setLoadingFoto(false);
+    }
+  };
+
+  const handleSubirFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return alert('Por favor selecciona una imagen válida');
+    if (file.size > 5 * 1024 * 1024) return alert('La imagen no puede ser mayor a 5MB');
+
+    try {
+      setUploadingFoto(true);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await asistenciasApi.subirFoto(claseId, selectedFecha, base64);
+      await cargarFoto();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al subir la foto');
+    } finally {
+      setUploadingFoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEliminarFoto = async () => {
+    if (!foto?.id || !confirm('¿Estás seguro de eliminar esta foto?')) return;
+    try {
+      setLoadingFoto(true);
+      await asistenciasApi.eliminarFoto(foto.id);
+      setFoto(null);
+    } catch (err) {
+      alert('Error al eliminar la foto');
+    } finally {
+      setLoadingFoto(false);
+    }
+  };
 
   // Verificar permisos para editar clases
   const puedeEditar = tienePermiso('clases:editar');
@@ -95,33 +194,16 @@ export default function ClaseDetallePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  if (!clase) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
-          <Alert variant="error">
-            Clase no encontrada
-          </Alert>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
   return (
     <ProtectedRoute requiredPermisos={['clases:ver']}>
       <DashboardLayout>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : !clase ? (
+          <Alert variant="error">Clase no encontrada</Alert>
+        ) : (
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -163,8 +245,248 @@ export default function ClaseDetallePage() {
             </Alert>
           )}
 
-          {/* Info de la clase */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Navegación por pestañas */}
+          <div className="flex border-b border-gray-200 gap-6 mt-4">
+            <button
+              onClick={() => setActiveTab('estudiantes')}
+              className={`pb-4 text-sm font-medium transition-colors relative ${
+                activeTab === 'estudiantes' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" /> 
+                Estudiantes ({clase.beneficiarios?.length || 0})
+              </div>
+              {activeTab === 'estudiantes' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('asistencia')}
+              className={`pb-4 text-sm font-medium transition-colors relative ${
+                activeTab === 'asistencia' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4" /> 
+                Asistencia
+              </div>
+              {activeTab === 'asistencia' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('info')}
+              className={`pb-4 text-sm font-medium transition-colors relative ${
+                activeTab === 'info' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4" /> 
+                Información de la Clase
+              </div>
+              {activeTab === 'info' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+              )}
+            </button>
+          </div>
+
+          {/* Tab: Estudiantes */}
+          {activeTab === 'estudiantes' && (
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Beneficiarios Inscritos ({clase.beneficiarios?.length || 0})
+                </h2>
+              </div>
+
+              {clase.beneficiarios && clase.beneficiarios.length > 0 ? (
+                <div className="divide-y divide-gray-200">
+                  {clase.beneficiarios.map((beneficiario) => (
+                    <div key={beneficiario.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 font-medium">
+                            {beneficiario.nombre.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {beneficiario.nombre} {beneficiario.apellido}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Código: {beneficiario.codigo}
+                            {beneficiario.fecha_nacimiento && (() => {
+                              const nac = new Date(beneficiario.fecha_nacimiento);
+                              const hoy = new Date();
+                              let edad = hoy.getFullYear() - nac.getFullYear();
+                              if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+                              return ` • ${edad} años`;
+                            })()}
+                          </p>
+                        </div>
+                      </div>
+                      {puedeEditar && (
+                        <button
+                          onClick={() => handleRemoverBeneficiarioClick(beneficiario.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded"
+                          title="Remover de la clase"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-12 text-center">
+                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">No hay beneficiarios inscritos en esta clase</p>
+                  {puedeEditar && (
+                    <Button onClick={() => setShowAgregarModal(true)}>
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Agregar Beneficiarios
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Asistencia */}
+          {activeTab === 'asistencia' && (
+            <div className="space-y-6">
+              
+              {/* Controles de fecha (Mes + Días válidos) */}
+              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      Días de Clase
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Selecciona la fecha para pasar asistencia
+                    </p>
+                  </div>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={e => {
+                      setSelectedMonth(e.target.value);
+                      // Opcional: auto-seleccionar la primera fecha de ese mes, lo haremos abajo
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 shadow-sm focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Lista de fechas */}
+                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                  {(() => {
+                    if (!clase) return null;
+                    const validDays = (clase.horarios || []).map(h => mapeoDias[h.dia]);
+                    const [year, month] = selectedMonth.split('-').map(Number);
+                    const daysInMonth = new Date(year, month, 0).getDate();
+                    const fechas = [];
+                    for (let i = 1; i <= daysInMonth; i++) {
+                      const d = new Date(year, month - 1, i);
+                      if (validDays.length === 0 || validDays.includes(d.getDay())) {
+                        const mStr = String(month).padStart(2, '0');
+                        const dStr = String(i).padStart(2, '0');
+                        fechas.push({ fechaStr: `${year}-${mStr}-${dStr}`, dateObj: d });
+                      }
+                    }
+
+                    if (fechas.length === 0) {
+                      return <p className="text-sm text-gray-400 py-4 italic">No hay clases programadas para este mes.</p>;
+                    }
+
+                    return fechas.map(({ fechaStr, dateObj }) => {
+                      const isSelected = selectedFecha === fechaStr;
+                      const dayName = dateObj.toLocaleDateString('es-DO', { weekday: 'short' });
+                      const dayNum = dateObj.getDate();
+                      
+                      return (
+                        <button
+                          key={fechaStr}
+                          onClick={() => setSelectedFecha(fechaStr)}
+                          className={`flex flex-col items-center justify-center min-w-[70px] py-3 px-2 rounded-xl border transition-all ${
+                            isSelected 
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-md scale-105' 
+                              : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className={`text-xs font-medium capitalize ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
+                            {dayName}
+                          </span>
+                          <span className={`text-lg font-bold mt-1 ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                            {dayNum}
+                          </span>
+                        </button>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* Foto del día compacta */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col md:flex-row items-center gap-6">
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                    <Camera className="w-4 h-4 text-blue-500" /> Foto grupal de evidencia
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Sube una foto de la clase como evidencia del día. 
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-4 shrink-0">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleSubirFoto}
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                  />
+                  
+                  {loadingFoto ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  ) : foto ? (
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setShowLightbox(true)}
+                      >
+                        <img src={foto.imagen_url} alt="Evidencia" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-blue-600 hover:text-blue-800">Cambiar</button>
+                        <button onClick={handleEliminarFoto} className="text-xs font-medium text-red-600 hover:text-red-800">Eliminar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFoto}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      {uploadingFoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      Subir Foto
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Registro de Asistencia (Ancho Completo) */}
+              <div>
+                <RegistroAsistencia claseId={claseId} fecha={selectedFecha} onSaved={() => {}} />
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Información */}
+          {activeTab === 'info' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Información general */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -262,105 +584,57 @@ export default function ClaseDetallePage() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Lista de beneficiarios */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Beneficiarios Inscritos ({clase.beneficiarios?.length || 0})
-              </h2>
             </div>
+          )}
 
-            {clase.beneficiarios && clase.beneficiarios.length > 0 ? (
-              <div className="divide-y divide-gray-200">
-                {clase.beneficiarios.map((beneficiario) => (
-                  <div key={beneficiario.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-600 font-medium">
-                          {beneficiario.nombre.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {beneficiario.nombre} {beneficiario.apellido}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Código: {beneficiario.codigo}
-                          {beneficiario.fecha_nacimiento && (() => {
-                            const nac = new Date(beneficiario.fecha_nacimiento);
-                            const hoy = new Date();
-                            let edad = hoy.getFullYear() - nac.getFullYear();
-                            if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
-                            return ` • ${edad} años`;
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    {puedeEditar && (
-                      <button
-                        onClick={() => handleRemoverBeneficiarioClick(beneficiario.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded"
-                        title="Remover de la clase"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+          {/* Modal Lightbox Foto */}
+          {showLightbox && foto && (
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setShowLightbox(false)}>
+              <button className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                <X className="w-6 h-6 text-white" />
+              </button>
+              <img src={foto.imagen_url} alt="Foto" className="max-w-full max-h-[90vh] object-contain rounded-lg" onClick={e => e.stopPropagation()} />
+            </div>
+          )}
+
+          {/* Modal Agregar Beneficiarios */}
+          <AgregarBeneficiariosModal
+            isOpen={showAgregarModal}
+            onClose={() => setShowAgregarModal(false)}
+            onAgregar={handleAgregarBeneficiarios}
+            beneficiariosActuales={clase.beneficiarios?.map(b => b.id) || []}
+          />
+
+          {/* Modal Confirmar Eliminación */}
+          <Modal
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            title="Confirmar Remoción"
+            size="sm"
+          >
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                ¿Estás seguro de que deseas remover este beneficiario de la clase?
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleRemoverBeneficiario}
+                >
+                  Remover
+                </Button>
               </div>
-            ) : (
-              <div className="p-12 text-center">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No hay beneficiarios inscritos en esta clase</p>
-                {puedeEditar && (
-                  <Button onClick={() => setShowAgregarModal(true)}>
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Agregar Beneficiarios
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
+          </Modal>
         </div>
-
-        {/* Modal Agregar Beneficiarios */}
-        <AgregarBeneficiariosModal
-          isOpen={showAgregarModal}
-          onClose={() => setShowAgregarModal(false)}
-          onAgregar={handleAgregarBeneficiarios}
-          beneficiariosActuales={clase.beneficiarios?.map(b => b.id) || []}
-        />
-
-        {/* Modal Confirmar Eliminación */}
-        <Modal
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          title="Confirmar Remoción"
-          size="sm"
-        >
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              ¿Estás seguro de que deseas remover este beneficiario de la clase?
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleRemoverBeneficiario}
-              >
-                Remover
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );
-}
+}

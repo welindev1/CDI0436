@@ -70,24 +70,17 @@ export default function DashboardPage() {
     day: 'numeric',
   });
 
-  if (loading) {
-    return (
-      <ProtectedRoute>
-        <DashboardLayout>
+  return (
+    <ProtectedRoute>
+      <DashboardLayout>
+        {loading ? (
           <div className="flex items-center justify-center h-96">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
               <p className="text-gray-500 text-sm">Cargando dashboard...</p>
             </div>
           </div>
-        </DashboardLayout>
-      </ProtectedRoute>
-    );
-  }
-
-  return (
-    <ProtectedRoute>
-      <DashboardLayout>
+        ) : (
         <div className="space-y-6">
           {/* Welcome Header */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
@@ -268,9 +261,9 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-
         </div>
+        )}
       </DashboardLayout>
     </ProtectedRoute>
   );
-}
+}

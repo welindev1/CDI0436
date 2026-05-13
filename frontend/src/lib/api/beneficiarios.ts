@@ -107,4 +107,23 @@ export const beneficiariosApi = {
     const response = await apiClient.get(`/beneficiarios/cumpleanos/${mes}`);
     return response.data;
   },
+
+  getExpedientes: async (id: string): Promise<any[]> => {
+    const response = await apiClient.get(`/beneficiarios/${id}/expediente`);
+    return response.data;
+  },
+
+  addExpediente: async (id: string, data: any): Promise<any> => {
+    const response = await apiClient.post(`/beneficiarios/${id}/expediente`, data);
+    return response.data;
+  },
+
+  deleteExpediente: async (expedienteId: string): Promise<void> => {
+    await apiClient.delete(`/beneficiarios/expediente/${expedienteId}`);
+  },
+
+  updateExpediente: async (expedienteId: string, data: any): Promise<any> => {
+    const response = await apiClient.patch(`/beneficiarios/expediente/${expedienteId}`, data);
+    return response.data;
+  },
 };

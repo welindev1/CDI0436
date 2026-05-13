@@ -73,6 +73,11 @@ export const PERMISOS_SISTEMA = [
 
   // Cumpleaños
   { codigo: 'cumpleanos:ver', nombre: 'Ver cumpleaños', modulo: 'cumpleanos', accion: 'ver', descripcion: 'Permite ver los cumpleaños de los beneficiarios' },
+
+  // Mérito Estudiantil
+  { codigo: 'merito:ver', nombre: 'Ver mérito', modulo: 'merito', accion: 'ver', descripcion: 'Permite ver los periodos y ganadores del mérito estudiantil' },
+  { codigo: 'merito:crear', nombre: 'Crear periodo de mérito', modulo: 'merito', accion: 'crear', descripcion: 'Permite crear nuevos periodos de mérito' },
+  { codigo: 'merito:editar', nombre: 'Digitar notas', modulo: 'merito', accion: 'editar', descripcion: 'Permite digitar notas de los estudiantes' },
 ];
 
 @Injectable()

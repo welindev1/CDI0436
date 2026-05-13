@@ -124,6 +124,20 @@ export class BeneficiariosController {
     return this.beneficiariosService.getCumpleanosPorMes(mes);
   }
 
+  @Patch('expediente/:expedienteId')
+  updateExpediente(
+    @Param('expedienteId', ParseUUIDPipe) expedienteId: string,
+    @Body() data: any
+  ) {
+    return this.beneficiariosService.updateExpediente(expedienteId, data);
+  }
+
+  @Delete('expediente/:expedienteId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteExpediente(@Param('expedienteId', ParseUUIDPipe) expedienteId: string) {
+    return this.beneficiariosService.deleteExpediente(expedienteId);
+  }
+
   // --- Dynamic :id routes come AFTER static routes ---
 
   @Get(':id')
@@ -134,6 +148,19 @@ export class BeneficiariosController {
   @Get(':id/estadisticas')
   getEstadisticas(@Param('id', ParseUUIDPipe) id: string) {
     return this.beneficiariosService.getEstadisticas(id);
+  }
+
+  @Get(':id/expediente')
+  getExpedientes(@Param('id', ParseUUIDPipe) id: string) {
+    return this.beneficiariosService.getExpedientes(id);
+  }
+
+  @Post(':id/expediente')
+  addExpediente(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() data: any
+  ) {
+    return this.beneficiariosService.addExpediente(id, data);
   }
 
   @Patch(':id')

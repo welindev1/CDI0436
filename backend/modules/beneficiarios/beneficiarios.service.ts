@@ -12,6 +12,7 @@ import { UpdateBeneficiarioDto } from './dto/update-beneficiario.dto';
 import { FilterBeneficiarioDto } from './dto/filter-beneficiario.dto';
 import { AsignarClaseDto } from './dto/asignar-clase.dto';
 import { Clase } from '../clases/clase.entity';
+import { BeneficiarioExpediente } from './beneficiario-expediente.entity';
 import * as XLSX from 'xlsx';
 
 interface ImportOptionsDto {
@@ -40,6 +41,8 @@ export class BeneficiariosService {
     private beneficiariosRepository: Repository<Beneficiario>,
     @InjectRepository(Clase)
     private clasesRepository: Repository<Clase>,
+    @InjectRepository(BeneficiarioExpediente)
+    private expedientesRepository: Repository<BeneficiarioExpediente>,
   ) {}
 
   async create(createBeneficiarioDto: CreateBeneficiarioDto): Promise<Beneficiario> {
@@ -477,6 +480,35 @@ export class BeneficiariosService {
         padre_tutor: b.padre_tutor
       };
     });
+  }
+
+  async getExpedientes(beneficiarioId: string): Promise<BeneficiarioExpediente[]> {
+    return await this.expedientesRepository.find({
+      where: { beneficiario: { id: beneficiarioId } },
+      order: { creado_en: 'DESC' },
+    });
+  }
+
+  async addExpediente(beneficiarioId: string, data: Partial<BeneficiarioExpediente>): Promise<BeneficiarioExpediente> {
+    const beneficiario = await this.findOne(beneficiarioId);
+    const expediente = this.expedientesRepository.create({
+      ...data,
+      beneficiario,
+    });
+    return await this.expedientesRepository.save(expediente);
+  }
+
+  async deleteExpediente(id: string): Promise<void> {
+    const expediente = await this.expedientesRepository.findOne({ where: { id } });
+    if (!expediente) throw new NotFoundException('Expediente no encontrado');
+    await this.expedientesRepository.remove(expediente);
+  }
+
+  async updateExpediente(id: string, data: Partial<BeneficiarioExpediente>): Promise<BeneficiarioExpediente> {
+    const expediente = await this.expedientesRepository.findOne({ where: { id } });
+    if (!expediente) throw new NotFoundException('Expediente no encontrado');
+    Object.assign(expediente, data);
+    return await this.expedientesRepository.save(expediente);
   }
 
   async exportarAExcel(filters?: FilterBeneficiarioDto): Promise<Buffer> {

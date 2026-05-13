@@ -8,51 +8,122 @@ import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { exportToPDF } from '@/lib/utils/exportPDF';
 import { exportToExcel } from '@/lib/utils/exportExcel';
-import { FileText, BarChart3, Users, BookOpen } from 'lucide-react';
+import { 
+  FileText, BarChart3, Users, BookOpen, Globe, Download, 
+  Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye
+} from 'lucide-react';
+
+type TipoPeriodo = 'dia' | 'mes' | 'anio' | 'rango' | 'todo';
+type TipoReporteGlobal = 'estadistico' | 'detallado';
 
 export default function ReportesPage() {
-  const [tipoReporte, setTipoReporte] = useState<'clase' | 'beneficiario'>('clase');
+  const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'global'>('clase');
+  
+  // Estado para reporte global
+  const [tipoPeriodo, setTipoPeriodo] = useState<TipoPeriodo>('mes');
+  const [tipoReporteGlobal, setTipoReporteGlobal] = useState<TipoReporteGlobal>('estadistico');
+  const [fechaDia, setFechaDia] = useState('');
+  const [mesSeleccionado, setMesSeleccionado] = useState('');
+  const [anioSeleccionado, setAnioSeleccionado] = useState(new Date().getFullYear().toString());
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleGenerarReporte = async (filtros: any, formato: 'pdf' | 'excel') => {
-    try {
-      setIsLoading(true);
-      setError('');
-      setSuccess('');
+  const [reportData, setReportData] = useState<any>(null);
+  const [activeReportContext, setActiveReportContext] = useState<any>(null);
 
-      // Usar la fecha del reporte que viene de los filtros
+  // Utilidades para reporte global
+  const meses = [
+    { value: '01', label: 'Enero' }, { value: '02', label: 'Febrero' },
+    { value: '03', label: 'Marzo' }, { value: '04', label: 'Abril' },
+    { value: '05', label: 'Mayo' }, { value: '06', label: 'Junio' },
+    { value: '07', label: 'Julio' }, { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Septiembre' }, { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' }, { value: '12', label: 'Diciembre' },
+  ];
+
+  const anios = Array.from({ length: 5 }, (_, i) => {
+    const year = new Date().getFullYear() - i;
+    return { value: year.toString(), label: year.toString() };
+  });
+
+  const calcularFechasGlobal = (): { fechaInicio?: string; fechaFin?: string } => {
+    switch (tipoPeriodo) {
+      case 'dia': return { fechaInicio: fechaDia, fechaFin: fechaDia };
+      case 'mes':
+        if (mesSeleccionado && anioSeleccionado) {
+          const ultimoDia = new Date(parseInt(anioSeleccionado), parseInt(mesSeleccionado), 0).getDate();
+          return {
+            fechaInicio: `${anioSeleccionado}-${mesSeleccionado}-01`,
+            fechaFin: `${anioSeleccionado}-${mesSeleccionado}-${ultimoDia.toString().padStart(2, '0')}`
+          };
+        }
+        return {};
+      case 'anio':
+        if (anioSeleccionado) {
+          return { fechaInicio: `${anioSeleccionado}-01-01`, fechaFin: `${anioSeleccionado}-12-31` };
+        }
+        return {};
+      case 'rango': return { fechaInicio, fechaFin };
+      case 'todo': default: return {};
+    }
+  };
+
+  const obtenerDescripcionPeriodo = (): string => {
+    switch (tipoPeriodo) {
+      case 'dia': return fechaDia ? new Date(fechaDia + 'T00:00:00').toLocaleDateString('es-DO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+      case 'mes':
+        const mes = meses.find(m => m.value === mesSeleccionado);
+        return mes ? `${mes.label} ${anioSeleccionado}` : '';
+      case 'anio': return `Año ${anioSeleccionado}`;
+      case 'rango':
+        if (fechaInicio && fechaFin) return `${new Date(fechaInicio + 'T00:00:00').toLocaleDateString('es-DO')} - ${new Date(fechaFin + 'T00:00:00').toLocaleDateString('es-DO')}`;
+        return '';
+      case 'todo': return 'Todo el historial';
+      default: return '';
+    }
+  };
+
+  const validarFiltrosGlobales = (): boolean => {
+    switch (tipoPeriodo) {
+      case 'dia':
+        if (!fechaDia) { setError('Por favor selecciona una fecha'); return false; } break;
+      case 'mes':
+        if (!mesSeleccionado) { setError('Por favor selecciona un mes'); return false; } break;
+      case 'rango':
+        if (!fechaInicio || !fechaFin) { setError('Por favor selecciona las fechas de inicio y fin'); return false; }
+        if (new Date(fechaInicio) > new Date(fechaFin)) { setError('La fecha de inicio no puede ser mayor a la fecha fin'); return false; }
+        break;
+    }
+    return true;
+  };
+
+  const handleSwitchTab = (tab: 'clase'|'beneficiario'|'global') => {
+    setTipoReportePrincipal(tab);
+    setReportData(null);
+    setActiveReportContext(null);
+    setError('');
+    setSuccess('');
+  };
+
+  // Handlers Principales
+  const handleGenerarEspecifco = async (filtros: any) => {
+    try {
+      setIsLoading(true); setError(''); setSuccess(''); setReportData(null);
       const fechaReporte = filtros.fechaReporte || new Date().toLocaleDateString('es-DO');
 
       let data;
-      if (tipoReporte === 'clase') {
-        data = await asistenciasApi.getReportePorClase(
-          filtros.id,
-          filtros.fechaInicio,
-          filtros.fechaFin
-        );
-
-        if (formato === 'pdf') {
-          generarPDFClase(data, fechaReporte);
-        } else {
-          generarExcelClase(data);
-        }
+      if (tipoReportePrincipal === 'clase') {
+        data = await asistenciasApi.getReportePorClase(filtros.id, filtros.fechaInicio, filtros.fechaFin);
       } else {
-        data = await asistenciasApi.getReportePorBeneficiario(
-          filtros.id,
-          filtros.fechaInicio,
-          filtros.fechaFin
-        );
-
-        if (formato === 'pdf') {
-          generarPDFBeneficiario(data, fechaReporte);
-        } else {
-          generarExcelBeneficiario(data);
-        }
+        data = await asistenciasApi.getReportePorBeneficiario(filtros.id, filtros.fechaInicio, filtros.fechaFin);
       }
-
-      setSuccess(`Reporte exportado exitosamente en formato ${formato.toUpperCase()}`);
+      
+      setReportData(data);
+      setActiveReportContext({ tipo: tipoReportePrincipal, filtros, fechaReporte });
     } catch (err: any) {
       setError(err.message || 'Error al generar reporte');
     } finally {
@@ -60,6 +131,48 @@ export default function ReportesPage() {
     }
   };
 
+  const handleGenerarGlobal = async () => {
+    if (!validarFiltrosGlobales()) return;
+    try {
+      setIsLoading(true); setError(''); setSuccess(''); setReportData(null);
+      const fechas = calcularFechasGlobal();
+      const detallado = tipoReporteGlobal === 'detallado';
+      const data = await asistenciasApi.getReporteGlobal(fechas.fechaInicio, fechas.fechaFin, detallado);
+      
+      const periodoDescripcion = obtenerDescripcionPeriodo();
+      const fechaReporte = new Date().toLocaleDateString('es-DO');
+
+      setReportData(data);
+      setActiveReportContext({ tipo: 'global', tipoGlobal: tipoReporteGlobal, periodoDescripcion, fechaReporte });
+    } catch (err: any) {
+      setError(err.message || 'Error al generar reporte global');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportar = (formato: 'pdf' | 'excel') => {
+    if (!reportData || !activeReportContext) return;
+    try {
+      const { tipo, fechaReporte, periodoDescripcion, tipoGlobal } = activeReportContext;
+      
+      if (tipo === 'clase') {
+         if (formato === 'pdf') generarPDFClase(reportData, fechaReporte);
+         else generarExcelClase(reportData);
+      } else if (tipo === 'beneficiario') {
+         if (formato === 'pdf') generarPDFBeneficiario(reportData, fechaReporte);
+         else generarExcelBeneficiario(reportData);
+      } else if (tipo === 'global') {
+         if (formato === 'pdf') generarPDFGlobal(reportData, periodoDescripcion, fechaReporte, tipoGlobal);
+         else generarExcelGlobal(reportData, periodoDescripcion, tipoGlobal);
+      }
+      setSuccess(`Reporte exportado exitosamente en formato ${formato.toUpperCase()}`);
+    } catch(err: any) {
+      setError('Error al exportar. Verifica los datos.');
+    }
+  };
+
+  // ----- GENERADORES CLASE -----
   const generarPDFClase = (data: any, fechaReporte: string) => {
     const asistencias = data.asistenciasPorBeneficiario.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
@@ -70,13 +183,9 @@ export default function ReportesPage() {
         observaciones: registro.observaciones || '-'
       }))
     );
-
     exportToPDF({
-      titulo: `Reporte de Asistencia - ${data.clase.nombre}`,
-      subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`,
-      fecha: fechaReporte,
-      datos: asistencias,
-      columnas: ['beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
+      titulo: `Reporte de Asistencia - ${data.clase.nombre}`, subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`, fecha: fechaReporte,
+      datos: asistencias, columnas: ['beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
       headers: ['Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
       totales: [
         { label: 'Total Registros', value: data.estadisticas.totalRegistros },
@@ -92,14 +201,11 @@ export default function ReportesPage() {
   const generarExcelClase = (data: any) => {
     const asistencias = data.asistenciasPorBeneficiario.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
-        Beneficiario: item.beneficiario.nombre,
-        Código: item.beneficiario.codigo,
+        Beneficiario: item.beneficiario.nombre, Código: item.beneficiario.codigo,
         Fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        Estado: registro.estado,
-        Observaciones: registro.observaciones || '-'
+        Estado: registro.estado, Observaciones: registro.observaciones || '-'
       }))
     );
-
     const estadisticas = [
       { Métrica: 'Total Registros', Valor: data.estadisticas.totalRegistros },
       { Métrica: 'Presentes', Valor: data.estadisticas.presentes },
@@ -108,33 +214,26 @@ export default function ReportesPage() {
       { Métrica: 'Tardes', Valor: data.estadisticas.tardes },
       { Métrica: '% Asistencia', Valor: data.estadisticas.porcentajeAsistencia },
     ];
-
     exportToExcel({
       nombreArchivo: `Reporte_Clase_${data.clase.nombre}`,
-      hojas: [
-        { nombre: 'Asistencias', datos: asistencias },
-        { nombre: 'Estadísticas', datos: estadisticas },
-      ],
+      hojas: [{ nombre: 'Asistencias', datos: asistencias }, { nombre: 'Estadísticas', datos: estadisticas }],
     });
   };
 
+  // ----- GENERADORES BENEFICIARIO -----
   const generarPDFBeneficiario = (data: any, fechaReporte: string) => {
     const asistencias = data.asistenciasPorClase.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
-        clase: item.clase.nombre,
-        codigo: item.clase.codigo || '-',
+        clase: item.clase.nombre, codigo: item.clase.codigo || '-',
         fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        estado: registro.estado,
-        observaciones: registro.observaciones || '-'
+        estado: registro.estado, observaciones: registro.observaciones || '-'
       }))
     );
-
     exportToPDF({
       titulo: `Reporte de Asistencia - ${data.beneficiario.nombre}`,
       subtitulo: `Código: ${data.beneficiario.codigo}${data.beneficiario.edad ? ` | Edad: ${data.beneficiario.edad} años` : ''}`,
       fecha: fechaReporte,
-      datos: asistencias,
-      columnas: ['clase', 'codigo', 'fecha', 'estado', 'observaciones'],
+      datos: asistencias, columnas: ['clase', 'codigo', 'fecha', 'estado', 'observaciones'],
       headers: ['Clase', 'Código', 'Fecha', 'Estado', 'Observaciones'],
       totales: [
         { label: 'Clases Inscritas', value: data.estadisticas.totalClasesInscritas },
@@ -151,14 +250,11 @@ export default function ReportesPage() {
   const generarExcelBeneficiario = (data: any) => {
     const asistencias = data.asistenciasPorClase.flatMap((item: any) =>
       item.registros.map((registro: any) => ({
-        Clase: item.clase.nombre,
-        Código: item.clase.codigo || '-',
+        Clase: item.clase.nombre, Código: item.clase.codigo || '-',
         Fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        Estado: registro.estado,
-        Observaciones: registro.observaciones || '-'
+        Estado: registro.estado, Observaciones: registro.observaciones || '-'
       }))
     );
-
     const estadisticas = [
       { Métrica: 'Clases Inscritas', Valor: data.estadisticas.totalClasesInscritas },
       { Métrica: 'Total Registros', Valor: data.estadisticas.totalRegistros },
@@ -168,127 +264,408 @@ export default function ReportesPage() {
       { Métrica: 'Tardes', Valor: data.estadisticas.tardes },
       { Métrica: '% Asistencia', Valor: data.estadisticas.porcentajeAsistencia },
     ];
-
-    const info = [
-      { Campo: 'Nombre', Valor: data.beneficiario.nombre },
-      { Campo: 'Código', Valor: data.beneficiario.codigo },
-      { Campo: 'Edad', Valor: data.beneficiario.edad || '-' },
-      { Campo: 'Padre/Tutor', Valor: data.beneficiario.padre_tutor || '-' },
-    ];
-
     exportToExcel({
       nombreArchivo: `Reporte_Beneficiario_${data.beneficiario.nombre}`,
       hojas: [
-        { nombre: 'Información', datos: info },
+        { nombre: 'Información', datos: [{ Campo: 'Nombre', Valor: data.beneficiario.nombre }, { Campo: 'Código', Valor: data.beneficiario.codigo }] },
         { nombre: 'Asistencias', datos: asistencias },
         { nombre: 'Estadísticas', datos: estadisticas },
       ],
     });
   };
 
+  // ----- GENERADORES GLOBAL -----
+  const generarPDFGlobal = (data: any, periodo: string, fechaReporte: string, tipoGlobal: string) => {
+    if (tipoGlobal === 'detallado') {
+      const registros = data.asistenciasPorClase.flatMap((item: any) =>
+        (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
+          ben.registros.map((reg: any) => ({
+            clase: item.clase.nombre, beneficiario: ben.beneficiario.nombre,
+            codigo: ben.beneficiario.codigo, fecha: new Date(reg.fecha).toLocaleDateString('es-DO'),
+            estado: reg.estado, observaciones: reg.observaciones || '-'
+          }))
+        )
+      );
+      exportToPDF({
+        titulo: 'Reporte General de Asistencia - Detallado', subtitulo: `Período: ${periodo}`, fecha: fechaReporte,
+        datos: registros, columnas: ['clase', 'beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
+        headers: ['Clase', 'Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
+        totales: [
+          { label: 'Total Clases', value: data.resumen.totalClases },
+          { label: 'Asistieron', value: data.estadisticasGlobales.beneficiariosPresentes },
+          { label: 'No Asistieron', value: data.estadisticasGlobales.beneficiariosAusentes },
+        ],
+      });
+    } else {
+      const resumenClases = data.asistenciasPorClase.map((item: any) => ({
+        clase: item.clase.nombre, tutor: item.clase.tutor,
+        inscritos: item.clase.totalBeneficiarios, asistieron: item.estadisticas.beneficiariosPresentes,
+        noAsistieron: item.estadisticas.beneficiariosAusentes, porcentaje: item.estadisticas.porcentajeAsistencia
+      }));
+      exportToPDF({
+        titulo: 'Reporte General de Asistencia - Estadístico', subtitulo: `Período: ${periodo}`, fecha: fechaReporte,
+        datos: resumenClases, columnas: ['clase', 'tutor', 'inscritos', 'asistieron', 'noAsistieron', 'porcentaje'],
+        headers: ['Clase', 'Tutor', 'Inscritos', 'Asistieron', 'No Asistieron', '% Asist.'],
+        totales: [
+          { label: 'Total Clases', value: data.resumen.totalClases },
+          { label: 'Asistieron', value: data.estadisticasGlobales.beneficiariosPresentes },
+          { label: 'No Asistieron', value: data.estadisticasGlobales.beneficiariosAusentes },
+        ],
+      });
+    }
+  };
+
+  const generarExcelGlobal = (data: any, periodo: string, tipoGlobal: string) => {
+    const hojas: { nombre: string; datos: any[] }[] = [];
+    hojas.push({
+      nombre: 'Resumen',
+      datos: [
+        { Campo: 'Período', Valor: periodo },
+        { Campo: 'Total Clases', Valor: data.resumen.totalClases },
+        { Campo: '% Asistencia Global', Valor: data.estadisticasGlobales.porcentajeAsistencia },
+      ]
+    });
+    hojas.push({
+      nombre: 'Por Clase',
+      datos: data.asistenciasPorClase.map((item: any) => ({
+        Clase: item.clase.nombre, Tutor: item.clase.tutor,
+        'Asistieron': item.estadisticas.beneficiariosPresentes, '% Asistencia': item.estadisticas.porcentajeAsistencia,
+      }))
+    });
+    if (tipoGlobal === 'detallado') {
+      const registrosDetallados = data.asistenciasPorClase.flatMap((item: any) =>
+        (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
+          ben.registros.map((reg: any) => ({
+            Clase: item.clase.nombre, Beneficiario: ben.beneficiario.nombre,
+            Fecha: new Date(reg.fecha).toLocaleDateString('es-DO'), Estado: reg.estado
+          }))
+        )
+      );
+      hojas.push({ nombre: 'Detalle', datos: registrosDetallados });
+    }
+    exportToExcel({ nombreArchivo: `Reporte_General_${tipoGlobal}`, hojas });
+  };
+
+  // ----- RENDER PREVIEW -----
+  const renderPreview = () => {
+    if (!reportData || !activeReportContext) return null;
+    const { tipo, tipoGlobal } = activeReportContext;
+
+    let stats: { label: string, value: string | number }[] = [];
+    let subtitle = '';
+    let tableHeaders: string[] = [];
+    let tableRows: any[] = [];
+
+    if (tipo === 'clase') {
+      stats = [
+        { label: 'Presentes', value: reportData.estadisticas?.presentes || 0 },
+        { label: 'Ausentes', value: reportData.estadisticas?.ausentes || 0 },
+        { label: 'Tardes', value: reportData.estadisticas?.tardes || 0 },
+        { label: '% Asistencia', value: reportData.estadisticas?.porcentajeAsistencia || '0%' },
+      ];
+      subtitle = reportData.clase?.nombre || '';
+      tableHeaders = ['Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'];
+      tableRows = reportData.asistenciasPorBeneficiario?.flatMap((item: any) =>
+        item.registros.map((registro: any) => ({
+          col1: item.beneficiario.nombre,
+          col2: item.beneficiario.codigo,
+          col3: new Date(registro.fecha).toLocaleDateString('es-DO'),
+          col4: registro.estado,
+          col5: registro.observaciones || '-',
+          key: `${item.beneficiario.id}-${registro.fecha}`
+        }))
+      ) || [];
+    } else if (tipo === 'beneficiario') {
+      stats = [
+        { label: 'Presentes', value: reportData.estadisticas?.presentes || 0 },
+        { label: 'Ausentes', value: reportData.estadisticas?.ausentes || 0 },
+        { label: 'Clases Inscrito', value: reportData.estadisticas?.totalClasesInscritas || 0 },
+        { label: '% Asistencia', value: reportData.estadisticas?.porcentajeAsistencia || '0%' },
+      ];
+      subtitle = reportData.beneficiario?.nombre || '';
+      tableHeaders = ['Clase', 'Código Clase', 'Fecha', 'Estado', 'Observaciones'];
+      tableRows = reportData.asistenciasPorClase?.flatMap((item: any) =>
+        item.registros.map((registro: any) => ({
+          col1: item.clase.nombre,
+          col2: item.clase.codigo || '-',
+          col3: new Date(registro.fecha).toLocaleDateString('es-DO'),
+          col4: registro.estado,
+          col5: registro.observaciones || '-',
+          key: `${item.clase.id}-${registro.fecha}`
+        }))
+      ) || [];
+    } else if (tipo === 'global') {
+      stats = [
+        { label: 'Total Clases', value: reportData.resumen?.totalClases || 0 },
+        { label: 'Total Beneficiarios', value: reportData.resumen?.totalBeneficiariosInscritos || 0 },
+        { label: 'Asistieron', value: reportData.estadisticasGlobales?.beneficiariosPresentes || 0 },
+        { label: '% Asistencia Global', value: reportData.estadisticasGlobales?.porcentajeAsistencia || '0%' },
+      ];
+      subtitle = activeReportContext.periodoDescripcion || 'Historial Completo';
+
+      if (tipoGlobal === 'detallado') {
+        tableHeaders = ['Clase', 'Beneficiario', 'Fecha', 'Estado', 'Observaciones'];
+        tableRows = reportData.asistenciasPorClase?.flatMap((item: any) =>
+          (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
+            ben.registros.map((reg: any) => ({
+              col1: item.clase.nombre,
+              col2: ben.beneficiario.nombre,
+              col3: new Date(reg.fecha).toLocaleDateString('es-DO'),
+              col4: reg.estado,
+              col5: reg.observaciones || '-',
+              key: `${item.clase.id}-${ben.beneficiario.id}-${reg.fecha}`
+            }))
+          )
+        ) || [];
+      } else {
+        tableHeaders = ['Clase', 'Tutor', 'Inscritos', 'Presentes', 'Ausentes', '% Asist.'];
+        tableRows = reportData.asistenciasPorClase?.map((item: any) => ({
+          col1: item.clase.nombre,
+          col2: item.clase.tutor || 'Sin tutor',
+          col3: item.clase.totalBeneficiarios,
+          col4: item.estadisticas.beneficiariosPresentes,
+          col5: item.estadisticas.beneficiariosAusentes,
+          col6: item.estadisticas.porcentajeAsistencia,
+          key: item.clase.id
+        })) || [];
+      }
+    }
+
+    const estadoColores: Record<string, string> = {
+      'PRESENTE': 'bg-green-100 text-green-700',
+      'AUSENTE': 'bg-red-100 text-red-700',
+      'TARDE': 'bg-amber-100 text-amber-700',
+      'JUSTIFICADO': 'bg-blue-100 text-blue-700'
+    };
+
+    return (
+      <div className="bg-white border-2 border-blue-100 rounded-2xl shadow-sm overflow-hidden mt-6 animate-in slide-in-from-bottom-4 duration-500">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Eye className="w-6 h-6 text-blue-600" />
+              Vista Previa del Reporte
+            </h2>
+            <p className="text-sm text-gray-600 mt-1 font-medium">{subtitle}</p>
+          </div>
+          <div className="flex gap-3 w-full md:w-auto">
+            <button onClick={() => handleExportar('pdf')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-all active:scale-95 text-sm">
+              <FileText className="w-4 h-4" /> Descargar PDF
+            </button>
+            <button onClick={() => handleExportar('excel')} className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all active:scale-95 text-sm">
+              <FileSpreadsheet className="w-4 h-4" /> Descargar Excel
+            </button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Métricas del Reporte</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stats.map((s, i) => (
+              <div key={i} className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                <p className="text-xs font-medium text-gray-500">{s.label}</p>
+                <p className="text-2xl font-black text-gray-900 mt-1">{s.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tabla */}
+        <div className="p-6 overflow-x-auto">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Detalles ({tableRows.length} registros)</h3>
+          {tableRows.length > 0 ? (
+            <div className="border border-gray-200 rounded-xl overflow-hidden max-h-96 overflow-y-auto custom-scrollbar relative">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500 sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    {tableHeaders.map((header, i) => (
+                      <th key={i} className="px-4 py-3 font-semibold">{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {tableRows.map((row, i) => (
+                    <tr key={row.key || i} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{row.col1}</td>
+                      <td className="px-4 py-3">{row.col2}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{row.col3}</td>
+                      <td className="px-4 py-3">
+                        {/* Status chip if it looks like a status, else just text */}
+                        {estadoColores[row.col4] ? (
+                           <span className={`px-2 py-1 text-xs font-bold rounded-lg ${estadoColores[row.col4]}`}>{row.col4}</span>
+                        ) : (
+                           row.col4
+                        )}
+                      </td>
+                      <td className="px-4 py-3">{row.col5}</td>
+                      {row.col6 !== undefined && <td className="px-4 py-3 font-medium">{row.col6}</td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+             <div className="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+               <p className="text-gray-500">No hay datos para mostrar con estos filtros.</p>
+             </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <ProtectedRoute requiredPermisos={['reportes:ver']}>
       <DashboardLayout>
-        <div className="space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="w-8 h-8 text-blue-600" />
-              Reportes de Asistencia
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Genera reportes detallados en PDF o Excel
-            </p>
-          </div>
-
-          {/* Alertas */}
-          {error && (
-            <Alert variant="error">
-              {error}
-            </Alert>
-          )}
-
-          {success && (
-            <Alert variant="success">
-              {success}
-            </Alert>
-          )}
-
-          {/* Selector de tipo de reporte */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => setTipoReporte('clase')}
-              className={`p-6 border-2 rounded-lg transition-all ${
-                tipoReporte === 'clase'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  tipoReporte === 'clase' ? 'bg-blue-500' : 'bg-gray-200'
-                }`}>
-                  <BookOpen className={`w-6 h-6 ${
-                    tipoReporte === 'clase' ? 'text-white' : 'text-gray-600'
-                  }`} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold text-gray-900">Reporte por Clase</h3>
-                  <p className="text-sm text-gray-600">
-                    Ver asistencias de todos los beneficiarios de una clase
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setTipoReporte('beneficiario')}
-              className={`p-6 border-2 rounded-lg transition-all ${
-                tipoReporte === 'beneficiario'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  tipoReporte === 'beneficiario' ? 'bg-blue-500' : 'bg-gray-200'
-                }`}>
-                  <Users className={`w-6 h-6 ${
-                    tipoReporte === 'beneficiario' ? 'text-white' : 'text-gray-600'
-                  }`} />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold text-gray-900">Reporte por Beneficiario</h3>
-                  <p className="text-sm text-gray-600">
-                    Ver todas las asistencias de un beneficiario
-                  </p>
-                </div>
-              </div>
-            </button>
-          </div>
-
-          {/* Filtros */}
-          <FiltrosReporte
-            tipoReporte={tipoReporte}
-            onGenerar={handleGenerarReporte}
-            isLoading={isLoading}
-          />
-
-          {/* Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-blue-900 mb-1">Información sobre los reportes</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Los reportes en PDF incluyen tablas detalladas y estadísticas</li>
-                  <li>• Los reportes en Excel incluyen múltiples hojas con datos estructurados</li>
-                  <li>• Puedes filtrar por rango de fechas o dejar en blanco para todo el historial</li>
-                  <li>• Las estadísticas incluyen: presentes, ausentes, justificados, tardes y % de asistencia</li>
-                </ul>
-              </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <FileText className="w-8 h-8 text-blue-600" />
+                Centro de Reportes
+              </h1>
+              <p className="text-gray-500 mt-1">Genera vistas previas y exporta datos de asistencia</p>
             </div>
           </div>
+
+          {error && <Alert variant="error" onClose={() => setError('')}>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
+
+          {/* Opciones Principales */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => handleSwitchTab('clase')}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
+                tipoReportePrincipal === 'clase' ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-blue-200 bg-white'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'clase' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <BookOpen className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Por Clase</h3>
+                <p className="text-xs text-gray-500 mt-1">Asistencias de una clase en específico</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleSwitchTab('beneficiario')}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
+                tipoReportePrincipal === 'beneficiario' ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-blue-200 bg-white'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'beneficiario' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Por Beneficiario</h3>
+                <p className="text-xs text-gray-500 mt-1">Historial completo de un estudiante</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleSwitchTab('global')}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
+                tipoReportePrincipal === 'global' ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-blue-200 bg-white'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'global' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <Globe className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Estadísticas Globales</h3>
+                <p className="text-xs text-gray-500 mt-1">Resumen general de todas las clases</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Area de Configuracion */}
+          {tipoReportePrincipal === 'global' ? (
+            <div className="space-y-6">
+              {/* Opciones Globales */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <ListFilter className="w-5 h-5 text-blue-500" /> Nivel de Detalle
+                </h2>
+                <div className="flex gap-4">
+                  <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'estadistico' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'estadistico'} onChange={() => setTipoReporteGlobal('estadistico')} />
+                    <div><p className="font-bold text-sm text-gray-900">Estadístico</p><p className="text-xs text-gray-500">Resumen y porcentajes</p></div>
+                  </label>
+                  <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'detallado' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'detallado'} onChange={() => setTipoReporteGlobal('detallado')} />
+                    <div><p className="font-bold text-sm text-gray-900">Detallado</p><p className="text-xs text-gray-500">Incluir lista de nombres</p></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Filtros Globales */}
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-blue-500" /> Rango de Tiempo
+                </h2>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {[
+                    { value: 'dia', label: 'Un día' }, { value: 'mes', label: 'Un mes' },
+                    { value: 'anio', label: 'Un año' }, { value: 'rango', label: 'Fechas personalizadas' },
+                    { value: 'todo', label: 'Desde el inicio' },
+                  ].map((tipo) => (
+                    <button
+                      key={tipo.value} onClick={() => setTipoPeriodo(tipo.value as TipoPeriodo)}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                        tipoPeriodo === tipo.value ? 'bg-gray-900 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {tipo.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Inputs de Tiempo */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tipoPeriodo === 'dia' && (
+                    <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Día exacto</label><input type="date" value={fechaDia} onChange={(e) => setFechaDia(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+                  )}
+                  {tipoPeriodo === 'mes' && (
+                    <>
+                      <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Mes</label><select value={mesSeleccionado} onChange={(e) => setMesSeleccionado(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"><option value="">Seleccionar</option>{meses.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}</select></div>
+                      <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Año</label><select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">{anios.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}</select></div>
+                    </>
+                  )}
+                  {tipoPeriodo === 'anio' && (
+                     <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Año completo</label><select value={anioSeleccionado} onChange={(e) => setAnioSeleccionado(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">{anios.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}</select></div>
+                  )}
+                  {tipoPeriodo === 'rango' && (
+                    <>
+                      <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Desde</label><input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+                      <div><label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Hasta</label><input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="mt-1 w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+                    </>
+                  )}
+                  {tipoPeriodo === 'todo' && (
+                    <div className="col-span-2 text-sm text-gray-500 bg-gray-50 p-4 rounded-xl border border-gray-100">Se exportará absolutamente todo el registro histórico del sistema. Puede tardar un poco.</div>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-6 mt-6 border-t border-gray-100">
+                  <button onClick={handleGenerarGlobal} disabled={isLoading} className="w-full flex justify-center items-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
+                    <Calendar className="w-5 h-5" /> Ver Reporte
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <FiltrosReporte
+              tipoReporte={tipoReportePrincipal}
+              onGenerar={handleGenerarEspecifco}
+              isLoading={isLoading}
+            />
+          )}
+
+          {/* Render de Preview */}
+          {renderPreview()}
+
         </div>
       </DashboardLayout>
     </ProtectedRoute>
