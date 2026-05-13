@@ -257,6 +257,7 @@ export default function SupervivenciaDetallePage() {
         ) : !supervivencia ? (
           <Alert variant="error">Curso de supervivencia no encontrado</Alert>
         ) : (
+          <>
           <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -735,63 +736,65 @@ export default function SupervivenciaDetallePage() {
               )}
             </div>
           )}
-        )}
-
-        {/* Modal Agregar Beneficiarios */}
-        <AgregarBeneficiariosSupervivenciaModal
-          isOpen={showAgregarModal}
-          onClose={() => setShowAgregarModal(false)}
-          onAgregar={handleAgregarBeneficiarios}
-          beneficiariosActuales={supervivencia?.beneficiarios?.map(b => b.id) || []}
-        />
-
-        {/* Modal Confirmar Eliminación */}
-        <Modal
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          title="Confirmar Remoción"
-          size="sm"
-        >
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              ¿Estás seguro de que deseas remover este beneficiario del curso?
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleRemoverBeneficiario}
-              >
-                Remover
-              </Button>
-            </div>
           </div>
-        </Modal>
 
-        {/* Lightbox foto */}
-        {showLightbox && foto && (
-          <div
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowLightbox(false)}
+          {/* Modal Agregar Beneficiarios */}
+          <AgregarBeneficiariosSupervivenciaModal
+            isOpen={showAgregarModal}
+            onClose={() => setShowAgregarModal(false)}
+            onAgregar={handleAgregarBeneficiarios}
+            beneficiariosActuales={supervivencia?.beneficiarios?.map(b => b.id) || []}
+          />
+
+          {/* Modal Confirmar Eliminación */}
+          <Modal
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            title="Confirmar Remoción"
+            size="sm"
           >
-            <button
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                ¿Estás seguro de que deseas remover este beneficiario del curso?
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleRemoverBeneficiario}
+                >
+                  Remover
+                </Button>
+              </div>
+            </div>
+          </Modal>
+
+          {/* Lightbox foto */}
+          {showLightbox && foto && (
+            <div
+              className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
               onClick={() => setShowLightbox(false)}
-              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
             >
-              <X className="w-6 h-6 text-white" />
-            </button>
-            <img
-              src={foto.imagen_url}
-              alt="Foto de asistencia"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
+              <button
+                onClick={() => setShowLightbox(false)}
+                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+              <img
+                src={foto.imagen_url}
+                alt="Foto de asistencia"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+          </>
         )}
       </DashboardLayout>
     </ProtectedRoute>
