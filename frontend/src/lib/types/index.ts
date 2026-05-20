@@ -2,8 +2,6 @@
 export enum EstadoAsistencia {
   PRESENTE = 'presente',
   AUSENTE = 'ausente',
-  JUSTIFICADO = 'justificado',
-  TARDE = 'tarde',
 }
 
 export enum DiaSemana {
@@ -89,6 +87,8 @@ export interface Beneficiario {
   activo: boolean;
   creado_en: string;
   actualizado_en: string;
+  clases?: Clase[];
+  supervivencias?: Supervivencia[];
 }
 
 export interface Clase {
@@ -203,8 +203,6 @@ export interface ReporteAsistenciaClase {
     totalRegistros: number;
     presentes: number;
     ausentes: number;
-    justificados: number;
-    tardes: number;
     porcentajeAsistencia: string;
   };
   asistenciasPorBeneficiario: any[];
@@ -227,8 +225,6 @@ export interface ReporteAsistenciaBeneficiario {
     totalRegistros: number;
     presentes: number;
     ausentes: number;
-    justificados: number;
-    tardes: number;
     porcentajeAsistencia: string;
   };
   asistenciasPorClase: any[];

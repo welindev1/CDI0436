@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
@@ -16,7 +17,7 @@ import {
   UserCircle,
   Calendar,
   Phone,
-  Mail,
+  GraduationCap,
   Plus,
   Trash2,
   FileText,
@@ -24,6 +25,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
+  Shield,
 } from 'lucide-react';
 
 const COLOR_MAP: Record<string, { dot: string; badge: string; text: string }> =
@@ -467,6 +470,12 @@ export default function BeneficiarioDetailPage() {
         ) + expedientes.filter((e) => e.imagen_base64).length
     : 0;
 
+  const claseActiva = beneficiario?.clases?.find((c) => c.activo);
+  const cursoActivo = beneficiario?.supervivencias?.find((s) => s.activo);
+  const tutorClase = claseActiva?.tutor
+    ? `${claseActiva.tutor.nombre} ${claseActiva.tutor.apellido || ''}`.trim()
+    : 'No asignado';
+
   return (
     <ProtectedRoute requiredPermisos={['beneficiarios:ver']}>
       <DashboardLayout>
@@ -595,9 +604,9 @@ export default function BeneficiarioDetailPage() {
                     value: beneficiario.telefono || 'No registrado',
                   },
                   {
-                    icon: Mail,
-                    label: 'Correo',
-                    value: beneficiario.correo || 'No registrado',
+                    icon: GraduationCap,
+                    label: 'Profesor / Tutor',
+                    value: tutorClase,
                   },
                 ].map(({ icon: Icon, label, value }) => (
                   <div
@@ -616,6 +625,69 @@ export default function BeneficiarioDetailPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Cursos y Clases Activas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tarjeta de Clase */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group/card hover:border-blue-200 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shadow-sm transition-transform duration-300 group-hover/card:scale-105">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Clase Académica</p>
+                  {claseActiva ? (
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 mt-0.5">{claseActiva.nombre}</h3>
+                      {claseActiva.codigo && (
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">Código: {claseActiva.codigo}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <h3 className="text-sm font-medium text-gray-400 mt-1">Sin clase asignada</h3>
+                  )}
+                </div>
+              </div>
+              {claseActiva && (
+                <Link 
+                  href={`/dashboard/clases/${claseActiva.id}`}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3.5 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow active:scale-95"
+                >
+                  Ver Clase
+                </Link>
+              )}
+            </div>
+
+            {/* Tarjeta de Curso de Supervivencia */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between group/card hover:border-emerald-200 transition-all duration-300">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-sm transition-transform duration-300 group-hover/card:scale-105">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Curso de Supervivencia</p>
+                  {cursoActivo ? (
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 mt-0.5">{cursoActivo.nombre}</h3>
+                      {cursoActivo.codigo && (
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">Código: {cursoActivo.codigo}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <h3 className="text-sm font-medium text-gray-400 mt-1">Sin curso de supervivencia</h3>
+                  )}
+                </div>
+              </div>
+              {cursoActivo && (
+                <Link 
+                  href={`/dashboard/supervivencia/${cursoActivo.id}`}
+                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-xl transition-all duration-200 shadow-sm hover:shadow active:scale-95"
+                >
+                  Ver Curso
+                </Link>
+              )}
             </div>
           </div>
 
@@ -710,7 +782,6 @@ export default function BeneficiarioDetailPage() {
           </div>
         )}
 
-        {/* Modal Editar Perfil */}
         {showEditPerfil && beneficiario && (
           <EditarPerfilModal
             beneficiario={beneficiario}

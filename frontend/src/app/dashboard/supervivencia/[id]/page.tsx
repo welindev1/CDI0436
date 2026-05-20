@@ -26,7 +26,9 @@ import {
   Save,
   Camera,
   Upload,
-  Loader2
+  Loader2,
+  ArrowUpDown,
+  ZoomIn
 } from 'lucide-react';
 
 type TabType = 'beneficiarios' | 'asistencia';
@@ -36,6 +38,8 @@ interface AsistenciaLocal {
   presente: boolean;
   observaciones: string;
 }
+
+import { Beneficiario } from '@/lib/types'; // Import Beneficiario type explicitly if not imported
 
 export default function SupervivenciaDetallePage() {
   const params = useParams();
@@ -50,6 +54,37 @@ export default function SupervivenciaDetallePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<string | null>(null);
 
+  // Ordenamiento de beneficiarios
+  const [sortBy, setSortBy] = useState<'nombre' | 'apellido' | 'codigo' | 'edad'>('nombre');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const getSortedBeneficiarios = (beneficiariosList: Beneficiario[]) => {
+    if (!beneficiariosList) return [];
+    return [...beneficiariosList].sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      if (sortBy === 'nombre') {
+        valA = a.nombre.toLowerCase();
+        valB = b.nombre.toLowerCase();
+      } else if (sortBy === 'apellido') {
+        valA = (a.apellido || '').toLowerCase();
+        valB = (b.apellido || '').toLowerCase();
+      } else if (sortBy === 'codigo') {
+        valA = a.codigo.toLowerCase();
+        valB = b.codigo.toLowerCase();
+      } else if (sortBy === 'edad') {
+        // En base a la fecha de nacimiento, mayor edad es fecha más antigua (menor valor numérico)
+        valA = a.fecha_nacimiento ? new Date(a.fecha_nacimiento).getTime() : 0;
+        valB = b.fecha_nacimiento ? new Date(b.fecha_nacimiento).getTime() : 0;
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
   // Tab de asistencia
   const [activeTab, setActiveTab] = useState<TabType>('beneficiarios');
   const [fechaAsistencia, setFechaAsistencia] = useState(new Date().toISOString().split('T')[0]);
@@ -59,11 +94,11 @@ export default function SupervivenciaDetallePage() {
   const [savingAsistencia, setSavingAsistencia] = useState(false);
   const [fechasConAsistencia, setFechasConAsistencia] = useState<string[]>([]);
 
-  // Foto del día
-  const [foto, setFoto] = useState<any>(null);
+  // Fotos del día (múltiples)
+  const [fotos, setFotos] = useState<any[]>([]);
   const [loadingFoto, setLoadingFoto] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
-  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxFoto, setLightboxFoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Verificar permisos para editar
@@ -77,9 +112,9 @@ export default function SupervivenciaDetallePage() {
   useEffect(() => {
     if (activeTab === 'asistencia' && supervivencia) {
       loadAsistenciasPorFecha();
-      cargarFoto();
+      cargarFotos();
     } else {
-      setFoto(null);
+      setFotos([]);
     }
   }, [activeTab, fechaAsistencia, supervivencia]);
 
@@ -169,35 +204,43 @@ export default function SupervivenciaDetallePage() {
     );
   };
 
-  const cargarFoto = async () => {
+  const cargarFotos = async () => {
     if (!supervivenciaId || !fechaAsistencia) return;
     try {
       setLoadingFoto(true);
       const data = await supervivenciasApi.getFoto(supervivenciaId, fechaAsistencia);
-      setFoto(data);
+      setFotos(Array.isArray(data) ? data : data ? [data] : []);
     } catch (err: any) {
-      if (err.response?.status !== 404) console.error('Error al cargar foto:', err);
-      setFoto(null);
+      if (err.response?.status !== 404) console.error('Error al cargar fotos:', err);
+      setFotos([]);
     } finally {
       setLoadingFoto(false);
     }
   };
 
   const handleSubirFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) { alert('Por favor selecciona una imagen válida'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('La imagen no puede ser mayor a 5MB'); return; }
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(f => {
+      if (!f.type.startsWith('image/')) { alert(`"${f.name}" no es una imagen válida`); return false; }
+      if (f.size > 5 * 1024 * 1024) { alert(`"${f.name}" supera los 5MB`); return false; }
+      return true;
+    });
+    if (validFiles.length === 0) return;
+
     try {
       setUploadingFoto(true);
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      await supervivenciasApi.subirFoto(supervivenciaId, fechaAsistencia, base64);
-      await cargarFoto();
+      for (const file of validFiles) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await supervivenciasApi.subirFoto(supervivenciaId, fechaAsistencia, base64);
+      }
+      await cargarFotos();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al subir la foto');
     } finally {
@@ -206,16 +249,13 @@ export default function SupervivenciaDetallePage() {
     }
   };
 
-  const handleEliminarFoto = async () => {
-    if (!foto?.id || !confirm('¿Estás seguro de eliminar esta foto?')) return;
+  const handleEliminarFoto = async (fotoId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta foto?')) return;
     try {
-      setLoadingFoto(true);
-      await supervivenciasApi.eliminarFoto(supervivenciaId, foto.id);
-      setFoto(null);
+      await supervivenciasApi.eliminarFoto(supervivenciaId, fotoId);
+      setFotos(prev => prev.filter(f => f.id !== fotoId));
     } catch {
       alert('Error al eliminar la foto');
-    } finally {
-      setLoadingFoto(false);
     }
   };
 
@@ -452,15 +492,40 @@ export default function SupervivenciaDetallePage() {
           {/* Tab de Beneficiarios */}
           {activeTab === 'beneficiarios' && (
             <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Beneficiarios Inscritos ({supervivencia.beneficiarios?.length || 0})
                 </h2>
+                {supervivencia.beneficiarios && supervivencia.beneficiarios.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-gray-500 font-medium">Ordenar por:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="nombre">Nombre</option>
+                      <option value="apellido">Apellido</option>
+                      <option value="codigo">Código</option>
+                      <option value="edad">Edad</option>
+                    </select>
+                    <button
+                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 flex items-center justify-center gap-1.5"
+                      title={sortOrder === 'asc' ? 'Orden Ascendente' : 'Orden Descendente'}
+                    >
+                      <ArrowUpDown className="w-4 h-4 text-orange-600" />
+                      <span className="hidden sm:inline font-medium">
+                        {sortOrder === 'asc' ? 'Ascendente (A-Z)' : 'Descendente (Z-A)'}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {supervivencia.beneficiarios && supervivencia.beneficiarios.length > 0 ? (
                 <div className="divide-y divide-gray-200">
-                  {supervivencia.beneficiarios.map((beneficiario) => (
+                  {getSortedBeneficiarios(supervivencia.beneficiarios).map((beneficiario) => (
                     <div key={beneficiario.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -565,33 +630,35 @@ export default function SupervivenciaDetallePage() {
                 </div>
               </div>
 
-              {/* Foto del día */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-3">
+              {/* Fotos del día — galería multi-foto */}
+              <div className="border-b border-gray-200">
+                <div className="flex items-center justify-between px-4 py-3">
                   <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    Foto del día
+                    Fotos del día
+                    {fotos.length > 0 && (
+                      <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">{fotos.length}</span>
+                    )}
                   </h3>
                   <input
                     type="file"
                     ref={fileInputRef}
                     onChange={handleSubirFoto}
                     accept="image/jpeg,image/png,image/webp"
+                    multiple
                     className="hidden"
                   />
-                  {!foto && !loadingFoto && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFoto}
-                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                    >
-                      {uploadingFoto ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" />Subiendo...</>
-                      ) : (
-                        <><Upload className="w-4 h-4" />Subir Foto</>
-                      )}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFoto || loadingFoto}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
+                  >
+                    {uploadingFoto ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />Subiendo...</>
+                    ) : (
+                      <><Upload className="w-4 h-4" />Subir Foto</>
+                    )}
+                  </button>
                 </div>
 
                 {loadingFoto && (
@@ -600,46 +667,49 @@ export default function SupervivenciaDetallePage() {
                   </div>
                 )}
 
-                {foto && !loadingFoto && (
-                  <div className="relative group">
-                    <div
-                      className="relative cursor-pointer overflow-hidden rounded-lg border border-gray-200"
-                      onClick={() => setShowLightbox(true)}
-                    >
-                      <img
-                        src={foto.imagen_url}
-                        alt="Foto de asistencia"
-                        className="w-full max-h-40 object-cover hover:opacity-90 transition-opacity"
-                      />
-                      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <span className="opacity-0 group-hover:opacity-100 text-white bg-black/50 px-3 py-1 rounded-full text-sm transition-opacity">Click para ampliar</span>
-                      </div>
-                    </div>
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                        disabled={uploadingFoto}
-                        className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
-                        title="Cambiar foto"
-                      >
-                        <Camera className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleEliminarFoto(); }}
-                        className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors"
-                        title="Eliminar foto"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
+                {!loadingFoto && fotos.length > 0 && (
+                  <div className="px-4 pb-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {fotos.map((foto, idx) => (
+                        <div
+                          key={foto.id}
+                          className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer bg-gray-50"
+                          onClick={() => setLightboxFoto(foto.imagen_url)}
+                        >
+                          <img
+                            src={foto.imagen_url}
+                            alt={`Foto ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center gap-1.5">
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1.5 bg-white/90 rounded-full shadow hover:bg-white transition-all scale-90 group-hover:scale-100"
+                              onClick={(e) => { e.stopPropagation(); setLightboxFoto(foto.imagen_url); }}
+                              title="Ver ampliada"
+                            >
+                              <ZoomIn className="w-3.5 h-3.5 text-gray-700" />
+                            </button>
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500/90 rounded-full shadow hover:bg-red-600 transition-all scale-90 group-hover:scale-100"
+                              onClick={(e) => { e.stopPropagation(); handleEliminarFoto(foto.id); }}
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-white" />
+                            </button>
+                          </div>
+                          <div className="absolute top-1 left-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">{idx + 1}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {!foto && !loadingFoto && !uploadingFoto && (
-                  <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
-                    <Camera className="w-8 h-8 mx-auto mb-1 text-gray-400" />
-                    <p className="text-sm">No hay foto para esta fecha</p>
-                    <p className="text-xs text-gray-400 mt-1">Haz click en "Subir Foto" para agregar una</p>
+                {!loadingFoto && fotos.length === 0 && !uploadingFoto && (
+                  <div className="text-center py-5 mx-4 mb-4 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                    <Camera className="w-8 h-8 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">Sin fotos · haz click en "Subir Foto" para agregar</p>
                   </div>
                 )}
               </div>
@@ -774,22 +844,22 @@ export default function SupervivenciaDetallePage() {
             </div>
           </Modal>
 
-          {/* Lightbox foto */}
-          {showLightbox && foto && (
+          {/* Lightbox */}
+          {lightboxFoto && (
             <div
               className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-              onClick={() => setShowLightbox(false)}
+              onClick={() => setLightboxFoto(null)}
             >
               <button
-                onClick={() => setShowLightbox(false)}
+                onClick={() => setLightboxFoto(null)}
                 className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
               >
                 <X className="w-6 h-6 text-white" />
               </button>
               <img
-                src={foto.imagen_url}
+                src={lightboxFoto}
                 alt="Foto de asistencia"
-                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

@@ -53,8 +53,7 @@ async function bootstrap() {
 
   app.use((req, res, next) => {
     if (req.path === '/beneficiarios/importar') {
-      // 10MB para archivos de importación
-      req.setTimeout(60000); // 60 segundos timeout
+      req.setTimeout(60000);
     }
     next();
   });

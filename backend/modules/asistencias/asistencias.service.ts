@@ -243,7 +243,6 @@ export class AsistenciasService {
     }
 
     asistencias.forEach(asistencia => {
-      asistencia.estado = EstadoAsistencia.JUSTIFICADO;
       asistencia.observaciones = dto.observaciones || asistencia.observaciones;
     });
 
@@ -289,11 +288,9 @@ export class AsistenciasService {
     const totalRegistros = asistencias.length;
     const presentes = asistencias.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
     const ausentes = asistencias.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
-    const justificados = asistencias.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
-    const tardes = asistencias.filter(a => a.estado === EstadoAsistencia.TARDE).length;
 
     const porcentajeAsistencia = totalRegistros > 0
-      ? (((presentes + tardes) / totalRegistros) * 100).toFixed(2)
+      ? ((presentes / totalRegistros) * 100).toFixed(2)
       : '0';
 
     return {
@@ -312,8 +309,6 @@ export class AsistenciasService {
         totalRegistros,
         presentes,
         ausentes,
-        justificados,
-        tardes,
         porcentajeAsistencia: `${porcentajeAsistencia}%`
       },
       asistenciasPorBeneficiario: this.agruparPorBeneficiario(asistencias)
@@ -348,11 +343,9 @@ export class AsistenciasService {
     const totalRegistros = asistencias.length;
     const presentes = asistencias.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
     const ausentes = asistencias.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
-    const justificados = asistencias.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
-    const tardes = asistencias.filter(a => a.estado === EstadoAsistencia.TARDE).length;
 
     const porcentajeAsistencia = totalRegistros > 0
-      ? (((presentes + tardes) / totalRegistros) * 100).toFixed(2)
+      ? ((presentes / totalRegistros) * 100).toFixed(2)
       : '0';
 
     return {
@@ -380,8 +373,6 @@ export class AsistenciasService {
         totalRegistros,
         presentes,
         ausentes,
-        justificados,
-        tardes,
         porcentajeAsistencia: `${porcentajeAsistencia}%`
       },
       asistenciasPorClase: this.agruparPorClase(asistencias)
@@ -430,12 +421,12 @@ export class AsistenciasService {
       }
       const registro = asistenciasPorBeneficiarioMap.get(benefId)!;
 
-      // Si vino al menos una vez (presente o tarde), marcar como presente
-      if (a.estado === EstadoAsistencia.PRESENTE || a.estado === EstadoAsistencia.TARDE) {
+      // Si vino al menos una vez (presente), marcar como presente
+      if (a.estado === EstadoAsistencia.PRESENTE) {
         registro.presente = true;
       }
-      // Si tiene al menos un ausente o justificado
-      if (a.estado === EstadoAsistencia.AUSENTE || a.estado === EstadoAsistencia.JUSTIFICADO) {
+      // Si tiene al menos un ausente
+      if (a.estado === EstadoAsistencia.AUSENTE) {
         registro.ausente = true;
       }
     });
@@ -448,7 +439,7 @@ export class AsistenciasService {
       if (registro.presente) {
         beneficiariosPresentes++;
       } else if (registro.ausente) {
-        // Solo cuenta como ausente si NUNCA vino (no tiene ningún presente/tarde)
+        // Solo cuenta como ausente si NUNCA vino (no tiene ningún presente)
         beneficiariosAusentes++;
       }
     });
@@ -473,10 +464,10 @@ export class AsistenciasService {
         }
         const registro = beneficiariosPorClaseMap.get(benefId)!;
 
-        if (a.estado === EstadoAsistencia.PRESENTE || a.estado === EstadoAsistencia.TARDE) {
+        if (a.estado === EstadoAsistencia.PRESENTE) {
           registro.presente = true;
         }
-        if (a.estado === EstadoAsistencia.AUSENTE || a.estado === EstadoAsistencia.JUSTIFICADO) {
+        if (a.estado === EstadoAsistencia.AUSENTE) {
           registro.ausente = true;
         }
       });
@@ -643,8 +634,6 @@ export class AsistenciasService {
     const totalRegistros = asistencias.length;
     const presentes = asistencias.filter(a => a.estado === EstadoAsistencia.PRESENTE).length;
     const ausentes = asistencias.filter(a => a.estado === EstadoAsistencia.AUSENTE).length;
-    const justificados = asistencias.filter(a => a.estado === EstadoAsistencia.JUSTIFICADO).length;
-    const tardes = asistencias.filter(a => a.estado === EstadoAsistencia.TARDE).length;
 
     return {
       periodo: {
@@ -657,10 +646,8 @@ export class AsistenciasService {
         totalRegistros,
         presentes,
         ausentes,
-        justificados,
-        tardes,
         porcentajeAsistencia: totalRegistros > 0
-          ? `${(((presentes + tardes) / totalRegistros) * 100).toFixed(2)}%`
+          ? `${((presentes / totalRegistros) * 100).toFixed(2)}%`
           : '0%'
       }
     };
@@ -668,7 +655,7 @@ export class AsistenciasService {
 
   // ===================== FOTOS DE ASISTENCIA =====================
 
-  // Subir foto de asistencia (Base64)
+  // Subir foto de asistencia (Base64) — permite múltiples fotos por clase y fecha
   async subirFotoAsistencia(
     claseId: string,
     fecha: string,
@@ -686,31 +673,18 @@ export class AsistenciasService {
     // Crear fecha correctamente para evitar problemas de zona horaria
     const fechaDate = new Date(`${fecha}T12:00:00`);
 
-    // Verificar si ya existe una foto para esta clase y fecha
-    const fotoExistente = await this.fotosAsistenciaRepository
-      .createQueryBuilder('foto')
-      .leftJoinAndSelect('foto.clase', 'clase')
-      .where('clase.id = :claseId', { claseId })
-      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
-      .getOne();
-
-    // Si existe, eliminarla
-    if (fotoExistente) {
-      await this.fotosAsistenciaRepository.remove(fotoExistente);
-    }
-
-    // Crear registro en la base de datos con Base64
+    // Crear nuevo registro (se permiten múltiples fotos por clase y fecha)
     const fotoAsistencia = this.fotosAsistenciaRepository.create({
       clase,
       fecha: fechaDate,
-      imagen_url: imagenBase64, // Guardamos el Base64 directamente
+      imagen_url: imagenBase64,
     });
 
     return await this.fotosAsistenciaRepository.save(fotoAsistencia);
   }
 
-  // Obtener foto por clase y fecha
-  async getFotoAsistencia(claseId: string, fecha: string): Promise<FotoAsistencia | null> {
+  // Obtener todas las fotos por clase y fecha
+  async getFotoAsistencia(claseId: string, fecha: string): Promise<FotoAsistencia[]> {
     // Usar query builder para comparar solo la parte de la fecha (YYYY-MM-DD)
     // Esto evita problemas de zona horaria
     return await this.fotosAsistenciaRepository
@@ -718,7 +692,8 @@ export class AsistenciasService {
       .leftJoinAndSelect('foto.clase', 'clase')
       .where('clase.id = :claseId', { claseId })
       .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
-      .getOne();
+      .orderBy('foto.creado_en', 'ASC')
+      .getMany();
   }
 
   // Eliminar foto de asistencia

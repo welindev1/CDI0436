@@ -63,6 +63,7 @@ export class BeneficiariosService {
       .leftJoinAndSelect('beneficiario.clases', 'clases')
       .leftJoinAndSelect('clases.tutor', 'tutor')
       .leftJoinAndSelect('clases.horarios', 'horario')
+      .leftJoinAndSelect('beneficiario.supervivencias', 'supervivencias')
       .orderBy('beneficiario.nombre', 'ASC');
 
     if (filters) {
@@ -141,7 +142,7 @@ export class BeneficiariosService {
   async findOne(id: string): Promise<Beneficiario> {
     const beneficiario = await this.beneficiariosRepository.findOne({
       where: { id },
-      relations: ['clases', 'clases.tutor', 'clases.horarios', 'asistencias']
+      relations: ['clases', 'clases.tutor', 'clases.horarios', 'asistencias', 'supervivencias']
     });
 
     if (!beneficiario) {
@@ -154,7 +155,7 @@ export class BeneficiariosService {
   async findByCodigo(codigo: string): Promise<Beneficiario> {
     const beneficiario = await this.beneficiariosRepository.findOne({
       where: { codigo },
-      relations: ['clases', 'clases.tutor', 'clases.horarios']
+      relations: ['clases', 'clases.tutor', 'clases.horarios', 'supervivencias']
     });
 
     if (!beneficiario) {
@@ -279,11 +280,9 @@ export class BeneficiariosService {
     const totalAsistencias = beneficiario.asistencias?.length || 0;
     const presentes = beneficiario.asistencias?.filter(a => a.estado === 'presente').length || 0;
     const ausentes = beneficiario.asistencias?.filter(a => a.estado === 'ausente').length || 0;
-    const justificados = beneficiario.asistencias?.filter(a => a.estado === 'justificado').length || 0;
-    const tardes = beneficiario.asistencias?.filter(a => a.estado === 'tarde').length || 0;
 
     const porcentajeAsistencia = totalAsistencias > 0 
-      ? ((presentes + tardes) / totalAsistencias * 100).toFixed(2)
+      ? (presentes / totalAsistencias * 100).toFixed(2)
       : 0;
 
     return {
@@ -298,8 +297,6 @@ export class BeneficiariosService {
         totalAsistenciasRegistradas: totalAsistencias,
         presentes,
         ausentes,
-        justificados,
-        tardes,
         porcentajeAsistencia: `${porcentajeAsistencia}%`
       },
     };

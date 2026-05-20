@@ -431,6 +431,7 @@ export class SupervivenciasService {
 
   // ===================== FOTOS DE ASISTENCIA =====================
 
+  // Subir foto de asistencia — permite múltiples fotos por supervivencia y fecha
   async subirFotoAsistencia(
     supervivenciaId: string,
     fecha: string,
@@ -446,18 +447,7 @@ export class SupervivenciasService {
 
     const fechaDate = new Date(`${fecha}T12:00:00`);
 
-    // Si ya existe una foto para esta fecha, eliminarla
-    const fotoExistente = await this.fotosRepository
-      .createQueryBuilder('foto')
-      .leftJoinAndSelect('foto.supervivencia', 'supervivencia')
-      .where('supervivencia.id = :supervivenciaId', { supervivenciaId })
-      .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
-      .getOne();
-
-    if (fotoExistente) {
-      await this.fotosRepository.remove(fotoExistente);
-    }
-
+    // Crear nuevo registro (se permiten múltiples fotos por supervivencia y fecha)
     const foto = this.fotosRepository.create({
       supervivencia,
       fecha: fechaDate,
@@ -467,16 +457,18 @@ export class SupervivenciasService {
     return await this.fotosRepository.save(foto);
   }
 
+  // Obtener todas las fotos por supervivencia y fecha
   async getFotoAsistencia(
     supervivenciaId: string,
     fecha: string
-  ): Promise<FotoAsistenciaSupervivencia | null> {
+  ): Promise<FotoAsistenciaSupervivencia[]> {
     return await this.fotosRepository
       .createQueryBuilder('foto')
       .leftJoinAndSelect('foto.supervivencia', 'supervivencia')
       .where('supervivencia.id = :supervivenciaId', { supervivenciaId })
       .andWhere('DATE(foto.fecha) = DATE(:fecha)', { fecha })
-      .getOne();
+      .orderBy('foto.creado_en', 'ASC')
+      .getMany();
   }
 
   async eliminarFotoAsistencia(id: string): Promise<void> {
