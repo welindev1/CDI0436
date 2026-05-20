@@ -15,7 +15,8 @@ import { Clase } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ArrowLeft, Edit, UserPlus, Users, Calendar, Clock, UserCircle, 
-  Trash2, BookOpen, ClipboardCheck, Camera, X, Upload, Loader2, Info, ChevronLeft, ChevronRight
+  Trash2, BookOpen, ClipboardCheck, Camera, X, Upload, Loader2, Info, ChevronLeft, ChevronRight,
+  ArrowUpDown, ZoomIn
 } from 'lucide-react';
 
 const mapeoDias: Record<string, number> = {
@@ -47,16 +48,46 @@ export default function ClaseDetallePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<string | null>(null);
 
+  // Ordenamiento de beneficiarios
+  const [sortBy, setSortBy] = useState<'nombre' | 'apellido' | 'codigo' | 'edad'>('nombre');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const getSortedBeneficiarios = (beneficiariosList: any[]) => {
+    if (!beneficiariosList) return [];
+    return [...beneficiariosList].sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      if (sortBy === 'nombre') {
+        valA = a.nombre.toLowerCase();
+        valB = b.nombre.toLowerCase();
+      } else if (sortBy === 'apellido') {
+        valA = (a.apellido || '').toLowerCase();
+        valB = (b.apellido || '').toLowerCase();
+      } else if (sortBy === 'codigo') {
+        valA = a.codigo.toLowerCase();
+        valB = b.codigo.toLowerCase();
+      } else if (sortBy === 'edad') {
+        valA = a.fecha_nacimiento ? new Date(a.fecha_nacimiento).getTime() : 0;
+        valB = b.fecha_nacimiento ? new Date(b.fecha_nacimiento).getTime() : 0;
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
   // Tabs state
   const [activeTab, setActiveTab] = useState<'estudiantes' | 'asistencia' | 'info'>('estudiantes');
 
   // Asistencia state
   const [selectedFecha, setSelectedFecha] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
-  const [foto, setFoto] = useState<any>(null);
+  const [fotos, setFotos] = useState<any[]>([]);
   const [loadingFoto, setLoadingFoto] = useState(false);
   const [uploadingFoto, setUploadingFoto] = useState(false);
-  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxFoto, setLightboxFoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generar fechas válidas del mes actual
@@ -66,7 +97,7 @@ export default function ClaseDetallePage() {
 
   useEffect(() => {
     if (activeTab === 'asistencia') {
-      cargarFoto();
+      cargarFotos();
     }
   }, [selectedFecha, activeTab]);
 
@@ -97,35 +128,42 @@ export default function ClaseDetallePage() {
     }
   }, [selectedMonth, clase, activeTab]);
 
-  const cargarFoto = async () => {
+  const cargarFotos = async () => {
     try {
       setLoadingFoto(true);
       const data = await asistenciasApi.getFoto(claseId, selectedFecha);
-      setFoto(data);
+      setFotos(Array.isArray(data) ? data : data ? [data] : []);
     } catch (err: any) {
-      if (err.response?.status !== 404) console.error('Error al cargar foto:', err);
-      setFoto(null);
+      if (err.response?.status !== 404) console.error('Error al cargar fotos:', err);
+      setFotos([]);
     } finally {
       setLoadingFoto(false);
     }
   };
 
   const handleSubirFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return alert('Por favor selecciona una imagen válida');
-    if (file.size > 5 * 1024 * 1024) return alert('La imagen no puede ser mayor a 5MB');
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(f => {
+      if (!f.type.startsWith('image/')) { alert(`"${f.name}" no es una imagen válida`); return false; }
+      if (f.size > 5 * 1024 * 1024) { alert(`"${f.name}" supera los 5MB`); return false; }
+      return true;
+    });
+    if (validFiles.length === 0) return;
 
     try {
       setUploadingFoto(true);
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      await asistenciasApi.subirFoto(claseId, selectedFecha, base64);
-      await cargarFoto();
+      for (const file of validFiles) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        await asistenciasApi.subirFoto(claseId, selectedFecha, base64);
+      }
+      await cargarFotos();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al subir la foto');
     } finally {
@@ -134,16 +172,13 @@ export default function ClaseDetallePage() {
     }
   };
 
-  const handleEliminarFoto = async () => {
-    if (!foto?.id || !confirm('¿Estás seguro de eliminar esta foto?')) return;
+  const handleEliminarFoto = async (fotoId: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta foto?')) return;
     try {
-      setLoadingFoto(true);
-      await asistenciasApi.eliminarFoto(foto.id);
-      setFoto(null);
+      await asistenciasApi.eliminarFoto(fotoId);
+      setFotos(prev => prev.filter(f => f.id !== fotoId));
     } catch (err) {
       alert('Error al eliminar la foto');
-    } finally {
-      setLoadingFoto(false);
     }
   };
 
@@ -294,15 +329,40 @@ export default function ClaseDetallePage() {
           {/* Tab: Estudiantes */}
           {activeTab === 'estudiantes' && (
             <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b border-gray-200">
+              <div className="p-6 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Beneficiarios Inscritos ({clase.beneficiarios?.length || 0})
                 </h2>
+                {clase.beneficiarios && clase.beneficiarios.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="text-gray-500 font-medium">Ordenar por:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="nombre">Nombre</option>
+                      <option value="apellido">Apellido</option>
+                      <option value="codigo">Código</option>
+                      <option value="edad">Edad</option>
+                    </select>
+                    <button
+                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 flex items-center justify-center gap-1.5"
+                      title={sortOrder === 'asc' ? 'Orden Ascendente' : 'Orden Descendente'}
+                    >
+                      <ArrowUpDown className="w-4 h-4 text-blue-600" />
+                      <span className="hidden sm:inline font-medium">
+                        {sortOrder === 'asc' ? 'Ascendente (A-Z)' : 'Descendente (Z-A)'}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {clase.beneficiarios && clase.beneficiarios.length > 0 ? (
                 <div className="divide-y divide-gray-200">
-                  {clase.beneficiarios.map((beneficiario) => (
+                  {getSortedBeneficiarios(clase.beneficiarios).map((beneficiario) => (
                     <div key={beneficiario.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -429,52 +489,87 @@ export default function ClaseDetallePage() {
                 </div>
               </div>
 
-              {/* Foto del día compacta */}
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col md:flex-row items-center gap-6">
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-1">
-                    <Camera className="w-4 h-4 text-blue-500" /> Foto grupal de evidencia
+              {/* Fotos del día — galería multi-foto */}
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-blue-500" />
+                    Fotos de evidencia
+                    {fotos.length > 0 && (
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">{fotos.length}</span>
+                    )}
                   </h3>
-                  <p className="text-xs text-gray-500">
-                    Sube una foto de la clase como evidencia del día. 
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-4 shrink-0">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleSubirFoto}
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                  />
-                  
-                  {loadingFoto ? (
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  ) : foto ? (
-                    <div className="flex items-center gap-3">
-                      <div 
-                        className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setShowLightbox(true)}
-                      >
-                        <img src={foto.imagen_url} alt="Evidencia" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <button onClick={() => fileInputRef.current?.click()} className="text-xs font-medium text-blue-600 hover:text-blue-800">Cambiar</button>
-                        <button onClick={handleEliminarFoto} className="text-xs font-medium text-red-600 hover:text-red-800">Eliminar</button>
-                      </div>
-                    </div>
-                  ) : (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleSubirFoto}
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      className="hidden"
+                    />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFoto}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                      disabled={uploadingFoto || loadingFoto}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
-                      {uploadingFoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      Subir Foto
+                      {uploadingFoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      {uploadingFoto ? 'Subiendo...' : 'Subir Foto'}
                     </button>
-                  )}
+                  </div>
                 </div>
+
+                {loadingFoto && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-7 h-7 animate-spin text-blue-600" />
+                  </div>
+                )}
+
+                {!loadingFoto && fotos.length > 0 && (
+                  <div className="p-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {fotos.map((foto, idx) => (
+                        <div
+                          key={foto.id}
+                          className="group relative aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer bg-gray-50"
+                          onClick={() => setLightboxFoto(foto.imagen_url)}
+                        >
+                          <img
+                            src={foto.imagen_url}
+                            alt={`Foto ${idx + 1}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center gap-1.5">
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1.5 bg-white/90 rounded-full shadow hover:bg-white transition-all scale-90 group-hover:scale-100"
+                              onClick={(e) => { e.stopPropagation(); setLightboxFoto(foto.imagen_url); }}
+                              title="Ver ampliada"
+                            >
+                              <ZoomIn className="w-3.5 h-3.5 text-gray-700" />
+                            </button>
+                            <button
+                              className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500/90 rounded-full shadow hover:bg-red-600 transition-all scale-90 group-hover:scale-100"
+                              onClick={(e) => { e.stopPropagation(); handleEliminarFoto(foto.id); }}
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-white" />
+                            </button>
+                          </div>
+                          <div className="absolute top-1 left-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">{idx + 1}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!loadingFoto && fotos.length === 0 && (
+                  <div className="text-center py-5 text-gray-400">
+                    <Camera className="w-8 h-8 mx-auto mb-1 opacity-40" />
+                    <p className="text-xs">Sin fotos · haz click en "Subir Foto" para agregar</p>
+                  </div>
+                )}
               </div>
 
               {/* Registro de Asistencia (Ancho Completo) */}
@@ -587,13 +682,16 @@ export default function ClaseDetallePage() {
             </div>
           )}
 
-          {/* Modal Lightbox Foto */}
-          {showLightbox && foto && (
-            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setShowLightbox(false)}>
-              <button className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+          {/* Lightbox */}
+          {lightboxFoto && (
+            <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setLightboxFoto(null)}>
+              <button
+                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                onClick={() => setLightboxFoto(null)}
+              >
                 <X className="w-6 h-6 text-white" />
               </button>
-              <img src={foto.imagen_url} alt="Foto" className="max-w-full max-h-[90vh] object-contain rounded-lg" onClick={e => e.stopPropagation()} />
+              <img src={lightboxFoto} alt="Foto" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" onClick={e => e.stopPropagation()} />
             </div>
           )}
 

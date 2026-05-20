@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDa
 import { Supervivencia } from './supervivencia.entity';
 
 @Entity('fotos_asistencia_supervivencia')
-@Index(['supervivencia', 'fecha'], { unique: true })
+@Index(['supervivencia', 'fecha'])
 export class FotoAsistenciaSupervivencia {
   @PrimaryGeneratedColumn('uuid')
   id: string;

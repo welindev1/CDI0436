@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, Up
 import { Clase } from '../clases/clase.entity';
 
 @Entity('fotos_asistencia')
-@Index(['clase', 'fecha'], { unique: true })
+@Index(['clase', 'fecha'])
 export class FotoAsistencia {
   @PrimaryGeneratedColumn('uuid')
   id: string;

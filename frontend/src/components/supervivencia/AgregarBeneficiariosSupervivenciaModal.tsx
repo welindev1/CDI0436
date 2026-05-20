@@ -37,8 +37,16 @@ export default function AgregarBeneficiariosSupervivenciaModal({
     try {
       setIsLoading(true);
       const data = await beneficiariosApi.getAll({ activo: true });
-      // Filtrar los que ya están en el curso
-      const disponibles = data.filter(b => !beneficiariosActuales.includes(b.id));
+      // Filtrar los que ya están en el curso actual, los que pertenecen a clases activas o a cursos de supervivencia activos
+      const disponibles = data.filter(b => {
+        // No debe estar en el curso actual
+        if (beneficiariosActuales.includes(b.id)) return false;
+        // No debe estar inscrito en ninguna clase activa
+        const tieneClaseActiva = b.clases && b.clases.some(c => c.activo);
+        // No debe estar inscrito en ningún curso de supervivencia activo
+        const tieneSupervivenciaActiva = b.supervivencias && b.supervivencias.some(s => s.activo);
+        return !tieneClaseActiva && !tieneSupervivenciaActiva;
+      });
       setBeneficiarios(disponibles);
     } catch (err: any) {
       setError('Error al cargar beneficiarios');
@@ -135,7 +143,12 @@ export default function AgregarBeneficiariosSupervivenciaModal({
           ) : filteredBeneficiarios.length === 0 ? (
             <div className="text-center py-12">
               <UserPlus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No hay beneficiarios disponibles</p>
+              <p className="text-gray-700 font-medium mb-1">No hay beneficiarios disponibles</p>
+              <p className="text-sm text-gray-500 px-8">
+                {beneficiariosActuales.length > 0
+                  ? 'Todos los beneficiarios disponibles ya están inscritos en este curso, o no existen beneficiarios sin clase/curso asignado.'
+                  : 'Todos los beneficiarios activos ya están inscritos en una clase o curso de supervivencia.'}
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">

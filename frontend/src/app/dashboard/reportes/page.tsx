@@ -16,6 +16,29 @@ import {
 type TipoPeriodo = 'dia' | 'mes' | 'anio' | 'rango' | 'todo';
 type TipoReporteGlobal = 'estadistico' | 'detallado';
 
+// Helper de Formateo de Fechas en Español
+const formatFechaEs = (fechaStr: string): string => {
+  if (!fechaStr) return '-';
+  const cleanDateStr = fechaStr.includes('T') ? fechaStr.split('T')[0] : fechaStr;
+  const [year, month, day] = cleanDateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  
+  const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const diaSemana = diasSemana[date.getDay()];
+  
+  const diaFormateado = day.toString().padStart(2, '0');
+  const mesFormateado = month.toString().padStart(2, '0');
+  
+  return `${diaSemana} ${diaFormateado}/${mesFormateado}`;
+};
+
+const formatFechasExport = (registros: any[], estado: string) => {
+  return (registros || [])
+    .filter(r => r.estado?.toLowerCase() === estado.toLowerCase())
+    .map(r => formatFechaEs(r.fecha))
+    .join(', ') || '-';
+};
+
 export default function ReportesPage() {
   const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'global'>('clase');
   
@@ -174,44 +197,39 @@ export default function ReportesPage() {
 
   // ----- GENERADORES CLASE -----
   const generarPDFClase = (data: any, fechaReporte: string) => {
-    const asistencias = data.asistenciasPorBeneficiario.flatMap((item: any) =>
-      item.registros.map((registro: any) => ({
-        beneficiario: item.beneficiario.nombre,
-        codigo: item.beneficiario.codigo,
-        fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        estado: registro.estado,
-        observaciones: registro.observaciones || '-'
-      }))
-    );
+    const asistencias = data.asistenciasPorBeneficiario.map((item: any) => ({
+      beneficiario: item.beneficiario.nombre,
+      codigo: item.beneficiario.codigo,
+      presentes: formatFechasExport(item.registros, 'presente'),
+      ausentes: formatFechasExport(item.registros, 'ausente')
+    }));
     exportToPDF({
-      titulo: `Reporte de Asistencia - ${data.clase.nombre}`, subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`, fecha: fechaReporte,
-      datos: asistencias, columnas: ['beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
-      headers: ['Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
+      titulo: `Reporte de Asistencia - ${data.clase.nombre}`, 
+      subtitulo: `${data.clase.tutor} | ${data.clase.horarios}`, 
+      fecha: fechaReporte,
+      datos: asistencias, 
+      columnas: ['beneficiario', 'codigo', 'presentes', 'ausentes'],
+      headers: ['Beneficiario', 'Código', 'Presentes', 'Ausentes (Faltas)'],
       totales: [
         { label: 'Total Registros', value: data.estadisticas.totalRegistros },
         { label: 'Presentes', value: data.estadisticas.presentes },
         { label: 'Ausentes', value: data.estadisticas.ausentes },
-        { label: 'Justificados', value: data.estadisticas.justificados },
-        { label: 'Tardes', value: data.estadisticas.tardes },
         { label: '% Asistencia', value: data.estadisticas.porcentajeAsistencia },
       ],
     });
   };
 
   const generarExcelClase = (data: any) => {
-    const asistencias = data.asistenciasPorBeneficiario.flatMap((item: any) =>
-      item.registros.map((registro: any) => ({
-        Beneficiario: item.beneficiario.nombre, Código: item.beneficiario.codigo,
-        Fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        Estado: registro.estado, Observaciones: registro.observaciones || '-'
-      }))
-    );
+    const asistencias = data.asistenciasPorBeneficiario.map((item: any) => ({
+      'Beneficiario': item.beneficiario.nombre, 
+      'Código': item.beneficiario.codigo,
+      'Presentes': formatFechasExport(item.registros, 'presente'),
+      'Ausentes (Faltas)': formatFechasExport(item.registros, 'ausente')
+    }));
     const estadisticas = [
       { Métrica: 'Total Registros', Valor: data.estadisticas.totalRegistros },
       { Métrica: 'Presentes', Valor: data.estadisticas.presentes },
       { Métrica: 'Ausentes', Valor: data.estadisticas.ausentes },
-      { Métrica: 'Justificados', Valor: data.estadisticas.justificados },
-      { Métrica: 'Tardes', Valor: data.estadisticas.tardes },
       { Métrica: '% Asistencia', Valor: data.estadisticas.porcentajeAsistencia },
     ];
     exportToExcel({
@@ -222,46 +240,41 @@ export default function ReportesPage() {
 
   // ----- GENERADORES BENEFICIARIO -----
   const generarPDFBeneficiario = (data: any, fechaReporte: string) => {
-    const asistencias = data.asistenciasPorClase.flatMap((item: any) =>
-      item.registros.map((registro: any) => ({
-        clase: item.clase.nombre, codigo: item.clase.codigo || '-',
-        fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        estado: registro.estado, observaciones: registro.observaciones || '-'
-      }))
-    );
+    const asistencias = data.asistenciasPorClase.map((item: any) => ({
+      clase: item.clase.nombre, 
+      codigo: item.clase.codigo || '-',
+      presentes: formatFechasExport(item.registros, 'presente'),
+      ausentes: formatFechasExport(item.registros, 'ausente')
+    }));
     exportToPDF({
       titulo: `Reporte de Asistencia - ${data.beneficiario.nombre}`,
       subtitulo: `Código: ${data.beneficiario.codigo}${data.beneficiario.edad ? ` | Edad: ${data.beneficiario.edad} años` : ''}`,
       fecha: fechaReporte,
-      datos: asistencias, columnas: ['clase', 'codigo', 'fecha', 'estado', 'observaciones'],
-      headers: ['Clase', 'Código', 'Fecha', 'Estado', 'Observaciones'],
+      datos: asistencias, 
+      columnas: ['clase', 'codigo', 'presentes', 'ausentes'],
+      headers: ['Clase', 'Código Clase', 'Presentes', 'Ausentes (Faltas)'],
       totales: [
         { label: 'Clases Inscritas', value: data.estadisticas.totalClasesInscritas },
         { label: 'Total Registros', value: data.estadisticas.totalRegistros },
         { label: 'Presentes', value: data.estadisticas.presentes },
         { label: 'Ausentes', value: data.estadisticas.ausentes },
-        { label: 'Justificados', value: data.estadisticas.justificados },
-        { label: 'Tardes', value: data.estadisticas.tardes },
         { label: '% Asistencia', value: data.estadisticas.porcentajeAsistencia },
       ],
     });
   };
 
   const generarExcelBeneficiario = (data: any) => {
-    const asistencias = data.asistenciasPorClase.flatMap((item: any) =>
-      item.registros.map((registro: any) => ({
-        Clase: item.clase.nombre, Código: item.clase.codigo || '-',
-        Fecha: new Date(registro.fecha).toLocaleDateString('es-DO'),
-        Estado: registro.estado, Observaciones: registro.observaciones || '-'
-      }))
-    );
+    const asistencias = data.asistenciasPorClase.map((item: any) => ({
+      'Clase': item.clase.nombre, 
+      'Código Clase': item.clase.codigo || '-',
+      'Presentes': formatFechasExport(item.registros, 'presente'),
+      'Ausentes (Faltas)': formatFechasExport(item.registros, 'ausente')
+    }));
     const estadisticas = [
       { Métrica: 'Clases Inscritas', Valor: data.estadisticas.totalClasesInscritas },
       { Métrica: 'Total Registros', Valor: data.estadisticas.totalRegistros },
       { Métrica: 'Presentes', Valor: data.estadisticas.presentes },
       { Métrica: 'Ausentes', Valor: data.estadisticas.ausentes },
-      { Métrica: 'Justificados', Valor: data.estadisticas.justificados },
-      { Métrica: 'Tardes', Valor: data.estadisticas.tardes },
       { Métrica: '% Asistencia', Valor: data.estadisticas.porcentajeAsistencia },
     ];
     exportToExcel({
@@ -278,18 +291,19 @@ export default function ReportesPage() {
   const generarPDFGlobal = (data: any, periodo: string, fechaReporte: string, tipoGlobal: string) => {
     if (tipoGlobal === 'detallado') {
       const registros = data.asistenciasPorClase.flatMap((item: any) =>
-        (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
-          ben.registros.map((reg: any) => ({
-            clase: item.clase.nombre, beneficiario: ben.beneficiario.nombre,
-            codigo: ben.beneficiario.codigo, fecha: new Date(reg.fecha).toLocaleDateString('es-DO'),
-            estado: reg.estado, observaciones: reg.observaciones || '-'
-          }))
-        )
+        (item.asistenciasPorBeneficiario || []).map((ben: any) => ({
+          clase: item.clase.nombre, 
+          beneficiario: ben.beneficiario.nombre,
+          codigo: ben.beneficiario.codigo,
+          presentes: formatFechasExport(ben.registros, 'presente'),
+          ausentes: formatFechasExport(ben.registros, 'ausente')
+        }))
       );
       exportToPDF({
         titulo: 'Reporte General de Asistencia - Detallado', subtitulo: `Período: ${periodo}`, fecha: fechaReporte,
-        datos: registros, columnas: ['clase', 'beneficiario', 'codigo', 'fecha', 'estado', 'observaciones'],
-        headers: ['Clase', 'Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'],
+        datos: registros, 
+        columnas: ['clase', 'beneficiario', 'codigo', 'presentes', 'ausentes'],
+        headers: ['Clase', 'Beneficiario', 'Código', 'Presentes', 'Ausentes (Faltas)'],
         totales: [
           { label: 'Total Clases', value: data.resumen.totalClases },
           { label: 'Asistieron', value: data.estadisticasGlobales.beneficiariosPresentes },
@@ -334,16 +348,45 @@ export default function ReportesPage() {
     });
     if (tipoGlobal === 'detallado') {
       const registrosDetallados = data.asistenciasPorClase.flatMap((item: any) =>
-        (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
-          ben.registros.map((reg: any) => ({
-            Clase: item.clase.nombre, Beneficiario: ben.beneficiario.nombre,
-            Fecha: new Date(reg.fecha).toLocaleDateString('es-DO'), Estado: reg.estado
-          }))
-        )
+        (item.asistenciasPorBeneficiario || []).map((ben: any) => ({
+          Clase: item.clase.nombre, 
+          Beneficiario: ben.beneficiario.nombre,
+          Código: ben.beneficiario.codigo,
+          Presentes: formatFechasExport(ben.registros, 'presente'),
+          Ausentes: formatFechasExport(ben.registros, 'ausente')
+        }))
       );
       hojas.push({ nombre: 'Detalle', datos: registrosDetallados });
     }
     exportToExcel({ nombreArchivo: `Reporte_General_${tipoGlobal}`, hojas });
+  };
+
+  const renderDateChips = (registros: any[], estado: string, colorClass: string) => {
+    const filtered = (registros || []).filter(r => r.estado?.toLowerCase() === estado.toLowerCase());
+    if (filtered.length === 0) return <span className="text-gray-400 text-xs font-normal">-</span>;
+
+    const isAusente = estado.toLowerCase() === 'ausente';
+
+    return (
+      <div className="flex flex-col gap-1.5 min-w-[120px] max-w-[280px]">
+        {isAusente && (
+          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-100 text-red-700 border border-red-200 shadow-sm w-fit">
+            {filtered.length} {filtered.length === 1 ? 'falta' : 'faltas'}
+          </span>
+        )}
+        <div className="flex flex-wrap gap-1">
+          {filtered.map((reg, index) => (
+            <span
+              key={index}
+              title={reg.observaciones ? `Observaciones: ${reg.observaciones}` : undefined}
+              className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border shadow-xs transition-all hover:scale-105 cursor-default ${colorClass}`}
+            >
+              {formatFechaEs(reg.fecha)}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   // ----- RENDER PREVIEW -----
@@ -360,21 +403,19 @@ export default function ReportesPage() {
       stats = [
         { label: 'Presentes', value: reportData.estadisticas?.presentes || 0 },
         { label: 'Ausentes', value: reportData.estadisticas?.ausentes || 0 },
-        { label: 'Tardes', value: reportData.estadisticas?.tardes || 0 },
         { label: '% Asistencia', value: reportData.estadisticas?.porcentajeAsistencia || '0%' },
       ];
       subtitle = reportData.clase?.nombre || '';
-      tableHeaders = ['Beneficiario', 'Código', 'Fecha', 'Estado', 'Observaciones'];
-      tableRows = reportData.asistenciasPorBeneficiario?.flatMap((item: any) =>
-        item.registros.map((registro: any) => ({
-          col1: item.beneficiario.nombre,
-          col2: item.beneficiario.codigo,
-          col3: new Date(registro.fecha).toLocaleDateString('es-DO'),
-          col4: registro.estado,
-          col5: registro.observaciones || '-',
-          key: `${item.beneficiario.id}-${registro.fecha}`
-        }))
-      ) || [];
+      tableHeaders = ['Beneficiario', 'Código', 'Presentes', 'Ausentes (Faltas)'];
+      tableRows = reportData.asistenciasPorBeneficiario?.map((item: any) => ({
+        cells: [
+          <span className="font-bold text-gray-900">{item.beneficiario.nombre}</span>,
+          <span className="font-mono text-xs">{item.beneficiario.codigo}</span>,
+          renderDateChips(item.registros, 'presente', 'bg-green-50 text-green-700 border-green-200'),
+          renderDateChips(item.registros, 'ausente', 'bg-red-50 text-red-700 border-red-200 font-bold')
+        ],
+        key: item.beneficiario.id
+      })) || [];
     } else if (tipo === 'beneficiario') {
       stats = [
         { label: 'Presentes', value: reportData.estadisticas?.presentes || 0 },
@@ -383,17 +424,16 @@ export default function ReportesPage() {
         { label: '% Asistencia', value: reportData.estadisticas?.porcentajeAsistencia || '0%' },
       ];
       subtitle = reportData.beneficiario?.nombre || '';
-      tableHeaders = ['Clase', 'Código Clase', 'Fecha', 'Estado', 'Observaciones'];
-      tableRows = reportData.asistenciasPorClase?.flatMap((item: any) =>
-        item.registros.map((registro: any) => ({
-          col1: item.clase.nombre,
-          col2: item.clase.codigo || '-',
-          col3: new Date(registro.fecha).toLocaleDateString('es-DO'),
-          col4: registro.estado,
-          col5: registro.observaciones || '-',
-          key: `${item.clase.id}-${registro.fecha}`
-        }))
-      ) || [];
+      tableHeaders = ['Clase', 'Código Clase', 'Presentes', 'Ausentes (Faltas)'];
+      tableRows = reportData.asistenciasPorClase?.map((item: any) => ({
+        cells: [
+          <span className="font-bold text-gray-900">{item.clase.nombre}</span>,
+          <span className="font-mono text-xs">{item.clase.codigo || '-'}</span>,
+          renderDateChips(item.registros, 'presente', 'bg-green-50 text-green-700 border-green-200'),
+          renderDateChips(item.registros, 'ausente', 'bg-red-50 text-red-700 border-red-200 font-bold')
+        ],
+        key: item.clase.id
+      })) || [];
     } else if (tipo === 'global') {
       stats = [
         { label: 'Total Clases', value: reportData.resumen?.totalClases || 0 },
@@ -404,39 +444,34 @@ export default function ReportesPage() {
       subtitle = activeReportContext.periodoDescripcion || 'Historial Completo';
 
       if (tipoGlobal === 'detallado') {
-        tableHeaders = ['Clase', 'Beneficiario', 'Fecha', 'Estado', 'Observaciones'];
+        tableHeaders = ['Clase', 'Beneficiario', 'Código', 'Presentes', 'Ausentes (Faltas)'];
         tableRows = reportData.asistenciasPorClase?.flatMap((item: any) =>
-          (item.asistenciasPorBeneficiario || []).flatMap((ben: any) =>
-            ben.registros.map((reg: any) => ({
-              col1: item.clase.nombre,
-              col2: ben.beneficiario.nombre,
-              col3: new Date(reg.fecha).toLocaleDateString('es-DO'),
-              col4: reg.estado,
-              col5: reg.observaciones || '-',
-              key: `${item.clase.id}-${ben.beneficiario.id}-${reg.fecha}`
-            }))
-          )
+          (item.asistenciasPorBeneficiario || []).map((ben: any) => ({
+            cells: [
+              <span className="font-medium text-gray-900">{item.clase.nombre}</span>,
+              <span className="font-bold text-gray-900">{ben.beneficiario.nombre}</span>,
+              <span className="font-mono text-xs">{ben.beneficiario.codigo}</span>,
+              renderDateChips(ben.registros, 'presente', 'bg-green-50 text-green-700 border-green-200'),
+              renderDateChips(ben.registros, 'ausente', 'bg-red-50 text-red-700 border-red-200 font-bold')
+            ],
+            key: `${item.clase.id}-${ben.beneficiario.id}`
+          }))
         ) || [];
       } else {
         tableHeaders = ['Clase', 'Tutor', 'Inscritos', 'Presentes', 'Ausentes', '% Asist.'];
         tableRows = reportData.asistenciasPorClase?.map((item: any) => ({
-          col1: item.clase.nombre,
-          col2: item.clase.tutor || 'Sin tutor',
-          col3: item.clase.totalBeneficiarios,
-          col4: item.estadisticas.beneficiariosPresentes,
-          col5: item.estadisticas.beneficiariosAusentes,
-          col6: item.estadisticas.porcentajeAsistencia,
+          cells: [
+            <span className="font-medium text-gray-900">{item.clase.nombre}</span>,
+            <span>{item.clase.tutor || 'Sin tutor'}</span>,
+            <span>{item.clase.totalBeneficiarios}</span>,
+            <span className="text-green-600 font-bold">{item.estadisticas.beneficiariosPresentes}</span>,
+            <span className="text-red-600 font-bold">{item.estadisticas.beneficiariosAusentes}</span>,
+            <span className="font-semibold">{item.estadisticas.porcentajeAsistencia}</span>
+          ],
           key: item.clase.id
         })) || [];
       }
     }
-
-    const estadoColores: Record<string, string> = {
-      'PRESENTE': 'bg-green-100 text-green-700',
-      'AUSENTE': 'bg-red-100 text-red-700',
-      'TARDE': 'bg-amber-100 text-amber-700',
-      'JUSTIFICADO': 'bg-blue-100 text-blue-700'
-    };
 
     return (
       <div className="bg-white border-2 border-blue-100 rounded-2xl shadow-sm overflow-hidden mt-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -487,19 +522,11 @@ export default function ReportesPage() {
                 <tbody className="divide-y divide-gray-100">
                   {tableRows.map((row, i) => (
                     <tr key={row.key || i} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{row.col1}</td>
-                      <td className="px-4 py-3">{row.col2}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{row.col3}</td>
-                      <td className="px-4 py-3">
-                        {/* Status chip if it looks like a status, else just text */}
-                        {estadoColores[row.col4] ? (
-                           <span className={`px-2 py-1 text-xs font-bold rounded-lg ${estadoColores[row.col4]}`}>{row.col4}</span>
-                        ) : (
-                           row.col4
-                        )}
-                      </td>
-                      <td className="px-4 py-3">{row.col5}</td>
-                      {row.col6 !== undefined && <td className="px-4 py-3 font-medium">{row.col6}</td>}
+                      {row.cells.map((cell: any, cellIndex: number) => (
+                        <td key={cellIndex} className="px-4 py-3">
+                          {cell}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -514,6 +541,7 @@ export default function ReportesPage() {
       </div>
     );
   };
+
 
   return (
     <ProtectedRoute requiredPermisos={['reportes:ver']}>

@@ -1,5 +1,5 @@
 import { EstadoAsistencia } from '@/lib/types';
-import { CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 interface EstadoBadgeProps {
   estado: EstadoAsistencia;
@@ -17,16 +17,6 @@ export default function EstadoBadge({ estado, showIcon = true }: EstadoBadgeProp
       color: 'bg-red-100 text-red-800',
       icon: XCircle,
       label: 'Ausente',
-    },
-    [EstadoAsistencia.JUSTIFICADO]: {
-      color: 'bg-blue-100 text-blue-800',
-      icon: AlertCircle,
-      label: 'Justificado',
-    },
-    [EstadoAsistencia.TARDE]: {
-      color: 'bg-yellow-100 text-yellow-800',
-      icon: Clock,
-      label: 'Tarde',
     },
   };
 

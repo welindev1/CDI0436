@@ -6,8 +6,6 @@ import { Usuario } from '../usuarios/usuario.entity';
 export enum EstadoAsistencia {
   PRESENTE = 'presente',
   AUSENTE = 'ausente',
-  JUSTIFICADO = 'justificado',
-  TARDE = 'tarde',
 }
 
 @Entity('asistencias')

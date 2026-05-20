@@ -6,7 +6,7 @@ import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
 import { EstadoAsistencia, Clase } from '@/lib/types';
 import {
-  Save, CheckCircle, XCircle, Clock, AlertCircle, Users, Search,
+  Save, CheckCircle, XCircle, Users, Search,
   MessageSquare, X, Loader2
 } from 'lucide-react';
 
@@ -19,8 +19,6 @@ interface RegistroAsistenciaProps {
 const ESTADOS = [
   { valor: EstadoAsistencia.PRESENTE,   label: 'Presente',    icon: CheckCircle,  bg: 'bg-green-100',  text: 'text-green-700',  ring: 'ring-green-500',  dot: 'bg-green-500' },
   { valor: EstadoAsistencia.AUSENTE,    label: 'Ausente',     icon: XCircle,      bg: 'bg-red-100',    text: 'text-red-700',    ring: 'ring-red-500',    dot: 'bg-red-500' },
-  { valor: EstadoAsistencia.TARDE,      label: 'Tarde',       icon: Clock,        bg: 'bg-amber-100',  text: 'text-amber-700',  ring: 'ring-amber-500',  dot: 'bg-amber-500' },
-  { valor: EstadoAsistencia.JUSTIFICADO,label: 'Justificado', icon: AlertCircle,  bg: 'bg-blue-100',   text: 'text-blue-700',   ring: 'ring-blue-500',   dot: 'bg-blue-500' },
 ];
 
 export default function RegistroAsistencia({ claseId, fecha, onSaved }: RegistroAsistenciaProps) {
@@ -114,14 +112,12 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
 
   const getStats = () => {
     const total = clase?.beneficiarios?.length || 0;
-    let presentes = 0, ausentes = 0, tardos = 0, justificados = 0;
+    let presentes = 0, ausentes = 0;
     asistencias.forEach(({ estado }) => {
       if (estado === EstadoAsistencia.PRESENTE) presentes++;
       else if (estado === EstadoAsistencia.AUSENTE) ausentes++;
-      else if (estado === EstadoAsistencia.TARDE) tardos++;
-      else if (estado === EstadoAsistencia.JUSTIFICADO) justificados++;
     });
-    return { total, sinMarcar: total - asistencias.size, presentes, ausentes, tardes: tardos, justificados };
+    return { total, sinMarcar: total - asistencias.size, presentes, ausentes };
   };
 
   if (isLoading) {
@@ -158,13 +154,11 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       {/* Header removido porque ahora está integrado en el perfil de la clase */}
 
       {/* ── Stats ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: 'Sin marcar', value: stats.sinMarcar, bg: 'bg-gray-50',   text: 'text-gray-700',   border: 'border-gray-200',  icon: <Users className="w-5 h-5 text-gray-400" /> },
           { label: 'Presentes',  value: stats.presentes, bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200', icon: <CheckCircle className="w-5 h-5 text-green-500" /> },
           { label: 'Ausentes',   value: stats.ausentes,  bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',   icon: <XCircle className="w-5 h-5 text-red-500" /> },
-          { label: 'Tardes',     value: stats.tardes,    bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200', icon: <Clock className="w-5 h-5 text-amber-500" /> },
-          { label: 'Justificados',value: stats.justificados, bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200',  icon: <AlertCircle className="w-5 h-5 text-blue-500" /> },
         ].map(s => (
           <div key={s.label} className={`${s.bg} border ${s.border} rounded-xl p-3 flex items-center justify-between`}>
             <div>
