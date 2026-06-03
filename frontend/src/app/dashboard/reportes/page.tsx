@@ -10,7 +10,7 @@ import { exportToPDF } from '@/lib/utils/exportPDF';
 import { exportToExcel } from '@/lib/utils/exportExcel';
 import { 
   FileText, BarChart3, Users, BookOpen, Globe, Download, 
-  Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye
+  Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye, UserCheck, UserX
 } from 'lucide-react';
 
 type TipoPeriodo = 'dia' | 'mes' | 'anio' | 'rango' | 'todo';
@@ -40,7 +40,7 @@ const formatFechasExport = (registros: any[], estado: string) => {
 };
 
 export default function ReportesPage() {
-  const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'global'>('clase');
+  const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'tutor' | 'global' | 'ausencias'>('clase');
   
   // Estado para reporte global
   const [tipoPeriodo, setTipoPeriodo] = useState<TipoPeriodo>('mes');
@@ -124,7 +124,7 @@ export default function ReportesPage() {
     return true;
   };
 
-  const handleSwitchTab = (tab: 'clase'|'beneficiario'|'global') => {
+  const handleSwitchTab = (tab: 'clase'|'beneficiario'|'tutor'|'global'|'ausencias') => {
     setTipoReportePrincipal(tab);
     setReportData(null);
     setActiveReportContext(null);
@@ -141,6 +141,8 @@ export default function ReportesPage() {
       let data;
       if (tipoReportePrincipal === 'clase') {
         data = await asistenciasApi.getReportePorClase(filtros.id, filtros.fechaInicio, filtros.fechaFin);
+      } else if (tipoReportePrincipal === 'tutor') {
+        data = await asistenciasApi.getReportePorTutor(filtros.id, filtros.fechaInicio, filtros.fechaFin);
       } else {
         data = await asistenciasApi.getReportePorBeneficiario(filtros.id, filtros.fechaInicio, filtros.fechaFin);
       }
@@ -159,16 +161,21 @@ export default function ReportesPage() {
     try {
       setIsLoading(true); setError(''); setSuccess(''); setReportData(null);
       const fechas = calcularFechasGlobal();
-      const detallado = tipoReporteGlobal === 'detallado';
-      const data = await asistenciasApi.getReporteGlobal(fechas.fechaInicio, fechas.fechaFin, detallado);
-      
       const periodoDescripcion = obtenerDescripcionPeriodo();
       const fechaReporte = new Date().toLocaleDateString('es-DO');
 
-      setReportData(data);
-      setActiveReportContext({ tipo: 'global', tipoGlobal: tipoReporteGlobal, periodoDescripcion, fechaReporte });
+      if (tipoReportePrincipal === 'ausencias') {
+        const data = await asistenciasApi.getReporteAusenciasGeneral(fechas.fechaInicio, fechas.fechaFin);
+        setReportData(data);
+        setActiveReportContext({ tipo: 'ausencias', periodoDescripcion, fechaReporte });
+      } else {
+        const detallado = tipoReporteGlobal === 'detallado';
+        const data = await asistenciasApi.getReporteGlobal(fechas.fechaInicio, fechas.fechaFin, detallado);
+        setReportData(data);
+        setActiveReportContext({ tipo: 'global', tipoGlobal: tipoReporteGlobal, periodoDescripcion, fechaReporte });
+      }
     } catch (err: any) {
-      setError(err.message || 'Error al generar reporte global');
+      setError(err.message || 'Error al generar reporte');
     } finally {
       setIsLoading(false);
     }
@@ -185,9 +192,15 @@ export default function ReportesPage() {
       } else if (tipo === 'beneficiario') {
          if (formato === 'pdf') generarPDFBeneficiario(reportData, fechaReporte);
          else generarExcelBeneficiario(reportData);
+      } else if (tipo === 'tutor') {
+         if (formato === 'pdf') generarPDFTutor(reportData, fechaReporte);
+         else generarExcelTutor(reportData);
       } else if (tipo === 'global') {
          if (formato === 'pdf') generarPDFGlobal(reportData, periodoDescripcion, fechaReporte, tipoGlobal);
          else generarExcelGlobal(reportData, periodoDescripcion, tipoGlobal);
+      } else if (tipo === 'ausencias') {
+         if (formato === 'pdf') generarPDFAusencias(reportData, periodoDescripcion, fechaReporte);
+         else generarExcelAusencias(reportData, periodoDescripcion);
       }
       setSuccess(`Reporte exportado exitosamente en formato ${formato.toUpperCase()}`);
     } catch(err: any) {
@@ -283,6 +296,96 @@ export default function ReportesPage() {
         { nombre: 'Información', datos: [{ Campo: 'Nombre', Valor: data.beneficiario.nombre }, { Campo: 'Código', Valor: data.beneficiario.codigo }] },
         { nombre: 'Asistencias', datos: asistencias },
         { nombre: 'Estadísticas', datos: estadisticas },
+      ],
+    });
+  };
+
+  // ----- GENERADORES TUTOR -----
+  const generarPDFTutor = (data: any, fechaReporte: string) => {
+    const clases = data.clases.map((item: any) => ({
+      clase: item.clase.nombre,
+      codigo: item.clase.codigo || '-',
+      fechas: item.fechasRegistro.map((f: string) => formatFechaEs(f)).join(', ') || '-',
+      totalDias: item.estadisticas.diasConAsistenciaRegistrada
+    }));
+    exportToPDF({
+      titulo: `Reporte de Asistencia por Tutor - ${data.tutor.nombre}`,
+      subtitulo: `Especialidad: ${data.tutor.especialidad || 'No especificada'}`,
+      fecha: fechaReporte,
+      datos: clases,
+      columnas: ['clase', 'codigo', 'totalDias', 'fechas'],
+      headers: ['Clase', 'Código Clase', 'Días Pasó Lista', 'Fechas de Asistencia'],
+      totales: [
+        { label: 'Total Clases', value: data.estadisticas.totalClasesAsignadas },
+        { label: 'Días Únicos Registró', value: data.estadisticas.totalDiasConRegistroGlobal },
+      ],
+    });
+  };
+
+  const generarExcelTutor = (data: any) => {
+    const clases = data.clases.map((item: any) => ({
+      'Clase': item.clase.nombre,
+      'Código Clase': item.clase.codigo || '-',
+      'Días Pasó Lista': item.estadisticas.diasConAsistenciaRegistrada,
+      'Fechas de Asistencia': item.fechasRegistro.map((f: string) => formatFechaEs(f)).join(', ') || '-'
+    }));
+    const estadisticas = [
+      { Métrica: 'Total Clases', Valor: data.estadisticas.totalClasesAsignadas },
+      { Métrica: 'Días Únicos Registró', Valor: data.estadisticas.totalDiasConRegistroGlobal },
+    ];
+    exportToExcel({
+      nombreArchivo: `Reporte_Tutor_${data.tutor.nombre}`,
+      hojas: [
+        { nombre: 'Información', datos: [{ Campo: 'Nombre', Valor: data.tutor.nombre }, { Campo: 'Especialidad', Valor: data.tutor.especialidad || 'N/A' }] },
+        { nombre: 'Clases y Asistencia', datos: clases },
+        { nombre: 'Estadísticas', datos: estadisticas },
+      ],
+    });
+  };
+
+  // ----- GENERADORES AUSENCIAS -----
+  const generarPDFAusencias = (data: any, periodo: string, fechaReporte: string) => {
+    const registros = data.registros.map((item: any) => ({
+      beneficiario: item.beneficiario.nombre,
+      codigo: item.beneficiario.codigo || '-',
+      clase: item.clase.nombre,
+      tutor: item.tutor.nombre,
+      fechas: (item.fechas || []).map((f: string) => formatFechaEs(f)).join(', ') || '-',
+      totalFaltas: (item.fechas || []).length
+    }));
+    exportToPDF({
+      titulo: 'Reporte General de Ausencias',
+      subtitulo: `Período: ${periodo}`,
+      fecha: fechaReporte,
+      datos: registros,
+      columnas: ['beneficiario', 'clase', 'tutor', 'totalFaltas', 'fechas'],
+      headers: ['Beneficiario', 'Clase', 'Tutor', 'Total Faltas', 'Fechas de Ausencia'],
+      totales: [
+        { label: 'Total Ausencias', value: data.estadisticas.totalAusencias },
+        { label: 'Alumnos con Faltas', value: data.estadisticas.totalBeneficiariosAusentes },
+      ],
+    });
+  };
+
+  const generarExcelAusencias = (data: any, periodo: string) => {
+    const registros = data.registros.map((item: any) => ({
+      'Beneficiario': item.beneficiario.nombre,
+      'Código': item.beneficiario.codigo || '-',
+      'Clase': item.clase.nombre,
+      'Tutor': item.tutor.nombre,
+      'Total Faltas': (item.fechas || []).length,
+      'Fechas de Ausencia': (item.fechas || []).map((f: string) => formatFechaEs(f)).join(', ') || '-'
+    }));
+    const estadisticas = [
+      { Métrica: 'Período', Valor: periodo },
+      { Métrica: 'Total Ausencias', Valor: data.estadisticas.totalAusencias },
+      { Métrica: 'Alumnos Distintos con Faltas', Valor: data.estadisticas.totalBeneficiariosAusentes },
+    ];
+    exportToExcel({
+      nombreArchivo: 'Reporte_General_Ausencias',
+      hojas: [
+        { nombre: 'Ausencias', datos: registros },
+        { nombre: 'Resumen', datos: estadisticas },
       ],
     });
   };
@@ -434,6 +537,28 @@ export default function ReportesPage() {
         ],
         key: item.clase.id
       })) || [];
+    } else if (tipo === 'tutor') {
+      stats = [
+        { label: 'Clases Asignadas', value: reportData.estadisticas?.totalClasesAsignadas || 0 },
+        { label: 'Días Registró Lista', value: reportData.estadisticas?.totalDiasConRegistroGlobal || 0 },
+      ];
+      subtitle = reportData.tutor?.nombre || '';
+      tableHeaders = ['Clase', 'Código Clase', 'Días Pasó Lista', 'Fechas de Registro'];
+      tableRows = reportData.clases?.map((item: any) => ({
+        cells: [
+          <span className="font-bold text-gray-900">{item.clase.nombre}</span>,
+          <span className="font-mono text-xs">{item.clase.codigo || '-'}</span>,
+          <span className="font-bold text-blue-600">{item.estadisticas.diasConAsistenciaRegistrada}</span>,
+          <div className="flex flex-wrap gap-1 max-w-[280px]">
+            {item.fechasRegistro.length > 0 ? item.fechasRegistro.map((f: string, i: number) => (
+              <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border shadow-xs bg-blue-50 text-blue-700 border-blue-200 cursor-default">
+                {formatFechaEs(f)}
+              </span>
+            )) : <span className="text-gray-400 text-xs">-</span>}
+          </div>
+        ],
+        key: item.clase.id
+      })) || [];
     } else if (tipo === 'global') {
       stats = [
         { label: 'Total Clases', value: reportData.resumen?.totalClases || 0 },
@@ -471,6 +596,32 @@ export default function ReportesPage() {
           key: item.clase.id
         })) || [];
       }
+    } else if (tipo === 'ausencias') {
+      stats = [
+        { label: 'Total Ausencias', value: reportData.estadisticas?.totalAusencias || 0 },
+        { label: 'Alumnos con Faltas', value: reportData.estadisticas?.totalBeneficiariosAusentes || 0 },
+        { label: 'Registros Agrupados', value: reportData.estadisticas?.totalRegistros || 0 },
+      ];
+      subtitle = activeReportContext.periodoDescripcion || 'Historial Completo';
+      tableHeaders = ['Beneficiario', 'Clase', 'Tutor', 'Fechas de Ausencia'];
+      tableRows = reportData.registros?.map((item: any) => ({
+        cells: [
+          <div>
+            <p className="font-bold text-gray-900">{item.beneficiario.nombre}</p>
+            <p className="text-xs text-gray-500 font-mono">{item.beneficiario.codigo || '-'}</p>
+          </div>,
+          <span className="font-medium text-blue-700">{item.clase.nombre}</span>,
+          <span className="text-gray-600">{item.tutor.nombre}</span>,
+          <div className="flex flex-wrap gap-1 max-w-[320px]">
+            {(item.fechas || []).map((f: string, i: number) => (
+              <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold border shadow-xs bg-red-50 text-red-700 border-red-200 cursor-default">
+                {formatFechaEs(f)}
+              </span>
+            ))}
+          </div>
+        ],
+        key: `${item.beneficiario.id}-${item.clase.id}`
+      })) || [];
     }
 
     return (
@@ -562,7 +713,7 @@ export default function ReportesPage() {
           {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
 
           {/* Opciones Principales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <button
               onClick={() => handleSwitchTab('clase')}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
@@ -594,6 +745,21 @@ export default function ReportesPage() {
             </button>
 
             <button
+              onClick={() => handleSwitchTab('tutor')}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
+                tipoReportePrincipal === 'tutor' ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-blue-200 bg-white'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'tutor' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Por Tutor</h3>
+                <p className="text-xs text-gray-500 mt-1">Control de pase de lista</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => handleSwitchTab('global')}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
                 tipoReportePrincipal === 'global' ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-blue-200 bg-white'
@@ -607,27 +773,44 @@ export default function ReportesPage() {
                 <p className="text-xs text-gray-500 mt-1">Resumen general de todas las clases</p>
               </div>
             </button>
+
+            <button
+              onClick={() => handleSwitchTab('ausencias')}
+              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
+                tipoReportePrincipal === 'ausencias' ? 'border-red-500 bg-red-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-red-200 bg-white'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'ausencias' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                <UserX className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">Ausencias</h3>
+                <p className="text-xs text-gray-500 mt-1">Listado general de faltas</p>
+              </div>
+            </button>
           </div>
 
           {/* Area de Configuracion */}
-          {tipoReportePrincipal === 'global' ? (
+          {tipoReportePrincipal === 'global' || tipoReportePrincipal === 'ausencias' ? (
             <div className="space-y-6">
               {/* Opciones Globales */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <ListFilter className="w-5 h-5 text-blue-500" /> Nivel de Detalle
-                </h2>
-                <div className="flex gap-4">
-                  <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'estadistico' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'estadistico'} onChange={() => setTipoReporteGlobal('estadistico')} />
-                    <div><p className="font-bold text-sm text-gray-900">Estadístico</p><p className="text-xs text-gray-500">Resumen y porcentajes</p></div>
-                  </label>
-                  <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'detallado' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'detallado'} onChange={() => setTipoReporteGlobal('detallado')} />
-                    <div><p className="font-bold text-sm text-gray-900">Detallado</p><p className="text-xs text-gray-500">Incluir lista de nombres</p></div>
-                  </label>
+              {tipoReportePrincipal === 'global' && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <ListFilter className="w-5 h-5 text-blue-500" /> Nivel de Detalle
+                  </h2>
+                  <div className="flex gap-4">
+                    <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'estadistico' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                      <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'estadistico'} onChange={() => setTipoReporteGlobal('estadistico')} />
+                      <div><p className="font-bold text-sm text-gray-900">Estadístico</p><p className="text-xs text-gray-500">Resumen y porcentajes</p></div>
+                    </label>
+                    <label className={`flex-1 flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${tipoReporteGlobal === 'detallado' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                      <input type="radio" className="w-4 h-4 text-blue-600" checked={tipoReporteGlobal === 'detallado'} onChange={() => setTipoReporteGlobal('detallado')} />
+                      <div><p className="font-bold text-sm text-gray-900">Detallado</p><p className="text-xs text-gray-500">Incluir lista de nombres</p></div>
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Filtros Globales */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">

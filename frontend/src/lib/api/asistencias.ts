@@ -109,16 +109,31 @@ export const asistenciasApi = {
   },
 
   // Reporte global de todas las clases
-  getReporteGlobal: async (
-    fechaInicio?: string,
-    fechaFin?: string,
-    detallado: boolean = false
-  ): Promise<any> => {
+  getReporteGlobal: async (fechaInicio?: string, fechaFin?: string, detallado?: boolean) => {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
-    params.append('detallado', detallado.toString());
+    if (detallado !== undefined) params.append('detallado', detallado.toString());
+
     const response = await apiClient.get(`/asistencias/reporte/global?${params}`);
+    return response.data;
+  },
+
+  getReportePorTutor: async (tutorId: string, fechaInicio?: string, fechaFin?: string) => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+
+    const response = await apiClient.get(`/asistencias/reporte/tutor/${tutorId}?${params}`);
+    return response.data;
+  },
+
+  getReporteAusenciasGeneral: async (fechaInicio?: string, fechaFin?: string) => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+
+    const response = await apiClient.get(`/asistencias/reporte/ausencias?${params}`);
     return response.data;
   },
 

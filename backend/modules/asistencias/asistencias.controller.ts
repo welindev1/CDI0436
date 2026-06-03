@@ -84,6 +84,30 @@ export class AsistenciasController {
     );
   }
 
+  @Get('reporte/tutor/:tutorId')
+  getReportePorTutor(
+    @Param('tutorId', ParseUUIDPipe) tutorId: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+  ) {
+    return this.asistenciasService.getReportePorTutor(
+      tutorId,
+      fechaInicio,
+      fechaFin,
+    );
+  }
+
+  @Get('reporte/ausencias')
+  getReporteAusenciasGeneral(
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+  ) {
+    return this.asistenciasService.getReporteAusenciasGeneral(
+      fechaInicio,
+      fechaFin,
+    );
+  }
+
   @Get('reporte/global')
   getReporteGlobal(
     @Query('fechaInicio') fechaInicio?: string,

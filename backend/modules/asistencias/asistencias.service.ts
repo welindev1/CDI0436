@@ -11,6 +11,7 @@ import { MarcarTodosDto } from './dto/marcar-todos.dto';
 import { JustificarMasivoDto } from './dto/justificar-masivo.dto';
 import { Clase } from '../clases/clase.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
+import { Tutor } from '../tutores/tutor.entity';
 
 @Injectable()
 export class AsistenciasService {
@@ -23,6 +24,8 @@ export class AsistenciasService {
     private beneficiariosRepository: Repository<Beneficiario>,
     @InjectRepository(FotoAsistencia)
     private fotosAsistenciaRepository: Repository<FotoAsistencia>,
+    @InjectRepository(Tutor)
+    private tutoresRepository: Repository<Tutor>,
   ) {}
 
   async create(createAsistenciaDto: CreateAsistenciaDto): Promise<Asistencia> {
@@ -376,6 +379,156 @@ export class AsistenciasService {
         porcentajeAsistencia: `${porcentajeAsistencia}%`
       },
       asistenciasPorClase: this.agruparPorClase(asistencias)
+    };
+  }
+
+  // Obtener reporte de asistencia por tutor
+  async getReportePorTutor(tutorId: string, fechaInicio?: string, fechaFin?: string): Promise<any> {
+    const tutor = await this.tutoresRepository.findOne({
+      where: { id: tutorId }
+    });
+
+    if (!tutor) {
+      throw new NotFoundException(`Tutor con ID ${tutorId} no encontrado`);
+    }
+
+    const clases = await this.clasesRepository.find({
+      where: { tutor: { id: tutorId }, activo: true },
+      relations: ['horarios', 'beneficiarios']
+    });
+
+    const query = this.asistenciasRepository.createQueryBuilder('asistencia')
+      .leftJoinAndSelect('asistencia.clase', 'clase')
+      .where('clase.tutor.id = :tutorId', { tutorId });
+
+    if (fechaInicio && fechaFin) {
+      query.andWhere('asistencia.fecha BETWEEN :fechaInicio AND :fechaFin', {
+        fechaInicio,
+        fechaFin
+      });
+    }
+
+    const asistencias = await query.getMany();
+
+    const asistenciasPorClase = clases.map(clase => {
+      const asistenciasClase = asistencias.filter(a => a.clase.id === clase.id);
+      
+      const fechasUnicas = [...new Set(asistenciasClase.map(a => {
+        const d = new Date(a.fecha);
+        return d.toISOString().split('T')[0];
+      }))].sort();
+
+      return {
+        clase: {
+          id: clase.id,
+          nombre: clase.nombre,
+          codigo: clase.codigo,
+          horarios: clase.horarios?.map(h => `${h.dia} ${h.hora_inicio} - ${h.hora_fin}`).join(', ') || 'Sin horario',
+          totalInscritos: clase.beneficiarios?.length || 0
+        },
+        estadisticas: {
+          diasConAsistenciaRegistrada: fechasUnicas.length
+        },
+        fechasRegistro: fechasUnicas
+      };
+    });
+
+    const todasLasFechasUnicas = [...new Set(asistencias.map(a => {
+      const d = new Date(a.fecha);
+      return d.toISOString().split('T')[0];
+    }))].sort();
+
+    return {
+      tutor: {
+        id: tutor.id,
+        nombre: `${tutor.nombre} ${tutor.apellido || ''}`.trim(),
+        especialidad: tutor.especialidad
+      },
+      periodo: {
+        fechaInicio: fechaInicio || 'Desde el inicio',
+        fechaFin: fechaFin || 'Hasta la fecha'
+      },
+      estadisticas: {
+        totalClasesAsignadas: clases.length,
+        totalDiasConRegistroGlobal: todasLasFechasUnicas.length
+      },
+      clases: asistenciasPorClase,
+      resumenFechasGlobal: todasLasFechasUnicas
+    };
+  }
+
+  // Obtener reporte general de ausencias
+  async getReporteAusenciasGeneral(fechaInicio?: string, fechaFin?: string): Promise<any> {
+    console.log('getReporteAusenciasGeneral called with:', { fechaInicio, fechaFin });
+    const query = this.asistenciasRepository.createQueryBuilder('asistencia')
+      .leftJoinAndSelect('asistencia.clase', 'clase')
+      .leftJoinAndSelect('asistencia.beneficiario', 'beneficiario')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
+      .where('asistencia.estado = :estado', { estado: EstadoAsistencia.AUSENTE })
+      .orderBy('asistencia.fecha', 'ASC');
+
+    if (fechaInicio && fechaFin) {
+      query.andWhere('asistencia.fecha BETWEEN :fechaInicio AND :fechaFin', {
+        fechaInicio,
+        fechaFin
+      });
+    } else if (fechaInicio) {
+      query.andWhere('asistencia.fecha >= :fechaInicio', { fechaInicio });
+    } else if (fechaFin) {
+      query.andWhere('asistencia.fecha <= :fechaFin', { fechaFin });
+    }
+
+    const asistencias = await query.getMany();
+
+    // Agrupar por beneficiario + clase
+    const grupos = new Map<string, {
+      beneficiario: any;
+      clase: any;
+      tutor: any;
+      fechas: string[];
+    }>();
+
+    for (const a of asistencias) {
+      const clave = `${a.beneficiario.id}__${a.clase.id}`;
+      if (!grupos.has(clave)) {
+        grupos.set(clave, {
+          beneficiario: {
+            id: a.beneficiario.id,
+            nombre: `${a.beneficiario.nombre} ${a.beneficiario.apellido || ''}`.trim(),
+            codigo: a.beneficiario.codigo
+          },
+          clase: {
+            id: a.clase.id,
+            nombre: a.clase.nombre,
+            codigo: a.clase.codigo
+          },
+          tutor: {
+            id: a.clase.tutor?.id,
+            nombre: a.clase.tutor
+              ? `${a.clase.tutor.nombre} ${a.clase.tutor.apellido || ''}`.trim()
+              : 'Sin tutor'
+          },
+          fechas: []
+        });
+      }
+      const fecha = typeof a.fecha === 'string' ? a.fecha : (a.fecha as Date).toISOString().slice(0, 10);
+      grupos.get(clave)!.fechas.push(fecha);
+    }
+
+    const registros = Array.from(grupos.values())
+      .sort((a, b) => b.fechas.length - a.fechas.length);
+
+    return {
+      periodo: {
+        fechaInicio: fechaInicio || 'Desde el inicio',
+        fechaFin: fechaFin || 'Hasta la fecha'
+      },
+      estadisticas: {
+        totalAusencias: asistencias.length,
+        totalBeneficiariosAusentes: new Set(asistencias.map(a => a.beneficiario.id)).size,
+        totalRegistros: registros.length
+      },
+      registros
     };
   }
 
