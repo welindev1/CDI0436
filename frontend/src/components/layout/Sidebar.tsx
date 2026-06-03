@@ -130,7 +130,7 @@ const menuGroups: MenuItem[] = [
         title: 'Bonos de Regalo',
         icon: Gift,
         href: '/dashboard/bonos',
-        permisos: ['reportes:ver'],
+        permisos: ['bonos:ver'],
       },
     ],
   },

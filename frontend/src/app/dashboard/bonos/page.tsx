@@ -252,7 +252,7 @@ export default function BonosPage() {
   const pagesCount = Math.ceil(mesesCount / BONOS_PER_PAGE);
 
   return (
-    <ProtectedRoute requiredPermisos={['reportes:ver']}>
+    <ProtectedRoute requiredPermisos={['bonos:ver']}>
       <DashboardLayout>
         {/* Print styles */}
         <style jsx global>{`
