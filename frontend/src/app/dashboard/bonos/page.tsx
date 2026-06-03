@@ -51,6 +51,8 @@ interface BondCardProps {
 }
 
 function BondCard({ row, mes, expira }: BondCardProps) {
+  // Positions calibrated from pixel-scan of the 2000x971 template
+  // Each value goes in the blank space AFTER its printed label
   return (
     <div
       className="bond-card"
@@ -64,114 +66,96 @@ function BondCard({ row, mes, expira }: BondCardProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Mes */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '26.5%',
-          left: '34%',
-          fontSize: 'clamp(8px, 1.4vw, 14px)',
-          fontWeight: '700',
-          color: '#1a1a1a',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {/* Mes — value goes to the right of "Mes:" which ends near center */}
+      <div style={{
+        position: 'absolute',
+        top: '27.6%', left: '52%',
+        fontSize: 'clamp(7px, 1.5vw, 16px)',
+        fontWeight: '700',
+        color: '#1a1a1a',
+        whiteSpace: 'nowrap',
+      }}>
         {mes}
       </div>
 
-      {/* Autorizado A (Padre/Tutor) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '36.5%',
-          left: '22%',
-          fontSize: 'clamp(7px, 1.2vw, 12px)',
-          fontWeight: '600',
-          color: '#1a1a1a',
-          maxWidth: '40%',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
+      {/* Padre — after "Autorizado A:" (label ends ~44%) */}
+      <div style={{
+        position: 'absolute',
+        top: '37.3%', left: '44.5%',
+        fontSize: 'clamp(6px, 1.3vw, 14px)',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        maxWidth: '20%',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}>
         {row.padre}
       </div>
 
-      {/* Cédula */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '36.5%',
-          left: '65%',
-          fontSize: 'clamp(7px, 1.2vw, 12px)',
-          fontWeight: '600',
-          color: '#1a1a1a',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {/* Cédula — after "Cédula:" label (label starts ~66%, ends ~74%) */}
+      <div style={{
+        position: 'absolute',
+        top: '37.3%', left: '74%',
+        fontSize: 'clamp(6px, 1.3vw, 14px)',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        maxWidth: '20%',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}>
         {row.cedula}
       </div>
 
-      {/* Nombre del Niño */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '46%',
-          left: '22%',
-          fontSize: 'clamp(7px, 1.2vw, 12px)',
-          fontWeight: '600',
-          color: '#1a1a1a',
-          maxWidth: '40%',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
+      {/* Beneficiario — after "Nombre del Niño:" (ends ~31.5%) */}
+      <div style={{
+        position: 'absolute',
+        top: '46.3%', left: '32%',
+        fontSize: 'clamp(6px, 1.3vw, 14px)',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        maxWidth: '30%',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}>
         {row.beneficiario}
       </div>
 
-      {/* Código */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '46%',
-          left: '65%',
-          fontSize: 'clamp(7px, 1.2vw, 12px)',
-          fontWeight: '600',
-          color: '#1a1a1a',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {/* Código — after "Código:" label (starts ~66%, ends ~74%) */}
+      <div style={{
+        position: 'absolute',
+        top: '46.3%', left: '74%',
+        fontSize: 'clamp(6px, 1.3vw, 14px)',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        whiteSpace: 'nowrap',
+      }}>
         {row.codigo}
       </div>
 
-      {/* Monto */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '55.5%',
-          left: '15%',
-          fontSize: 'clamp(7px, 1.2vw, 12px)',
-          fontWeight: '700',
-          color: '#1a1a1a',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {/* Monto — after "Monto:" (ends ~36%) */}
+      <div style={{
+        position: 'absolute',
+        top: '55.2%', left: '37%',
+        fontSize: 'clamp(7px, 1.5vw, 16px)',
+        fontWeight: '700',
+        color: '#1a1a1a',
+        whiteSpace: 'nowrap',
+      }}>
         {formatMonto(row.monto)}
       </div>
 
-      {/* Expira */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '62%',
-          left: '59%',
-          fontSize: 'clamp(6px, 1.1vw, 11px)',
-          fontWeight: '600',
-          color: '#1a1a1a',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      {/* Expira — after "Expira" label (centered ~52-62%, value after) */}
+      <div style={{
+        position: 'absolute',
+        top: '62%', left: '54%',
+        fontSize: 'clamp(6px, 1.2vw, 13px)',
+        fontWeight: '600',
+        color: '#1a1a1a',
+        whiteSpace: 'nowrap',
+      }}>
         {expira}
       </div>
     </div>
@@ -210,11 +194,18 @@ export default function BonosPage() {
           if (hasId) {
             headerRow = i;
             row.forEach((cell, idx) => {
-              if (cell.includes('id local') || cell.includes('beneficiario') && !colMap['codigo']) colMap['codigo'] = idx;
-              if (cell.includes('nombre del beneficiario')) colMap['beneficiario'] = idx;
-              if (cell.includes('nombre del padre') || cell.includes('padre')) colMap['padre'] = idx;
-              if (cell.includes('cedula') || cell.includes('cédula')) colMap['cedula'] = idx;
-              if (cell.includes('monto')) colMap['monto'] = idx;
+              // Fix: check 'id local' separately FIRST so it doesn't get overwritten
+              if (cell.includes('id local del beneficiario')) {
+                colMap['codigo'] = idx;
+              } else if (cell.includes('nombre del beneficiario')) {
+                colMap['beneficiario'] = idx;
+              } else if (cell.includes('nombre del padre') || (cell.includes('padre') && !cell.includes('beneficiario'))) {
+                colMap['padre'] = idx;
+              } else if (cell.includes('cedula') || cell.includes('cédula')) {
+                colMap['cedula'] = idx;
+              } else if (cell.includes('monto')) {
+                colMap['monto'] = idx;
+              }
             });
             break;
           }
@@ -380,13 +371,14 @@ export default function BonosPage() {
                 {pageRows.map((row) => (
                   <div key={row.id} className="print-bond">
                     <img src="/bond_template.png" alt="bono" />
-                    <span className="print-field" style={{ top: '27%', left: '34%', fontSize: '14pt' }}>{mes}</span>
-                    <span className="print-field" style={{ top: '37%', left: '22%', fontSize: '13pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.padre}</span>
-                    <span className="print-field" style={{ top: '37%', left: '65%', fontSize: '13pt' }}>{row.cedula}</span>
-                    <span className="print-field" style={{ top: '46.5%', left: '22%', fontSize: '13pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.beneficiario}</span>
-                    <span className="print-field" style={{ top: '46.5%', left: '65%', fontSize: '13pt' }}>{row.codigo}</span>
-                    <span className="print-field" style={{ top: '56%', left: '15%', fontSize: '13pt' }}>{formatMonto(row.monto)}</span>
-                    <span className="print-field" style={{ top: '63%', left: '60%', fontSize: '12pt' }}>{expira}</span>
+                    {/* Positions match pixel-calibrated values from template scan (2000x971) */}
+                    <span className="print-field" style={{ top: '27.6%', left: '52%',   fontSize: '14pt' }}>{mes}</span>
+                    <span className="print-field" style={{ top: '37.3%', left: '44.5%', fontSize: '12pt', maxWidth: '20%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.padre}</span>
+                    <span className="print-field" style={{ top: '37.3%', left: '74%',   fontSize: '12pt', maxWidth: '20%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.cedula}</span>
+                    <span className="print-field" style={{ top: '46.3%', left: '32%',   fontSize: '12pt', maxWidth: '30%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.beneficiario}</span>
+                    <span className="print-field" style={{ top: '46.3%', left: '74%',   fontSize: '12pt' }}>{row.codigo}</span>
+                    <span className="print-field" style={{ top: '55.2%', left: '37%',   fontSize: '14pt' }}>{formatMonto(row.monto)}</span>
+                    <span className="print-field" style={{ top: '62%',   left: '54%',   fontSize: '12pt' }}>{expira}</span>
                   </div>
                 ))}
               </div>
