@@ -6,9 +6,10 @@ import { Asistencia } from './asistencia.entity';
 import { FotoAsistencia } from './foto-asistencia.entity';
 import { Clase } from '../clases/clase.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
+import { Tutor } from '../tutores/tutor.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Asistencia, FotoAsistencia, Clase, Beneficiario])],
+  imports: [TypeOrmModule.forFeature([Asistencia, FotoAsistencia, Clase, Beneficiario, Tutor])],
   controllers: [AsistenciasController],
   providers: [AsistenciasService],
   exports: [AsistenciasService, TypeOrmModule],

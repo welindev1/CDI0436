@@ -6,10 +6,11 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import { clasesApi } from '@/lib/api/clases';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
+import { tutoresApi } from '@/lib/api/tutores';
 import { FileDown, FileSpreadsheet, Calendar } from 'lucide-react';
 
 interface FiltrosReporteProps {
-  tipoReporte: 'clase' | 'beneficiario';
+  tipoReporte: 'clase' | 'beneficiario' | 'tutor';
   onGenerar: (filtros: any) => void;
   isLoading?: boolean;
 }
@@ -39,11 +40,17 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
           value: c.id,
           label: `${c.nombre} ${c.codigo ? `(${c.codigo})` : ''}`
         })));
-      } else {
+      } else if (tipoReporte === 'beneficiario') {
         const beneficiarios = await beneficiariosApi.getAll();
         setOpciones(beneficiarios.map(b => ({
           value: b.id,
           label: `${b.nombre} ${b.apellido || ''} (${b.codigo})`
+        })));
+      } else if (tipoReporte === 'tutor') {
+        const tutores = await tutoresApi.getAll();
+        setOpciones(tutores.map(t => ({
+          value: t.id,
+          label: `${t.nombre} ${t.apellido || ''}`.trim()
         })));
       }
     } catch (error) {
@@ -60,7 +67,7 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
 
   const handleGenerar = () => {
     if (!filtros.id) {
-      alert(`Por favor selecciona ${tipoReporte === 'clase' ? 'una clase' : 'un beneficiario'}`);
+      alert(`Por favor selecciona ${tipoReporte === 'clase' ? 'una clase' : tipoReporte === 'beneficiario' ? 'un beneficiario' : 'un tutor'}`);
       return;
     }
 
@@ -123,7 +130,7 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select
-          label={tipoReporte === 'clase' ? 'Seleccionar Clase *' : 'Seleccionar Beneficiario *'}
+          label={tipoReporte === 'clase' ? 'Seleccionar Clase *' : tipoReporte === 'beneficiario' ? 'Seleccionar Beneficiario *' : 'Seleccionar Tutor *'}
           name="id"
           value={filtros.id}
           onChange={handleChange}
