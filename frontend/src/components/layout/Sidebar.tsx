@@ -27,6 +27,7 @@ import {
   HeartPulse,
   Home,
   Award,
+  Gift,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -123,6 +124,12 @@ const menuGroups: MenuItem[] = [
         title: 'Centro de Reportes',
         icon: FileText,
         href: '/dashboard/reportes',
+        permisos: ['reportes:ver'],
+      },
+      {
+        title: 'Bonos de Regalo',
+        icon: Gift,
+        href: '/dashboard/bonos',
         permisos: ['reportes:ver'],
       },
     ],
