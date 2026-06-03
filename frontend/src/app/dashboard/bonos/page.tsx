@@ -69,47 +69,46 @@ function BondCard({ row, mes, expira }: BondCardProps) {
     >
       {/* Mes — after 'Mes:' label (ends ~44%), Y=37.3% */}
       <div style={{ position: 'absolute', top: '37.3%', left: '44.5%',
-        fontSize: 'clamp(7px, 1.4vw, 15px)', fontWeight: '700', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
+        fontSize: 'clamp(7px, 1.4vw, 15px)', fontWeight: '400', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
         {mes}
       </div>
 
       {/* Padre — after 'Autorizado A:' (ends ~31.5%), Y=46.3% */}
       <div style={{ position: 'absolute', top: '46.3%', left: '32%',
-        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '600', color: '#1a1a1a',
+        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '400', color: '#1a1a1a',
         maxWidth: '28%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {row.padre}
       </div>
 
-      {/* Cédula — after 'Cédula:' (right side, starts 66%, ends ~79%), Y=46.3% */}
-      <div style={{ position: 'absolute', top: '46.3%', left: '79%',
-        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '600', color: '#1a1a1a',
+      {/* Cédula — Y=46.3% */}
+      <div style={{ position: 'absolute', top: '46.3%', left: '76%',
+        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '400', color: '#1a1a1a',
         maxWidth: '18%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {row.cedula}
       </div>
 
-      {/* Beneficiario — after 'Nombre del Niño:' (ends ~36.4%), Y=55.2% */}
+      {/* Beneficiario — Y=55.2% */}
       <div style={{ position: 'absolute', top: '55.2%', left: '37%',
-        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '600', color: '#1a1a1a',
+        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '400', color: '#1a1a1a',
         maxWidth: '26%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {row.beneficiario}
       </div>
 
-      {/* Código — after 'Código:' (right side, starts 66%, ends ~79%), Y=55.2% */}
-      <div style={{ position: 'absolute', top: '55.2%', left: '79%',
-        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '600', color: '#1a1a1a',
-        whiteSpace: 'nowrap' }}>
+      {/* Código — Y=55.2% */}
+      <div style={{ position: 'absolute', top: '55.2%', left: '76%',
+        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '400', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
         {row.codigo}
       </div>
 
-      {/* Monto — after 'Monto:' (ends ~16%), Y=62% */}
-      <div style={{ position: 'absolute', top: '62%', left: '17%',
-        fontSize: 'clamp(7px, 1.4vw, 15px)', fontWeight: '700', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
+      {/* Monto — Y=62% */}
+      <div style={{ position: 'absolute', top: '64.5%', left: '25%',
+        fontSize: 'clamp(7px, 1.4vw, 15px)', fontWeight: '400', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
         {formatMonto(row.monto)}
       </div>
 
-      {/* Expira — after 'Expira' label (right side ~55%), Y=70% */}
-      <div style={{ position: 'absolute', top: '70%', left: '55%',
-        fontSize: 'clamp(6px, 1.1vw, 12px)', fontWeight: '600', color: '#1a1a1a', whiteSpace: 'nowrap' }}>
+      {/* Expira — Y=70% */}
+      <div style={{ position: 'absolute', top: '80%', left: '66%',
+        fontSize: 'clamp(6px, 1.2vw, 13px)', fontWeight: '400', color: 'red', whiteSpace: 'nowrap' }}>
         {expira}
       </div>
     </div>
@@ -266,7 +265,7 @@ export default function BonosPage() {
               visibility: visible !important;
             }
             #bonos-print-area {
-              position: fixed !important;
+              position: absolute !important;
               top: 0 !important;
               left: 0 !important;
               width: 100% !important;
@@ -288,6 +287,7 @@ export default function BonosPage() {
                 display: block !important;
               }
               .print-page {
+                page-break-inside: avoid;
                 page-break-after: always;
                 width: 7.9in;
                 height: 10.4in;
@@ -296,6 +296,7 @@ export default function BonosPage() {
                 gap: 0.2in;
                 justify-content: flex-start;
                 align-items: stretch;
+                margin: 0 auto; /* Center on page */
               }
               .print-page:last-child {
                 page-break-after: auto;
@@ -314,7 +315,7 @@ export default function BonosPage() {
                 position: absolute;
                 font-family: Arial, Helvetica, sans-serif;
                 color: #1a1a1a;
-                font-weight: 700;
+                font-weight: 400; /* Regular instead of bold */
                 line-height: 1;
               }
             }
@@ -327,13 +328,13 @@ export default function BonosPage() {
                   <div key={row.id} className="print-bond">
                     <img src="/bond_template.png" alt="bono" />
                     {/* Y positions: all shifted down 9.7% from prior version to match actual template label rows */}
-                    <span className="print-field" style={{ top: '37.3%', left: '44.5%', fontSize: '13pt' }}>{mes}</span>
+                    <span className="print-field" style={{ top: '35%', left: '44.5%', fontSize: '13pt' }}>{mes}</span>
                     <span className="print-field" style={{ top: '46.3%', left: '32%',   fontSize: '11pt', maxWidth: '27%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.padre}</span>
-                    <span className="print-field" style={{ top: '46.3%', left: '79%',   fontSize: '11pt', maxWidth: '18%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.cedula}</span>
+                    <span className="print-field" style={{ top: '46.3%', left: '76%',   fontSize: '11pt', maxWidth: '18%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.cedula}</span>
                     <span className="print-field" style={{ top: '55.2%', left: '37%',   fontSize: '11pt', maxWidth: '26%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.beneficiario}</span>
-                    <span className="print-field" style={{ top: '55.2%', left: '79%',   fontSize: '11pt' }}>{row.codigo}</span>
-                    <span className="print-field" style={{ top: '62%',   left: '17%',   fontSize: '13pt' }}>{formatMonto(row.monto)}</span>
-                    <span className="print-field" style={{ top: '70%',   left: '55%',   fontSize: '11pt' }}>{expira}</span>
+                    <span className="print-field" style={{ top: '55.2%', left: '76%',   fontSize: '11pt' }}>{row.codigo}</span>
+                    <span className="print-field" style={{ top: '64.5%',   left: '25%',   fontSize: '13pt', color: '#1a1a1a' }}>{formatMonto(row.monto)}</span>
+                    <span className="print-field" style={{ top: '80%',   left: '66%',   fontSize: '11pt', color: 'red' }}>{expira}</span>
                   </div>
                 ))}
               </div>
