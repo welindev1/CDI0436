@@ -303,7 +303,8 @@ export default function BonosPage() {
   };
 
   const mesesCount = rows.length;
-  const pagesCount = Math.ceil(mesesCount / 4);
+  const BONOS_PER_PAGE = 2;
+  const pagesCount = Math.ceil(mesesCount / BONOS_PER_PAGE);
 
   return (
     <ProtectedRoute requiredPermisos={['reportes:ver']}>
@@ -344,24 +345,23 @@ export default function BonosPage() {
                 page-break-after: always;
                 width: 7.9in;
                 height: 10.4in;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                grid-template-rows: 1fr 1fr;
-                gap: 0.15in;
+                display: flex;
+                flex-direction: column;
+                gap: 0.2in;
+                justify-content: flex-start;
+                align-items: stretch;
               }
               .print-page:last-child {
                 page-break-after: auto;
               }
               .print-bond {
                 width: 100%;
-                height: 100%;
+                flex: 0 0 auto;
                 position: relative;
                 overflow: hidden;
               }
               .print-bond img {
                 width: 100%;
-                height: 100%;
-                object-fit: fill;
                 display: block;
               }
               .print-field {
@@ -374,24 +374,20 @@ export default function BonosPage() {
             }
           `}</style>
           {Array.from({ length: pagesCount }).map((_, pageIdx) => {
-            const pageRows = rows.slice(pageIdx * 4, pageIdx * 4 + 4);
+            const pageRows = rows.slice(pageIdx * BONOS_PER_PAGE, pageIdx * BONOS_PER_PAGE + BONOS_PER_PAGE);
             return (
               <div key={pageIdx} className="print-page">
                 {pageRows.map((row) => (
                   <div key={row.id} className="print-bond">
                     <img src="/bond_template.png" alt="bono" />
-                    <span className="print-field" style={{ top: '27%', left: '34%', fontSize: '11pt' }}>{mes}</span>
-                    <span className="print-field" style={{ top: '37%', left: '22%', fontSize: '10pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.padre}</span>
-                    <span className="print-field" style={{ top: '37%', left: '65%', fontSize: '10pt' }}>{row.cedula}</span>
-                    <span className="print-field" style={{ top: '46.5%', left: '22%', fontSize: '10pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.beneficiario}</span>
-                    <span className="print-field" style={{ top: '46.5%', left: '65%', fontSize: '10pt' }}>{row.codigo}</span>
-                    <span className="print-field" style={{ top: '56%', left: '15%', fontSize: '10pt' }}>{formatMonto(row.monto)}</span>
-                    <span className="print-field" style={{ top: '63%', left: '60%', fontSize: '9pt' }}>{expira}</span>
+                    <span className="print-field" style={{ top: '27%', left: '34%', fontSize: '14pt' }}>{mes}</span>
+                    <span className="print-field" style={{ top: '37%', left: '22%', fontSize: '13pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.padre}</span>
+                    <span className="print-field" style={{ top: '37%', left: '65%', fontSize: '13pt' }}>{row.cedula}</span>
+                    <span className="print-field" style={{ top: '46.5%', left: '22%', fontSize: '13pt', maxWidth: '38%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{row.beneficiario}</span>
+                    <span className="print-field" style={{ top: '46.5%', left: '65%', fontSize: '13pt' }}>{row.codigo}</span>
+                    <span className="print-field" style={{ top: '56%', left: '15%', fontSize: '13pt' }}>{formatMonto(row.monto)}</span>
+                    <span className="print-field" style={{ top: '63%', left: '60%', fontSize: '12pt' }}>{expira}</span>
                   </div>
-                ))}
-                {/* Fill empty spots */}
-                {Array.from({ length: 4 - pageRows.length }).map((_, i) => (
-                  <div key={`empty-${i}`} className="print-bond" />
                 ))}
               </div>
             );
@@ -642,7 +638,7 @@ export default function BonosPage() {
                     <Gift className="w-4 h-4 text-red-500" />
                     Vista Previa de Bonos
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {rows.map((row) => (
                       <div key={row.id} className="rounded-lg overflow-hidden shadow border border-gray-100">
                         <BondCard row={row} mes={mes} expira={expira} />
