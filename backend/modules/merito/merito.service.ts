@@ -70,6 +70,7 @@ export class MeritoService {
       periodo,
       beneficiario,
       ciclo: createNotaDto.ciclo,
+      curso: createNotaDto.curso,
       matematicas: createNotaDto.matematicas,
       lengua_espanola: createNotaDto.lengua_espanola,
       naturales: createNotaDto.naturales,
@@ -110,6 +111,7 @@ export class MeritoService {
         nombre: n.beneficiario.nombre,
         apellido: n.beneficiario.apellido,
         ciclo: n.ciclo,
+        curso: n.curso,
         promedio: n.promedio,
         matematicas: n.matematicas,
         lengua_espanola: n.lengua_espanola,
@@ -141,12 +143,14 @@ export class MeritoService {
         id: n.beneficiario.id,
         codigo: n.beneficiario.codigo,
         nombre: `${n.beneficiario.nombre} ${n.beneficiario.apellido || ''}`,
+        curso: n.curso,
         promedio: n.promedio
       })),
       secundaria: secundaria.map(n => ({
         id: n.beneficiario.id,
         codigo: n.beneficiario.codigo,
         nombre: `${n.beneficiario.nombre} ${n.beneficiario.apellido || ''}`,
+        curso: n.curso,
         promedio: n.promedio
       }))
     };

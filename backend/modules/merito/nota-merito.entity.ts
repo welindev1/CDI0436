@@ -26,6 +26,9 @@ export class NotaMerito {
   })
   ciclo: CicloEducativo;
 
+  @Column({ type: 'int', default: 1 })
+  curso: number;
+
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   matematicas: number;
 
