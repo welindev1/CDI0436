@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { beneficiariosApi } from '@/lib/api/beneficiarios';
 
 interface BeneficiarioRow {
   id: string;
@@ -125,11 +126,13 @@ export default function BonosPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showAdjustments, setShowAdjustments] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseExcel = useCallback((file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -194,7 +197,28 @@ export default function BonosPage() {
           }
         }
 
+        try {
+          // Validar nombres con la base de datos
+          const dbBeneficiarios = await beneficiariosApi.getAll();
+          const benefMap = new Map(dbBeneficiarios.map(b => [b.codigo, b]));
+          
+          parsed.forEach(row => {
+            if (row.codigo) {
+              const dbBen = benefMap.get(row.codigo);
+              if (dbBen) {
+                const fullName = [dbBen.nombre, dbBen.apellido].filter(Boolean).join(' ').trim();
+                if (fullName) {
+                  row.beneficiario = fullName;
+                }
+              }
+            }
+          });
+        } catch (apiErr) {
+          console.warn('Error al obtener beneficiarios para validar nombres:', apiErr);
+        }
+
         setRows(parsed);
+        setCurrentPage(1);
         setFileName(file.name);
         setError('');
       } catch (err) {
@@ -250,6 +274,10 @@ export default function BonosPage() {
   const mesesCount = rows.length;
   const BONOS_PER_PAGE = 2;
   const pagesCount = Math.ceil(mesesCount / BONOS_PER_PAGE);
+
+  const totalAmount = rows.reduce((acc, row) => acc + (parseFloat(row.monto) || 0), 0);
+  const totalPages = Math.ceil(rows.length / ITEMS_PER_PAGE);
+  const paginatedRows = rows.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <ProtectedRoute requiredPermisos={['bonos:ver']}>
@@ -523,12 +551,12 @@ export default function BonosPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {rows.map((row, idx) => (
+                        {paginatedRows.map((row, idx) => (
                           <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
-                            <td className="px-4 py-2 text-xs text-gray-400">{idx + 1}</td>
+                            <td className="px-4 py-2 text-xs text-gray-400">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                             {(['codigo', 'beneficiario', 'padre', 'cedula', 'monto'] as const).map((field) => (
                               <td key={field} className="px-4 py-2">
-                                {editingId === row.id ? (
+                                {editingId === row.id && field !== 'codigo' && field !== 'beneficiario' ? (
                                   <input
                                     type="text"
                                     value={row[field]}
@@ -537,9 +565,13 @@ export default function BonosPage() {
                                   />
                                 ) : (
                                   <span
-                                    className="text-xs text-gray-700 cursor-pointer hover:text-blue-600"
-                                    onClick={() => setEditingId(row.id)}
-                                    title="Clic para editar"
+                                    className={`text-xs text-gray-700 ${field !== 'codigo' && field !== 'beneficiario' ? 'cursor-pointer hover:text-blue-600' : ''}`}
+                                    onClick={() => {
+                                      if (field !== 'codigo' && field !== 'beneficiario') {
+                                        setEditingId(row.id);
+                                      }
+                                    }}
+                                    title={field !== 'codigo' && field !== 'beneficiario' ? "Clic para editar" : ""}
                                   >
                                     {field === 'monto' ? formatMonto(row[field]) : row[field] || <span className="text-gray-300">—</span>}
                                   </span>
@@ -575,6 +607,34 @@ export default function BonosPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                  
+                  {/* Paginación y Total */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-gray-100 bg-gray-50/50 gap-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Anterior
+                      </button>
+                      <span className="text-xs text-gray-500 font-medium px-2">
+                        Página {currentPage} de {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Siguiente
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-lg border border-red-100 shadow-sm">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total de Bonos:</span>
+                      <span className="text-lg font-bold text-red-600">{formatMonto(totalAmount.toString())}</span>
+                    </div>
                   </div>
                 </div>
               )}
