@@ -10,6 +10,7 @@ import AgregarExpedienteModal from '@/components/beneficiarios/AgregarExpediente
 import EditarExpedienteModal from '@/components/beneficiarios/EditarExpedienteModal';
 import EditarPerfilModal from '@/components/beneficiarios/EditarPerfilModal';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
+import { useAuth } from '@/contexts/AuthContext';
 import { Beneficiario } from '@/lib/types';
 import {
   ArrowLeft,
@@ -399,6 +400,7 @@ function EntradaCard({
 export default function BeneficiarioDetailPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { tienePermiso } = useAuth();
   const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(null);
   const [expedientes, setExpedientes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -562,11 +564,13 @@ export default function BeneficiarioDetailPage() {
                           {edad} años
                         </span>
                       )}
-                      <span
-                        className={`text-xs font-semibold px-2.5 py-1 rounded-full ${beneficiario.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}
-                      >
-                        {beneficiario.activo ? 'Activo' : 'Inactivo'}
-                      </span>
+                      {tienePermiso('beneficiarios:editar') && (
+                        <span
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${beneficiario.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}
+                        >
+                          {beneficiario.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
