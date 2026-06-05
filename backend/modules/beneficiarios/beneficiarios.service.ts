@@ -208,7 +208,24 @@ export class BeneficiariosService {
 
   async softDelete(id: string): Promise<Beneficiario> {
     const beneficiario = await this.findOne(id);
-    beneficiario.activo = false;
+    
+    // Toggle active state
+    beneficiario.activo = !beneficiario.activo;
+    
+    // Si se está desactivando, remover de todas las clases
+    if (!beneficiario.activo) {
+      if (beneficiario.clases && beneficiario.clases.length > 0) {
+        for (const clase of beneficiario.clases) {
+          await this.clasesRepository
+            .createQueryBuilder()
+            .relation(Clase, 'beneficiarios')
+            .of(clase.id)
+            .remove(beneficiario.id);
+        }
+        beneficiario.clases = [];
+      }
+    }
+    
     return await this.beneficiariosRepository.save(beneficiario);
   }
 
