@@ -28,6 +28,7 @@ import {
   ChevronRight,
   BookOpen,
   Shield,
+  Power,
 } from 'lucide-react';
 
 const COLOR_MAP: Record<string, { dot: string; badge: string; text: string }> =
@@ -408,6 +409,7 @@ export default function BeneficiarioDetailPage() {
   const [entradaEditar, setEntradaEditar] = useState<any | null>(null);
   const [showFotoPerfil, setShowFotoPerfil] = useState(false);
   const [showEditPerfil, setShowEditPerfil] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
 
   useEffect(() => {
     if (id) loadData(id as string);
@@ -439,6 +441,20 @@ export default function BeneficiarioDetailPage() {
     const updated = await beneficiariosApi.update(beneficiario.id, payload);
     setBeneficiario(updated);
     setShowEditPerfil(false);
+  };
+
+  const handleToggleEstado = async () => {
+    if (!beneficiario) return;
+    try {
+      setIsToggling(true);
+      const updated = await beneficiariosApi.desactivar(beneficiario.id);
+      setBeneficiario(updated);
+    } catch (err) {
+      console.error('Error al cambiar el estado', err);
+      alert('Hubo un error al cambiar el estado del beneficiario.');
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const handleSaveExpediente = async (data: any) => {
@@ -512,6 +528,17 @@ export default function BeneficiarioDetailPage() {
               <ArrowLeft className="w-4 h-4" /> Volver a la cuadrícula
             </button>
             <div className="flex gap-2">
+              {tienePermiso('beneficiarios:editar') && (
+                <Button
+                  variant="outline"
+                  onClick={handleToggleEstado}
+                  isLoading={isToggling}
+                  className={`flex items-center gap-2 text-sm ${beneficiario.activo ? 'text-red-600 hover:bg-red-50 border-red-200' : 'text-green-600 hover:bg-green-50 border-green-200'}`}
+                >
+                  <Power className="w-4 h-4" />
+                  {beneficiario.activo ? 'Desactivar' : 'Activar'}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => setShowEditPerfil(true)}
