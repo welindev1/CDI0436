@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Beneficiario } from '@/lib/types';
 
 interface BeneficiarioFolderProps {
@@ -7,6 +8,7 @@ interface BeneficiarioFolderProps {
 }
 
 export default function BeneficiarioFolder({ beneficiario }: BeneficiarioFolderProps) {
+  const { tienePermiso } = useAuth();
   const nombreCompleto = `${beneficiario.nombre} ${beneficiario.apellido || ''}`.trim();
   const nombreTruncado = nombreCompleto.length > 15 ? nombreCompleto.substring(0, 15) + '...' : nombreCompleto;
 
@@ -52,7 +54,7 @@ export default function BeneficiarioFolder({ beneficiario }: BeneficiarioFolderP
         </div>
         
         {/* Badge inactivo */}
-        {!beneficiario.activo && (
+        {tienePermiso('beneficiarios:editar') && !beneficiario.activo && (
           <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-400 rounded-full border-2 border-white shadow-sm z-40" title="Inactivo" />
         )}
       </div>
