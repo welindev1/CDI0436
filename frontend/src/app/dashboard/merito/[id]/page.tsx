@@ -24,6 +24,7 @@ export default function PeriodoDetallePage() {
   const [estudianteActivo, setEstudianteActivo] = useState<BeneficiarioPendiente | null>(null);
   const [notasForm, setNotasForm] = useState({
     ciclo: 'Primaria',
+    curso: 1,
     matematicas: '',
     lengua_espanola: '',
     naturales: '',
@@ -76,6 +77,7 @@ export default function PeriodoDetallePage() {
     setEstudianteActivo(estudiante);
     setNotasForm({
       ciclo: 'Primaria',
+      curso: 1,
       matematicas: '',
       lengua_espanola: '',
       naturales: '',
@@ -92,6 +94,7 @@ export default function PeriodoDetallePage() {
       await meritoApi.agregarNota(id as string, {
         beneficiario_id: estudianteActivo.id,
         ciclo: notasForm.ciclo,
+        curso: Number(notasForm.curso),
         matematicas: Number(notasForm.matematicas),
         lengua_espanola: Number(notasForm.lengua_espanola),
         naturales: Number(notasForm.naturales),
@@ -142,12 +145,12 @@ export default function PeriodoDetallePage() {
         currentY += 5;
 
         const datosPrimaria = previewGanadores.primaria.map((g, index) => [
-          index + 1, g.codigo, g.nombre, `${Number(g.promedio).toFixed(2)}`
+          index + 1, g.codigo, g.nombre, `${g.curso}º`, `${Number(g.promedio).toFixed(2)}`
         ]);
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Puesto', 'CÃ³digo', 'Estudiante', 'Promedio']],
+          head: [['Puesto', 'Código', 'Estudiante', 'Curso', 'Promedio']],
           body: datosPrimaria,
           theme: 'striped',
           headStyles: { fillColor: [65, 105, 225] },
@@ -162,12 +165,12 @@ export default function PeriodoDetallePage() {
         currentY += 5;
 
         const datosSecundaria = previewGanadores.secundaria.map((g, index) => [
-          index + 1, g.codigo, g.nombre, `${Number(g.promedio).toFixed(2)}`
+          index + 1, g.codigo, g.nombre, `${g.curso}º`, `${Number(g.promedio).toFixed(2)}`
         ]);
 
         autoTable(doc, {
           startY: currentY,
-          head: [['Puesto', 'CÃ³digo', 'Estudiante', 'Promedio']],
+          head: [['Puesto', 'Código', 'Estudiante', 'Curso', 'Promedio']],
           body: datosSecundaria,
           theme: 'striped',
           headStyles: { fillColor: [46, 139, 87] },
@@ -303,7 +306,8 @@ export default function PeriodoDetallePage() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciclo</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">MatemÃ¡ticas</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Curso</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Matemáticas</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Lengua Esp.</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Naturales</th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sociales</th>
@@ -331,6 +335,7 @@ export default function PeriodoDetallePage() {
                                 {nota.ciclo}
                               </span>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-700">{nota.curso}º</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">{Number(nota.matematicas).toFixed(1)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">{Number(nota.lengua_espanola).toFixed(1)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">{Number(nota.naturales).toFixed(1)}</td>
@@ -368,6 +373,18 @@ export default function PeriodoDetallePage() {
                       <input type="radio" name="ciclo" value="Secundaria" className="sr-only" checked={notasForm.ciclo === 'Secundaria'} onChange={(e) => setNotasForm({...notasForm, ciclo: e.target.value})} />
                       <span className="font-semibold">Secundaria</span>
                     </label>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <label className="block text-sm font-bold text-gray-700 mb-3">Curso (Grado)</label>
+                    <div className="grid grid-cols-6 gap-2">
+                      {[1, 2, 3, 4, 5, 6].map(c => (
+                        <label key={c} className={`flex items-center justify-center py-2 border-2 rounded-lg cursor-pointer transition-all ${notasForm.curso === c ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold' : 'border-gray-200 hover:border-blue-200 text-gray-600'}`}>
+                          <input type="radio" name="curso" value={c} className="sr-only" checked={notasForm.curso === c} onChange={(e) => setNotasForm({...notasForm, curso: Number(e.target.value)})} />
+                          {c}º
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -439,14 +456,14 @@ export default function PeriodoDetallePage() {
                   <div>
                     <h3 className="font-bold text-lg mb-3">Primaria (Top {cantPrimaria})</h3>
                     <div className="space-y-2">
-                      {previewGanadores.primaria.map((g, i) => (<div key={g.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"><div className="flex items-center gap-3"><span className="font-black text-gray-400 w-4">{i + 1}.</span><div><p className="font-bold text-gray-800 text-sm">{g.nombre}</p><p className="text-xs text-gray-500">{g.codigo}</p></div></div><span className="font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md">{Number(g.promedio).toFixed(2)}</span></div>))}
+                      {previewGanadores.primaria.map((g, i) => (<div key={g.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"><div className="flex items-center gap-3"><span className="font-black text-gray-400 w-4">{i + 1}.</span><div><p className="font-bold text-gray-800 text-sm">{g.nombre}</p><p className="text-xs text-gray-500">{g.codigo} • Curso: {g.curso}º</p></div></div><span className="font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md">{Number(g.promedio).toFixed(2)}</span></div>))}
                       {previewGanadores.primaria.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg">No hay notas registradas</p>}
                     </div>
                   </div>
                   <div>
                     <h3 className="font-bold text-lg mb-3">Secundaria (Top {cantSecundaria})</h3>
                     <div className="space-y-2">
-                      {previewGanadores.secundaria.map((g, i) => (<div key={g.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"><div className="flex items-center gap-3"><span className="font-black text-gray-400 w-4">{i + 1}.</span><div><p className="font-bold text-gray-800 text-sm">{g.nombre}</p><p className="text-xs text-gray-500">{g.codigo}</p></div></div><span className="font-black text-green-600 bg-green-100 px-2 py-1 rounded-md">{Number(g.promedio).toFixed(2)}</span></div>))}
+                      {previewGanadores.secundaria.map((g, i) => (<div key={g.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"><div className="flex items-center gap-3"><span className="font-black text-gray-400 w-4">{i + 1}.</span><div><p className="font-bold text-gray-800 text-sm">{g.nombre}</p><p className="text-xs text-gray-500">{g.codigo} • Curso: {g.curso}º</p></div></div><span className="font-black text-green-600 bg-green-100 px-2 py-1 rounded-md">{Number(g.promedio).toFixed(2)}</span></div>))}
                       {previewGanadores.secundaria.length === 0 && <p className="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg">No hay notas registradas</p>}
                     </div>
                   </div>

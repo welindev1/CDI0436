@@ -9,6 +9,11 @@ export class CreateNotaDto {
   ciclo: CicloEducativo;
 
   @IsNumber()
+  @Min(1)
+  @Max(6)
+  curso: number;
+
+  @IsNumber()
   @Min(0)
   @Max(100)
   matematicas: number;

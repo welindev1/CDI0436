@@ -15,6 +15,7 @@ export interface NotaMerito {
   nombre: string;
   apellido: string;
   ciclo: 'Primaria' | 'Secundaria';
+  curso: number;
   matematicas: number;
   lengua_espanola: number;
   naturales: number;
@@ -39,6 +40,7 @@ export interface GanadorMerito {
   id: string;
   codigo: string;
   nombre: string;
+  curso: number;
   promedio: number;
 }
 
@@ -63,7 +65,7 @@ export const meritoApi = {
     return response.data;
   },
 
-  agregarNota: async (periodo_id: string, data: { beneficiario_id: string; ciclo: string; matematicas: number; lengua_espanola: number; naturales: number; sociales: number }) => {
+  agregarNota: async (periodo_id: string, data: { beneficiario_id: string; ciclo: string; curso: number; matematicas: number; lengua_espanola: number; naturales: number; sociales: number }) => {
     const response = await apiClient.post(`/merito/periodos/${periodo_id}/notas`, data);
     return response.data;
   },
