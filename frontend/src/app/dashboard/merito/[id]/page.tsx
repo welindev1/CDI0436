@@ -130,7 +130,7 @@ export default function PeriodoDetallePage() {
       
       doc.setFontSize(22);
       doc.setTextColor(0, 51, 153);
-      doc.text('Cuadro de Honor - MÃ©rito Estudiantil', pageWidth / 2, 20, { align: 'center' });
+      doc.text('Cuadro de Honor - Mérito Estudiantil', pageWidth / 2, 20, { align: 'center' });
       
       doc.setFontSize(14);
       doc.setTextColor(100, 100, 100);
@@ -256,7 +256,7 @@ export default function PeriodoDetallePage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Buscar alumno por nombre o cÃ³digo..."
+                  placeholder="Buscar alumno por nombre o código..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -318,7 +318,7 @@ export default function PeriodoDetallePage() {
                       {filtrados.registradas.length === 0 ? (
                         <tr>
                           <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                            No hay notas registradas todavÃ­a.
+                            No hay notas registradas todavía.
                           </td>
                         </tr>
                       ) : (
@@ -388,8 +388,8 @@ export default function PeriodoDetallePage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">MatemÃ¡ticas</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.matematicas} onChange={(e) => setNotasForm({...notasForm, matematicas: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Lengua EspaÃ±ola</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.lengua_espanola} onChange={(e) => setNotasForm({...notasForm, lengua_espanola: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Matemáticas</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.matematicas} onChange={(e) => setNotasForm({...notasForm, matematicas: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Lengua Española</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.lengua_espanola} onChange={(e) => setNotasForm({...notasForm, lengua_espanola: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">C. Naturales</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.naturales} onChange={(e) => setNotasForm({...notasForm, naturales: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                   <div><label className="block text-sm font-medium text-gray-700 mb-1">C. Sociales</label><input type="number" min="0" max="100" required step="0.01" value={notasForm.sociales} onChange={(e) => setNotasForm({...notasForm, sociales: e.target.value})} className="w-full px-4 py-2 text-lg font-bold text-center border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                 </div>
@@ -418,7 +418,7 @@ export default function PeriodoDetallePage() {
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3"><Trophy className="w-8 h-8 text-yellow-600" /></div>
-                  <p className="text-gray-600">Configura cuÃ¡ntos ganadores quieres sacar por cada ciclo.</p>
+                  <p className="text-gray-600">Configura cuántos ganadores quieres sacar por cada ciclo.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
                   <div className="flex flex-col items-center">
