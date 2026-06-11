@@ -256,11 +256,6 @@ function EntradaCard({ entrada, onDelete, onEdit }: { entrada: any; onDelete: ()
           <div className="relative overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={imagenes[0].base64} alt="" className="w-full object-cover max-h-56 transition-transform duration-500 group-hover:scale-105" />
-            {entrada.tipo === 'educativo' && entrada.mostrar_titulo && entrada.titulo && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3">
-                <p className="text-white font-semibold text-sm leading-tight">{entrada.titulo}</p>
-              </div>
-            )}
             {imagenes.length > 1 && (
               <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm font-medium">
                 {imagenes.length} fotos
@@ -298,12 +293,8 @@ function EntradaCard({ entrada, onDelete, onEdit }: { entrada: any; onDelete: ()
             </div>
           )}
 
-          {/* Título (no para educativo que ya se muestra en la imagen) */}
-          {entrada.titulo && entrada.tipo !== 'educativo' && (
-            <h4 className="font-bold text-gray-900 text-base mb-2 leading-tight">{entrada.titulo}</h4>
-          )}
-          {/* Título para educativo cuando no hay imagen */}
-          {entrada.titulo && entrada.tipo === 'educativo' && !hasImages && (
+          {/* Título — siempre fuera de la imagen */}
+          {entrada.titulo && (
             <h4 className="font-bold text-gray-900 text-base mb-2 leading-tight">{entrada.titulo}</h4>
           )}
 
