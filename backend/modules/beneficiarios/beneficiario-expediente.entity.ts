@@ -9,8 +9,10 @@ import {
 import { Beneficiario } from './beneficiario.entity';
 
 // Tipos soportados:
-// 'registro' - Nota/Registro con texto e imagen opcional
-// 'galeria'  - Galería de imágenes con título y descripción opcional
+// 'educativo'  - Galería de imágenes con título, descripción y fecha
+// 'registro'   - Nota con múltiples fotos, texto y fecha de evento
+// 'documentos' - Título, detalle, imagen(es) y PDFs, sin fecha de evento
+// 'otros'      - Expedientes legacy creados anteriormente
 
 @Entity('beneficiario_expedientes')
 export class BeneficiarioExpediente {
@@ -54,6 +56,14 @@ export class BeneficiarioExpediente {
     base64: string;
     titulo?: string;
     descripcion?: string;
+  }>;
+
+  // PDFs adjuntos en JSON:
+  // [{ nombre: string, base64_pdf: string }]
+  @Column({ type: 'jsonb', nullable: true })
+  pdfs: Array<{
+    nombre: string;
+    base64_pdf: string;
   }>;
 
   // Etiqueta de color para categorizar visualmente
