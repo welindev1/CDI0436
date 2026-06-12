@@ -192,10 +192,13 @@ export default function ClaseDetallePage() {
   const loadClase = async () => {
     try {
       setIsLoading(true);
+      setError('');
       const data = await clasesApi.getById(claseId);
       setClase(data);
     } catch (err: any) {
-      setError(err.message || 'Error al cargar clase');
+      const msg = err.response?.data?.message || err.message || 'Error al cargar la clase';
+      setError(msg);
+      console.error('Error cargando clase:', err);
     } finally {
       setIsLoading(false);
     }
@@ -236,8 +239,17 @@ export default function ClaseDetallePage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        ) : !clase ? (
-          <Alert variant="error">Clase no encontrada</Alert>
+        ) : error && !clase ? (
+          <div className="space-y-4 py-8 max-w-lg mx-auto text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+              <Info className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900">No se pudo cargar la clase</h2>
+            <p className="text-gray-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
+            <Button variant="outline" onClick={() => router.push('/dashboard/clases')}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Volver a clases
+            </Button>
+          </div>
         ) : (
         <div className="space-y-6">
           {/* Header */}
