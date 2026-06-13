@@ -250,6 +250,10 @@ export default function ClaseDetallePage() {
               <ArrowLeft className="w-4 h-4 mr-2" /> Volver a clases
             </Button>
           </div>
+        ) : !clase ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
         ) : (
         <div className="space-y-6">
           {/* Header */}
