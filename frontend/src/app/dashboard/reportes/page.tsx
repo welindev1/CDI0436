@@ -348,6 +348,9 @@ export default function ReportesPage() {
     const registros = data.registros.map((item: any) => ({
       beneficiario: item.beneficiario.nombre,
       codigo: item.beneficiario.codigo || '-',
+      telefono: item.beneficiario.telefono || '-',
+      padre_tutor: item.beneficiario.padre_tutor || '-',
+      direccion: item.beneficiario.direccion || '-',
       clase: item.clase.nombre,
       tutor: item.tutor.nombre,
       fechas: (item.fechas || []).map((f: string) => formatFechaEs(f)).join(', ') || '-',
@@ -358,8 +361,8 @@ export default function ReportesPage() {
       subtitulo: `Período: ${periodo}`,
       fecha: fechaReporte,
       datos: registros,
-      columnas: ['beneficiario', 'clase', 'tutor', 'totalFaltas', 'fechas'],
-      headers: ['Beneficiario', 'Clase', 'Tutor', 'Total Faltas', 'Fechas de Ausencia'],
+      columnas: ['beneficiario', 'codigo', 'telefono', 'padre_tutor', 'direccion', 'clase', 'tutor', 'totalFaltas', 'fechas'],
+      headers: ['Beneficiario', 'Código', 'Teléfono', 'Padre/Tutor', 'Dirección', 'Clase', 'Tutor', 'Total Faltas', 'Fechas de Ausencia'],
       totales: [
         { label: 'Total Ausencias', value: data.estadisticas.totalAusencias },
         { label: 'Alumnos con Faltas', value: data.estadisticas.totalBeneficiariosAusentes },
@@ -371,6 +374,9 @@ export default function ReportesPage() {
     const registros = data.registros.map((item: any) => ({
       'Beneficiario': item.beneficiario.nombre,
       'Código': item.beneficiario.codigo || '-',
+      'Teléfono': item.beneficiario.telefono || '-',
+      'Padre / Tutor': item.beneficiario.padre_tutor || '-',
+      'Dirección': item.beneficiario.direccion || '-',
       'Clase': item.clase.nombre,
       'Tutor': item.tutor.nombre,
       'Total Faltas': (item.fechas || []).length,
@@ -603,16 +609,19 @@ export default function ReportesPage() {
         { label: 'Registros Agrupados', value: reportData.estadisticas?.totalRegistros || 0 },
       ];
       subtitle = activeReportContext.periodoDescripcion || 'Historial Completo';
-      tableHeaders = ['Beneficiario', 'Clase', 'Tutor', 'Fechas de Ausencia'];
+      tableHeaders = ['Beneficiario', 'Teléfono', 'Padre / Tutor', 'Dirección', 'Clase', 'Tutor', 'Fechas de Ausencia'];
       tableRows = reportData.registros?.map((item: any) => ({
         cells: [
           <div>
             <p className="font-bold text-gray-900">{item.beneficiario.nombre}</p>
             <p className="text-xs text-gray-500 font-mono">{item.beneficiario.codigo || '-'}</p>
           </div>,
+          <span className="text-gray-700">{item.beneficiario.telefono || '-'}</span>,
+          <span className="text-gray-700">{item.beneficiario.padre_tutor || '-'}</span>,
+          <span className="text-gray-600 text-xs">{item.beneficiario.direccion || '-'}</span>,
           <span className="font-medium text-blue-700">{item.clase.nombre}</span>,
           <span className="text-gray-600">{item.tutor.nombre}</span>,
-          <div className="flex flex-wrap gap-1 max-w-[320px]">
+          <div className="flex flex-wrap gap-1 max-w-[280px]">
             {(item.fechas || []).map((f: string, i: number) => (
               <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold border shadow-xs bg-red-50 text-red-700 border-red-200 cursor-default">
                 {formatFechaEs(f)}

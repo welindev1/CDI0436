@@ -495,7 +495,10 @@ export class AsistenciasService {
           beneficiario: {
             id: a.beneficiario.id,
             nombre: `${a.beneficiario.nombre} ${a.beneficiario.apellido || ''}`.trim(),
-            codigo: a.beneficiario.codigo
+            codigo: a.beneficiario.codigo,
+            telefono: a.beneficiario.telefono || '-',
+            padre_tutor: a.beneficiario.padre_tutor || '-',
+            direccion: a.beneficiario.direccion || '-',
           },
           clase: {
             id: a.clase.id,
