@@ -8,6 +8,8 @@ import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { exportToPDF } from '@/lib/utils/exportPDF';
 import { exportToExcel } from '@/lib/utils/exportExcel';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   FileText, BarChart3, Users, BookOpen, Globe, Download, 
   Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye, UserCheck, UserX
@@ -345,29 +347,61 @@ export default function ReportesPage() {
 
   // ----- GENERADORES AUSENCIAS -----
   const generarPDFAusencias = (data: any, periodo: string, fechaReporte: string) => {
-    const registros = data.registros.map((item: any) => ({
-      beneficiario: item.beneficiario.nombre,
-      codigo: item.beneficiario.codigo || '-',
-      telefono: item.beneficiario.telefono || '-',
-      padre_tutor: item.beneficiario.padre_tutor || '-',
-      direccion: item.beneficiario.direccion || '-',
-      clase: item.clase.nombre,
-      tutor: item.tutor.nombre,
-      fechas: (item.fechas || []).map((f: string) => formatFechaEs(f)).join(', ') || '-',
-      totalFaltas: (item.fechas || []).length
-    }));
-    exportToPDF({
-      titulo: 'Reporte General de Ausencias',
-      subtitulo: `Período: ${periodo}`,
-      fecha: fechaReporte,
-      datos: registros,
-      columnas: ['beneficiario', 'codigo', 'telefono', 'padre_tutor', 'direccion', 'clase', 'tutor', 'totalFaltas', 'fechas'],
-      headers: ['Beneficiario', 'Código', 'Teléfono', 'Padre/Tutor', 'Dirección', 'Clase', 'Tutor', 'Total Faltas', 'Fechas de Ausencia'],
-      totales: [
-        { label: 'Total Ausencias', value: data.estadisticas.totalAusencias },
-        { label: 'Alumnos con Faltas', value: data.estadisticas.totalBeneficiariosAusentes },
-      ],
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // Título
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(37, 99, 235);
+    doc.text('Reporte General de Ausencias', pageW / 2, 16, { align: 'center' });
+
+    // Subtitulo y fecha
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Período: ${periodo}`, pageW / 2, 23, { align: 'center' });
+    doc.text(`Generado: ${fechaReporte}`, pageW / 2, 29, { align: 'center' });
+
+    const tableData = data.registros.map((item: any) => [
+      `${item.beneficiario.nombre}\n${item.beneficiario.codigo || '-'}`,
+      item.beneficiario.telefono || '-',
+      item.beneficiario.padre_tutor || '-',
+      item.beneficiario.direccion || '-',
+      item.clase.nombre,
+      item.tutor.nombre,
+      String((item.fechas || []).length),
+      (item.fechas || []).map((f: string) => formatFechaEs(f)).join('\n') || '-',
+    ]);
+
+    autoTable(doc, {
+      startY: 34,
+      head: [['Beneficiario / Código', 'Teléfono', 'Padre / Tutor', 'Dirección', 'Clase', 'Tutor', 'Faltas', 'Fechas de Ausencia']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak', valign: 'top' },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 38 },  // Beneficiario
+        1: { cellWidth: 28 },  // Teléfono
+        2: { cellWidth: 35 },  // Padre/Tutor
+        3: { cellWidth: 50 },  // Dirección
+        4: { cellWidth: 22 },  // Clase
+        5: { cellWidth: 28 },  // Tutor
+        6: { cellWidth: 14, halign: 'center' },  // Faltas
+        7: { cellWidth: 52 },  // Fechas
+      },
     });
+
+    // Totales al final
+    const finalY = (doc as any).lastAutoTable.finalY + 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 30, 30);
+    doc.text(`Total Ausencias: ${data.estadisticas.totalAusencias}   |   Alumnos con Faltas: ${data.estadisticas.totalBeneficiariosAusentes}`, 14, finalY);
+
+    doc.save(`Reporte_Ausencias_${new Date().getTime()}.pdf`);
   };
 
   const generarExcelAusencias = (data: any, periodo: string) => {
