@@ -127,10 +127,19 @@ export default function NutricionPage() {
     cargar();
   }, [diaSeleccionado, tanda]);
 
-  // ── Filtrar clases por tanda ────────────────────────────────────────────────
-  const clasesFiltradas = clases.filter(c =>
-    c.horarios?.some(h => tanda === 'matutina' ? esMatutina(h.hora_inicio) : !esMatutina(h.hora_inicio))
-  );
+  // ── Filtrar clases por tanda y día ────────────────────────────────────────────────
+  const diaSemanaSeleccionado = diaSeleccionado 
+    ? ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][new Date(diaSeleccionado + 'T12:00:00').getDay()]
+    : null;
+
+  const clasesFiltradas = clases.filter(c => {
+    // 1. Filtrar que la clase tenga al menos un horario el día seleccionado
+    const horariosDelDia = c.horarios?.filter(h => h.dia?.toLowerCase() === diaSemanaSeleccionado);
+    if (!horariosDelDia || horariosDelDia.length === 0) return false;
+
+    // 2. Filtrar por tanda
+    return horariosDelDia.some(h => tanda === 'matutina' ? esMatutina(h.hora_inicio) : !esMatutina(h.hora_inicio));
+  });
 
   const resumenFiltrado = resumen.filter(r =>
     clasesFiltradas.some(c => c.id === r.claseId)
@@ -370,9 +379,11 @@ export default function NutricionPage() {
                           const presentes = r?.totalPresentes ?? 0;
                           const pct = inscritos > 0 ? ((presentes / inscritos) * 100).toFixed(1) : '0';
                           const pctN = parseFloat(pct);
-                          const horariosTanda = clase.horarios?.filter(h =>
-                            tanda === 'matutina' ? esMatutina(h.hora_inicio) : !esMatutina(h.hora_inicio)
-                          );
+                          const horariosTanda = clase.horarios?.filter(h => {
+                            const esMismoDia = h.dia?.toLowerCase() === diaSemanaSeleccionado;
+                            const esMismaTanda = tanda === 'matutina' ? esMatutina(h.hora_inicio) : !esMatutina(h.hora_inicio);
+                            return esMismoDia && esMismaTanda;
+                          });
 
                           return (
                             <tr key={clase.id} className="hover:bg-gray-50 transition-colors">

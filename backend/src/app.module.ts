@@ -67,7 +67,7 @@ import { MeritoModule } from '../modules/merito/merito.module';
         ssl: {
           rejectUnauthorized: false,
         },
-        logging: configService.get('NODE_ENV') !== 'production',
+        logging: ['error', 'warn'],
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
