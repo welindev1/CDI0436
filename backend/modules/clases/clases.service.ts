@@ -65,7 +65,6 @@ export class ClasesService {
     const query = this.clasesRepository.createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
       .leftJoinAndSelect('clase.horarios', 'horario')
-      .leftJoinAndSelect('clase.beneficiarios', 'beneficiarios')
       .orderBy('clase.nombre', 'ASC');
 
     if (filters) {
@@ -94,10 +93,13 @@ export class ClasesService {
   }
 
   async findOne(id: string): Promise<Clase> {
-    const clase = await this.clasesRepository.findOne({
-      where: { id },
-      relations: ['tutor', 'tutor.usuario', 'horarios', 'beneficiarios', 'asistencias']
-    });
+    const clase = await this.clasesRepository.createQueryBuilder('clase')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
+      .leftJoinAndSelect('tutor.usuario', 'usuario')
+      .leftJoinAndSelect('clase.horarios', 'horario')
+      .leftJoinAndSelect('clase.beneficiarios', 'beneficiario')
+      .where('clase.id = :id', { id })
+      .getOne();
 
     if (!clase) {
       throw new NotFoundException(`Clase con ID ${id} no encontrada`);
@@ -107,10 +109,11 @@ export class ClasesService {
   }
 
   async findByCodigo(codigo: string): Promise<Clase> {
-    const clase = await this.clasesRepository.findOne({
-      where: { codigo },
-      relations: ['tutor', 'horarios', 'beneficiarios']
-    });
+    const clase = await this.clasesRepository.createQueryBuilder('clase')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
+      .leftJoinAndSelect('clase.horarios', 'horario')
+      .where('clase.codigo = :codigo', { codigo })
+      .getOne();
 
     if (!clase) {
       throw new NotFoundException(`Clase con código ${codigo} no encontrada`);
@@ -165,7 +168,7 @@ export class ClasesService {
   async remove(id: string): Promise<void> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['beneficiarios', 'asistencias']
+      relations: ['beneficiarios']
     });
 
     if (!clase) {
@@ -249,17 +252,33 @@ export class ClasesService {
 
   // Obtener estadísticas de una clase
   async getEstadisticas(id: string): Promise<any> {
-    const clase = await this.clasesRepository.findOne({
-      where: { id },
-      relations: ['beneficiarios', 'asistencias', 'tutor', 'horarios']
-    });
+    const clase = await this.clasesRepository.createQueryBuilder('clase')
+      .leftJoinAndSelect('clase.tutor', 'tutor')
+      .leftJoinAndSelect('clase.horarios', 'horario')
+      .where('clase.id = :id', { id })
+      .getOne();
 
     if (!clase) {
       throw new NotFoundException(`Clase con ID ${id} no encontrada`);
     }
 
-    const totalBeneficiarios = clase.beneficiarios?.length || 0;
-    const totalAsistencias = clase.asistencias?.length || 0;
+    const [totalBeneficiarios, totalAsistencias] = await Promise.all([
+      this.clasesRepository
+        .createQueryBuilder('clase')
+        .leftJoin('clase.beneficiarios', 'beneficiario')
+        .where('clase.id = :id', { id })
+        .select('COUNT(beneficiario.id)', 'total')
+        .getRawOne()
+        .then((result) => Number(result?.total || 0)),
+      this.clasesRepository
+        .createQueryBuilder('clase')
+        .leftJoin('clase.asistencias', 'asistencia')
+        .where('clase.id = :id', { id })
+        .select('COUNT(asistencia.id)', 'total')
+        .getRawOne()
+        .then((result) => Number(result?.total || 0)),
+    ]);
+
     const capacidadDisponible = clase.capacidad_maxima > 0 
       ? clase.capacidad_maxima - totalBeneficiarios 
       : null;

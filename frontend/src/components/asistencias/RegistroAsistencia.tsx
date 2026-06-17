@@ -7,7 +7,7 @@ import { clasesApi } from '@/lib/api/clases';
 import { EstadoAsistencia, Clase } from '@/lib/types';
 import {
   Save, CheckCircle, XCircle, Users, Search,
-  MessageSquare, X, Loader2
+  MessageSquare, X, Loader2, MinusCircle, RotateCcw
 } from 'lucide-react';
 
 interface RegistroAsistenciaProps {
@@ -19,11 +19,12 @@ interface RegistroAsistenciaProps {
 const ESTADOS = [
   { valor: EstadoAsistencia.PRESENTE,   label: 'Presente',    icon: CheckCircle,  bg: 'bg-green-100',  text: 'text-green-700',  ring: 'ring-green-500',  dot: 'bg-green-500' },
   { valor: EstadoAsistencia.AUSENTE,    label: 'Ausente',     icon: XCircle,      bg: 'bg-red-100',    text: 'text-red-700',    ring: 'ring-red-500',    dot: 'bg-red-500' },
+  { valor: null,                       label: 'Sin marcar',   icon: MinusCircle,   bg: 'bg-gray-100',   text: 'text-gray-600',   ring: 'ring-gray-400',  dot: 'bg-gray-400' },
 ];
 
 export default function RegistroAsistencia({ claseId, fecha, onSaved }: RegistroAsistenciaProps) {
   const [clase, setClase] = useState<Clase | null>(null);
-  const [asistencias, setAsistencias] = useState<Map<string, { estado: EstadoAsistencia; observaciones: string }>>(new Map());
+  const [asistencias, setAsistencias] = useState<Map<string, { estado: EstadoAsistencia | null; observaciones: string }>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +41,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       const claseData = await clasesApi.getById(claseId);
       setClase(claseData);
       const asistenciasExistentes = await asistenciasApi.getByClaseYFecha(claseId, fecha);
-      const map = new Map<string, { estado: EstadoAsistencia; observaciones: string }>();
+      const map = new Map<string, { estado: EstadoAsistencia | null; observaciones: string }>();
       asistenciasExistentes.forEach(a => {
         map.set(a.beneficiario.id, { estado: a.estado, observaciones: a.observaciones || '' });
       });
@@ -52,11 +53,15 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
     }
   };
 
-  const handleEstadoChange = (beneficiarioId: string, estado: EstadoAsistencia) => {
+  const handleEstadoChange = (beneficiarioId: string, estado: EstadoAsistencia | null) => {
     setAsistencias(prev => {
       const m = new Map(prev);
-      const current = m.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
-      m.set(beneficiarioId, { ...current, estado });
+      if (estado === null) {
+        m.delete(beneficiarioId);
+      } else {
+        const current = m.get(beneficiarioId) || { estado: null, observaciones: '' };
+        m.set(beneficiarioId, { ...current, estado });
+      }
       return m;
     });
   };
@@ -64,7 +69,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   const handleObservacionesChange = (beneficiarioId: string, observaciones: string) => {
     setAsistencias(prev => {
       const m = new Map(prev);
-      const current = m.get(beneficiarioId) || { estado: EstadoAsistencia.AUSENTE, observaciones: '' };
+      const current = m.get(beneficiarioId) || { estado: null, observaciones: '' };
       m.set(beneficiarioId, { ...current, observaciones });
       return m;
     });
@@ -85,23 +90,31 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
     }
   };
 
+  const handleLimpiarTodos = () => {
+    if (!confirm('¿Quitar todas las marcas de esta fecha?')) return;
+    setAsistencias(new Map());
+    setSuccess('Todas las marcas de esta fecha fueron quitadas');
+  };
+
   const handleGuardar = async () => {
     try {
       setIsSaving(true);
       setError('');
       setSuccess('');
-      const asistenciasArray = Array.from(asistencias.entries()).map(([beneficiarioId, data]) => ({
-        beneficiarioId,
-        estado: data.estado,
-        observaciones: data.observaciones || undefined,
-      }));
-      if (asistenciasArray.length === 0) {
-        setError('Debes marcar al menos un beneficiario antes de guardar');
-        setIsSaving(false);
-        return;
-      }
+      const asistenciasArray = Array.from(asistencias.entries())
+        .filter(([, data]) => data.estado !== null)
+        .map(([beneficiarioId, data]) => ({
+          beneficiarioId,
+          estado: data.estado as EstadoAsistencia,
+          observaciones: data.observaciones || undefined,
+        }));
+
       await asistenciasApi.registrarAsistenciaMasiva({ claseId, fecha, asistencias: asistenciasArray });
-      setSuccess('Asistencias guardadas correctamente');
+      setSuccess(
+        asistenciasArray.length === 0
+          ? 'Se limpiaron todas las asistencias para esta fecha'
+          : 'Asistencias guardadas correctamente'
+      );
       if (onSaved) onSaved();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al guardar asistencias');
@@ -173,12 +186,12 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       {/* ── Acciones rápidas ──────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-2">Marcar todos:</span>
-        {ESTADOS.map(e => {
+        {ESTADOS.filter(e => e.valor !== null).map(e => {
           const Icon = e.icon;
           return (
             <button
-              key={e.valor}
-              onClick={() => handleMarcarTodos(e.valor)}
+              key={e.label}
+              onClick={() => handleMarcarTodos(e.valor as EstadoAsistencia)}
               disabled={isSaving}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border
                 ${e.bg} ${e.text} border-transparent hover:ring-2 hover:${e.ring} disabled:opacity-50`}
@@ -188,6 +201,14 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
             </button>
           );
         })}
+        <button
+          onClick={handleLimpiarTodos}
+          disabled={isSaving}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200 disabled:opacity-50"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Quitar todos
+        </button>
       </div>
 
       {error && <Alert variant="error">{error}</Alert>}

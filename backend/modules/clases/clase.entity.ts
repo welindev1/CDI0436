@@ -18,10 +18,10 @@ export class Clase {
   @Column({ length: 50, nullable: true })
   codigo: string;
 
-  @ManyToOne(() => Tutor, tutor => tutor.clases, { eager: true })
+  @ManyToOne(() => Tutor, tutor => tutor.clases)
   tutor: Tutor;
 
-  @ManyToMany(() => Horario, horario => horario.clases, { eager: true })
+  @ManyToMany(() => Horario, horario => horario.clases)
   @JoinTable({
     name: 'clase_horario',
     joinColumn: { name: 'clase_id', referencedColumnName: 'id' },
