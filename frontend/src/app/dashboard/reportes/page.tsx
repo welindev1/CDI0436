@@ -6,14 +6,13 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Alert from '@/components/ui/Alert';
 import FiltrosReporte from '@/components/reportes/FiltrosReporte';
 import { asistenciasApi } from '@/lib/api/asistencias';
-import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { exportToPDF } from '@/lib/utils/exportPDF';
 import { exportToExcel } from '@/lib/utils/exportExcel';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { 
   FileText, BarChart3, Users, BookOpen, Globe, Download, 
-  Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye, UserCheck, UserX, Folder
+  Calendar, ListFilter, TrendingUp, FileSpreadsheet, Eye, UserCheck, UserX
 } from 'lucide-react';
 
 type TipoPeriodo = 'dia' | 'mes' | 'anio' | 'rango' | 'todo';
@@ -43,12 +42,8 @@ const formatFechasExport = (registros: any[], estado: string) => {
 };
 
 export default function ReportesPage() {
-  const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'tutor' | 'global' | 'ausencias' | 'carpetas'>('clase');
+  const [tipoReportePrincipal, setTipoReportePrincipal] = useState<'clase' | 'beneficiario' | 'tutor' | 'global' | 'ausencias'>('clase');
   
-  // Estado para reporte de carpetas
-  const [tipoExpediente, setTipoExpediente] = useState('todos');
-  const [condicionCarpeta, setCondicionCarpeta] = useState('todos');
-
   // Estado para reporte global
   const [tipoPeriodo, setTipoPeriodo] = useState<TipoPeriodo>('mes');
   const [tipoReporteGlobal, setTipoReporteGlobal] = useState<TipoReporteGlobal>('estadistico');
@@ -131,26 +126,12 @@ export default function ReportesPage() {
     return true;
   };
 
-  const handleSwitchTab = (tab: 'clase'|'beneficiario'|'tutor'|'global'|'ausencias'|'carpetas') => {
+  const handleSwitchTab = (tab: 'clase'|'beneficiario'|'tutor'|'global'|'ausencias') => {
     setTipoReportePrincipal(tab);
     setReportData(null);
     setActiveReportContext(null);
     setError('');
     setSuccess('');
-  };
-
-  const handleGenerarCarpetas = async () => {
-    try {
-      setIsLoading(true); setError(''); setSuccess(''); setReportData(null);
-      const fechaReporte = new Date().toLocaleDateString('es-DO');
-      const data = await beneficiariosApi.getReporteCarpetas(tipoExpediente, condicionCarpeta);
-      setReportData(data);
-      setActiveReportContext({ tipo: 'carpetas', fechaReporte, tipoExpediente, condicionCarpeta });
-    } catch (err: any) {
-      setError(err.message || 'Error al generar reporte de carpetas');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   // Handlers Principales
@@ -222,9 +203,6 @@ export default function ReportesPage() {
       } else if (tipo === 'ausencias') {
          if (formato === 'pdf') generarPDFAusencias(reportData, periodoDescripcion, fechaReporte);
          else generarExcelAusencias(reportData, periodoDescripcion);
-      } else if (tipo === 'carpetas') {
-         if (formato === 'pdf') generarPDFCarpetas(reportData, activeReportContext.tipoExpediente, activeReportContext.condicionCarpeta, fechaReporte);
-         else generarExcelCarpetas(reportData, activeReportContext.tipoExpediente, activeReportContext.condicionCarpeta);
       }
       setSuccess(`Reporte exportado exitosamente en formato ${formato.toUpperCase()}`);
     } catch(err: any) {
@@ -447,56 +425,6 @@ export default function ReportesPage() {
       nombreArchivo: 'Reporte_General_Ausencias',
       hojas: [
         { nombre: 'Ausencias', datos: registros },
-        { nombre: 'Resumen', datos: estadisticas },
-      ],
-    });
-  };
-
-  // ----- GENERADORES CARPETAS -----
-  const generarPDFCarpetas = (data: any, tipoExpediente: string, condicion: string, fechaReporte: string) => {
-    const subtitulo = `Tipo: ${tipoExpediente === 'todos' ? 'Todos' : tipoExpediente.toUpperCase()} | Condición: ${condicion === 'todos' ? 'Todos' : condicion === 'con_registros' ? 'Con Registros' : 'Sin Registros'}`;
-    const registros = data.registros.map((item: any) => ({
-      beneficiario: item.beneficiario.nombre,
-      codigo: item.beneficiario.codigo || '-',
-      tieneRegistros: item.tieneRegistros ? 'Sí' : 'No',
-      detalles: item.expedientes.map((e: any) => e.titulo).join(', ') || 'Ninguno'
-    }));
-
-    exportToPDF({
-      titulo: 'Reporte de Carpetas de Beneficiarios',
-      subtitulo: subtitulo,
-      fecha: fechaReporte,
-      datos: registros,
-      columnas: ['beneficiario', 'codigo', 'tieneRegistros', 'detalles'],
-      headers: ['Beneficiario', 'Código', 'Tiene Registros', 'Detalles de Expedientes'],
-      totales: [
-        { label: 'Total Evaluados', value: data.estadisticas.totalEvaluados },
-        { label: 'Con Registros', value: data.estadisticas.conRegistros },
-        { label: 'Sin Registros', value: data.estadisticas.sinRegistros },
-      ],
-    });
-  };
-
-  const generarExcelCarpetas = (data: any, tipoExpediente: string, condicion: string) => {
-    const registros = data.registros.map((item: any) => ({
-      'Beneficiario': item.beneficiario.nombre,
-      'Código': item.beneficiario.codigo || '-',
-      'Tiene Registros': item.tieneRegistros ? 'Sí' : 'No',
-      'Detalles de Expedientes': item.expedientes.map((e: any) => e.titulo).join(', ') || 'Ninguno'
-    }));
-
-    const estadisticas = [
-      { Métrica: 'Tipo de Expediente', Valor: tipoExpediente === 'todos' ? 'Todos' : tipoExpediente.toUpperCase() },
-      { Métrica: 'Condición', Valor: condicion === 'todos' ? 'Todos' : condicion === 'con_registros' ? 'Con Registros' : 'Sin Registros' },
-      { Métrica: 'Total Evaluados', Valor: data.estadisticas.totalEvaluados },
-      { Métrica: 'Con Registros', Valor: data.estadisticas.conRegistros },
-      { Métrica: 'Sin Registros', Valor: data.estadisticas.sinRegistros },
-    ];
-
-    exportToExcel({
-      nombreArchivo: `Reporte_Carpetas_${new Date().getTime()}`,
-      hojas: [
-        { nombre: 'Registros', datos: registros },
         { nombre: 'Resumen', datos: estadisticas },
       ],
     });
@@ -737,35 +665,6 @@ export default function ReportesPage() {
         ],
         key: `${item.beneficiario.id}-${item.clase.id}`
       })) || [];
-    } else if (tipo === 'carpetas') {
-      stats = [
-        { label: 'Total Evaluados', value: reportData.estadisticas?.totalEvaluados || 0 },
-        { label: 'Con Registros', value: reportData.estadisticas?.conRegistros || 0 },
-        { label: 'Sin Registros', value: reportData.estadisticas?.sinRegistros || 0 },
-      ];
-      subtitle = `Módulo: ${activeReportContext.tipoExpediente === 'todos' ? 'Todos' : activeReportContext.tipoExpediente.toUpperCase()} | Condición: ${activeReportContext.condicionCarpeta === 'todos' ? 'Todos' : activeReportContext.condicionCarpeta === 'con_registros' ? 'Con Registros' : 'Sin Registros'}`;
-      tableHeaders = ['Beneficiario', 'Código', 'Tiene Registros', 'Detalles de Expedientes'];
-      tableRows = reportData.registros?.map((item: any) => ({
-        cells: [
-          <span className="font-bold text-gray-900">{item.beneficiario.nombre}</span>,
-          <span className="font-mono text-xs">{item.beneficiario.codigo || '-'}</span>,
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${item.tieneRegistros ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {item.tieneRegistros ? 'Sí' : 'No'}
-          </span>,
-          <div className="flex flex-col gap-1 text-xs">
-            {item.expedientes && item.expedientes.length > 0 ? (
-              item.expedientes.map((e: any, i: number) => (
-                <span key={i} className="text-gray-600 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                  <span className="font-semibold text-gray-700">{e.tipo.toUpperCase()}:</span> {e.titulo}
-                </span>
-              ))
-            ) : (
-              <span className="text-gray-400 italic">Sin registros</span>
-            )}
-          </div>
-        ],
-        key: item.beneficiario.id
-      })) || [];
     }
 
     return (
@@ -857,7 +756,7 @@ export default function ReportesPage() {
           {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
 
           {/* Opciones Principales */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <button
               onClick={() => handleSwitchTab('clase')}
               className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
@@ -932,25 +831,10 @@ export default function ReportesPage() {
                 <p className="text-xs text-gray-500 mt-1">Listado general de faltas</p>
               </div>
             </button>
-
-            <button
-              onClick={() => handleSwitchTab('carpetas')}
-              className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-3 ${
-                tipoReportePrincipal === 'carpetas' ? 'border-indigo-500 bg-indigo-50 shadow-md scale-[1.02]' : 'border-gray-100 hover:border-indigo-200 bg-white'
-              }`}
-            >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tipoReportePrincipal === 'carpetas' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                <Folder className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900">Carpetas</h3>
-                <p className="text-xs text-gray-500 mt-1">Expedientes de beneficiarios</p>
-              </div>
-            </button>
           </div>
 
           {/* Area de Configuracion */}
-          {tipoReportePrincipal === 'global' || tipoReportePrincipal === 'ausencias' || tipoReportePrincipal === 'carpetas' ? (
+          {tipoReportePrincipal === 'global' || tipoReportePrincipal === 'ausencias' ? (
             <div className="space-y-6">
               {/* Opciones Globales */}
               {tipoReportePrincipal === 'global' && (
@@ -971,44 +855,7 @@ export default function ReportesPage() {
                 </div>
               )}
 
-              {/* Filtros Carpetas */}
-              {tipoReportePrincipal === 'carpetas' && (
-                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                  <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <Folder className="w-5 h-5 text-indigo-500" /> Filtros de Carpetas
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">Módulo de Expediente</label>
-                      <select 
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        value={tipoExpediente}
-                        onChange={(e) => setTipoExpediente(e.target.value)}
-                      >
-                        <option value="todos">Todos los Expedientes</option>
-                        <option value="documentos">Documentos Personales</option>
-                        <option value="educativo">Expediente Educativo</option>
-                        <option value="registro">Registro/Otros</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">Condición</label>
-                      <select 
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                        value={condicionCarpeta}
-                        onChange={(e) => setCondicionCarpeta(e.target.value)}
-                      >
-                        <option value="todos">Todos (Con y Sin Registros)</option>
-                        <option value="con_registros">Tienen Registros</option>
-                        <option value="sin_registros">No Tienen Registros</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Filtros Globales */}
-              {(tipoReportePrincipal === 'global' || tipoReportePrincipal === 'ausencias') && (
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                 <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-500" /> Rango de Tiempo
@@ -1054,20 +901,13 @@ export default function ReportesPage() {
                     <div className="col-span-2 text-sm text-gray-500 bg-gray-50 p-4 rounded-xl border border-gray-100">Se exportará absolutamente todo el registro histórico del sistema. Puede tardar un poco.</div>
                   )}
                 </div>
-              </div>
-              )}
 
                 <div className="flex gap-3 pt-6 mt-6 border-t border-gray-100">
-                  <button onClick={tipoReportePrincipal === 'carpetas' ? handleGenerarCarpetas : handleGenerarGlobal} disabled={isLoading || (tipoReportePrincipal !== 'carpetas' && !validarFiltrosGlobales())} className="w-full flex justify-center items-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
-                    {isLoading ? (
-                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <TrendingUp className="w-5 h-5" /> Generar Reporte
-                      </>
-                    )}
+                  <button onClick={handleGenerarGlobal} disabled={isLoading} className="w-full flex justify-center items-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50">
+                    <Calendar className="w-5 h-5" /> Ver Reporte
                   </button>
                 </div>
+              </div>
             </div>
           ) : (
             <FiltrosReporte
