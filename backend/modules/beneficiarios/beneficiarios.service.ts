@@ -577,7 +577,7 @@ export class BeneficiariosService {
     const isTodosExpedientes = !tipoExpediente || tipoExpediente === 'todos';
     const isTodasCondiciones = !condicion || condicion === 'todos';
 
-    const resultados = [];
+    const resultados: any[] = [];
     let conRegistros = 0;
     let sinRegistros = 0;
 
