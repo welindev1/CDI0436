@@ -127,6 +127,12 @@ const menuGroups: MenuItem[] = [
         permisos: ['reportes:ver'],
       },
       {
+        title: 'Reporte de Carpetas',
+        icon: FileText,
+        href: '/dashboard/reportes/carpetas',
+        permisos: ['reportes:ver'],
+      },
+      {
         title: 'Bonos de Regalo',
         icon: Gift,
         href: '/dashboard/bonos',
