@@ -108,6 +108,16 @@ export const beneficiariosApi = {
     return response.data;
   },
 
+  getReporteCarpetas: async (tipoExpediente?: string, condicion?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (tipoExpediente) params.append('tipoExpediente', tipoExpediente);
+    if (condicion) params.append('condicion', condicion);
+    
+    const url = `/beneficiarios/reporte/carpetas${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  },
+
   getExpedientes: async (id: string): Promise<any[]> => {
     const response = await apiClient.get(`/beneficiarios/${id}/expediente`);
     return response.data;

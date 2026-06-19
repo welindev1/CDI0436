@@ -566,4 +566,61 @@ export class BeneficiariosService {
 
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
+
+  async getReporteCarpetas(tipoExpediente?: string, condicion?: string): Promise<any> {
+    const beneficiarios = await this.beneficiariosRepository.find({
+      where: { activo: true },
+      relations: ['expedientes'],
+      order: { nombre: 'ASC' }
+    });
+
+    const isTodosExpedientes = !tipoExpediente || tipoExpediente === 'todos';
+    const isTodasCondiciones = !condicion || condicion === 'todos';
+
+    const resultados = [];
+    let conRegistros = 0;
+    let sinRegistros = 0;
+
+    for (const b of beneficiarios) {
+      // Filtrar expedientes según el tipo solicitado
+      const expedientesFiltrados = isTodosExpedientes
+        ? b.expedientes
+        : b.expedientes.filter(e => e.tipo === tipoExpediente);
+
+      const tieneRegistros = expedientesFiltrados && expedientesFiltrados.length > 0;
+
+      // Aplicar filtro de condición
+      if (!isTodasCondiciones) {
+        if (condicion === 'con_registros' && !tieneRegistros) continue;
+        if (condicion === 'sin_registros' && tieneRegistros) continue;
+      }
+
+      if (tieneRegistros) conRegistros++;
+      else sinRegistros++;
+
+      resultados.push({
+        beneficiario: {
+          id: b.id,
+          nombre: b.nombre + (b.apellido ? ` ${b.apellido}` : ''),
+          codigo: b.codigo,
+        },
+        tieneRegistros,
+        expedientes: expedientesFiltrados.map(e => ({
+          id: e.id,
+          titulo: e.titulo || e.tipo,
+          tipo: e.tipo,
+          fecha: e.fecha_evento || e.creado_en
+        }))
+      });
+    }
+
+    return {
+      estadisticas: {
+        totalEvaluados: resultados.length,
+        conRegistros,
+        sinRegistros
+      },
+      registros: resultados
+    };
+  }
 }

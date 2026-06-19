@@ -44,6 +44,14 @@ export class BeneficiariosController {
 
   // --- Static routes MUST come before :id ---
 
+  @Get('reporte/carpetas')
+  getReporteCarpetas(
+    @Query('tipoExpediente') tipoExpediente?: string,
+    @Query('condicion') condicion?: string,
+  ) {
+    return this.beneficiariosService.getReporteCarpetas(tipoExpediente, condicion);
+  }
+
   @Get('exportar')
   async exportar(
     @Query(new ValidationPipe({ 
