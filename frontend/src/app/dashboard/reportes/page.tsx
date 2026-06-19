@@ -1068,7 +1068,6 @@ export default function ReportesPage() {
                     )}
                   </button>
                 </div>
-              </div>
             </div>
           ) : (
             <FiltrosReporte
