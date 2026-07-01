@@ -7,10 +7,10 @@ import * as bcrypt from 'bcrypt';
 import { AppModule } from '../app.module';
 
 // Importar entidades con paths relativos
-import { Usuario } from '../../modules/usuarios/usuario.entity';
-import { Rol } from '../../modules/roles/entities/rol.entity';
-import { Permiso } from '../../modules/roles/entities/permiso.entity';
-import { PERMISOS_SISTEMA } from '../../modules/roles/permisos.service';
+import { Usuario } from '../modules/usuarios/usuario.entity';
+import { Rol } from '../modules/roles/entities/rol.entity';
+import { Permiso } from '../modules/roles/entities/permiso.entity';
+import { PERMISOS_SISTEMA } from '../modules/roles/permisos.service';
 
 async function seedUsers() {
   console.log('🚀 Iniciando seed del sistema...\n');

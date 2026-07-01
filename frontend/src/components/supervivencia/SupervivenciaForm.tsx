@@ -45,7 +45,7 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
   const loadTutores = async () => {
     try {
       setLoadingTutores(true);
-      const data = await tutoresApi.getAll({ activo: true });
+      const data = await tutoresApi.getAll({ activo: 'true' });
       setTutores(data);
     } catch (err) {
       console.error('Error al cargar tutores:', err);
@@ -60,7 +60,7 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
     setIsLoading(true);
 
     try {
-      const data: any = {
+      const data: Record<string, unknown> = {
         nombre: formData.nombre,
         descripcion: formData.descripcion,
         codigo: formData.codigo,
@@ -69,15 +69,15 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
       };
 
       // Remover campos vacíos excepto tutor_id (puede ser null para quitar tutor)
-      Object.keys(data).forEach(key => {
+      for (const key of Object.keys(data)) {
         if (key !== 'tutor_id' && (data[key] === '' || data[key] === undefined)) {
           delete data[key];
         }
-      });
+      }
 
-      await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar curso de supervivencia');
+      await onSubmit(data as Parameters<typeof onSubmit>[0]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar curso de supervivencia');
     } finally {
       setIsLoading(false);
     }

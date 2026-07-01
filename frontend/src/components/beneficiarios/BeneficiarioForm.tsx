@@ -5,25 +5,12 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
 import { Beneficiario } from '@/lib/types';
+import { calcularEdad } from '@/lib/utils/formatters';
 
 interface BeneficiarioFormProps {
   beneficiario?: Beneficiario;
   onSubmit: (data: Partial<Beneficiario>) => Promise<void>;
   onCancel: () => void;
-}
-
-function calcularEdad(fechaNacimiento: string): number | null {
-  if (!fechaNacimiento) return null;
-  const nacimiento = new Date(fechaNacimiento);
-  if (isNaN(nacimiento.getTime())) return null;
-  const hoy = new Date();
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const mesActual = hoy.getMonth();
-  const mesNacimiento = nacimiento.getMonth();
-  if (mesActual < mesNacimiento || (mesActual === mesNacimiento && hoy.getDate() < nacimiento.getDate())) {
-    edad--;
-  }
-  return edad;
 }
 
 export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: BeneficiarioFormProps) {
@@ -63,20 +50,19 @@ export default function BeneficiarioForm({ beneficiario, onSubmit, onCancel }: B
     setIsLoading(true);
 
     try {
-      const data: any = {
-        ...formData,
-      };
+      const data: Partial<Beneficiario> = { ...formData };
 
       // Remover campos vacíos
-      Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === undefined) {
-          delete data[key];
+      for (const key of Object.keys(data)) {
+        const k = key as keyof typeof data;
+        if (data[k] === '' || data[k] === undefined) {
+          delete data[k];
         }
-      });
+      }
 
       await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar beneficiario');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar beneficiario');
     } finally {
       setIsLoading(false);
     }

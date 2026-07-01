@@ -3,36 +3,37 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Importar entidades
-import { Usuario } from '../modules/usuarios/usuario.entity';
-import { Tutor } from '../modules/tutores/tutor.entity';
-import { Horario } from '../modules/horarios/horario.entity';
-import { Clase } from '../modules/clases/clase.entity';
-import { Asistencia } from '../modules/asistencias/asistencia.entity';
-import { Reporte } from '../modules/reportes/reporte.entity';
-import { Beneficiario } from '../modules/beneficiarios/beneficiario.entity';
-import { BeneficiarioExpediente } from '../modules/beneficiarios/beneficiario-expediente.entity';
-import { Rol } from '../modules/roles/entities/rol.entity';
-import { Permiso } from '../modules/roles/entities/permiso.entity';
-import { Supervivencia } from '../modules/supervivencias/supervivencia.entity';
-import { AsistenciaSupervivencia } from '../modules/supervivencias/asistencia-supervivencia.entity';
-import { FotoAsistenciaSupervivencia } from '../modules/supervivencias/foto-asistencia-supervivencia.entity';
-import { MenuNutricion } from '../modules/nutricion/menu-nutricion.entity';
-import { PeriodoMerito } from '../modules/merito/periodo-merito.entity';
-import { NotaMerito } from '../modules/merito/nota-merito.entity';
+import { Usuario } from './modules/usuarios/usuario.entity';
+import { Tutor } from './modules/tutores/tutor.entity';
+import { Horario } from './modules/horarios/horario.entity';
+import { Clase } from './modules/clases/clase.entity';
+import { Asistencia } from './modules/asistencias/asistencia.entity';
+import { Reporte } from './modules/reportes/reporte.entity';
+import { Beneficiario } from './modules/beneficiarios/beneficiario.entity';
+import { BeneficiarioExpediente } from './modules/beneficiarios/beneficiario-expediente.entity';
+import { Rol } from './modules/roles/entities/rol.entity';
+import { Permiso } from './modules/roles/entities/permiso.entity';
+import { Supervivencia } from './modules/supervivencias/supervivencia.entity';
+import { AsistenciaSupervivencia } from './modules/supervivencias/asistencia-supervivencia.entity';
+import { FotoAsistenciaSupervivencia } from './modules/supervivencias/foto-asistencia-supervivencia.entity';
+import { MenuNutricion } from './modules/nutricion/menu-nutricion.entity';
+import { PeriodoMerito } from './modules/merito/periodo-merito.entity';
+import { NotaMerito } from './modules/merito/nota-merito.entity';
 
 // Importar módulos
-import { AuthModule } from '../modules/auth/auth.module';
-import { UsuariosModule } from '../modules/usuarios/usuarios.module';
-import { TutoresModule } from '../modules/tutores/tutores.module';
-import { HorariosModule } from '../modules/horarios/horarios.module';
-import { BeneficiariosModule } from '../modules/beneficiarios/beneficiarios.module';
-import { ClasesModule } from '../modules/clases/clases.module';
-import { AsistenciasModule } from '../modules/asistencias/asistencias.module';
-import { AyudasModule } from '../modules/ayudas/ayudas.module';
-import { RolesModule } from '../modules/roles/roles.module';
-import { SupervivenciasModule } from '../modules/supervivencias/supervivencias.module';
-import { NutricionModule } from '../modules/nutricion/nutricion.module';
-import { MeritoModule } from '../modules/merito/merito.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsuariosModule } from './modules/usuarios/usuarios.module';
+import { TutoresModule } from './modules/tutores/tutores.module';
+import { HorariosModule } from './modules/horarios/horarios.module';
+import { BeneficiariosModule } from './modules/beneficiarios/beneficiarios.module';
+import { ClasesModule } from './modules/clases/clases.module';
+import { AsistenciasModule } from './modules/asistencias/asistencias.module';
+import { AyudasModule } from './modules/ayudas/ayudas.module';
+import { RolesModule } from './modules/roles/roles.module';
+import { SupervivenciasModule } from './modules/supervivencias/supervivencias.module';
+import { NutricionModule } from './modules/nutricion/nutricion.module';
+import { MeritoModule } from './modules/merito/merito.module';
+import { ReportesModule } from './modules/reportes/reportes.module';
 
 @Module({
   imports: [
@@ -63,7 +64,14 @@ import { MeritoModule } from '../modules/merito/merito.module';
           PeriodoMerito,
           NotaMerito,
         ],
-        synchronize: true,
+        // ⚠️ MIGRACIONES: synchronize: false es obligatorio en producción.
+        // Usa los comandos del package.json para gestionar migraciones:
+        //   npm run migration:generate -- src/migrations/Nombre
+        //   npm run migration:run
+        //   npm run migration:revert
+        synchronize: false,
+        migrationsTableName: 'migrations_typeorm',
+        migrations: ['dist/src/migrations/*.{ts,js}'],
         ssl: {
           rejectUnauthorized: false,
         },
@@ -86,6 +94,7 @@ import { MeritoModule } from '../modules/merito/merito.module';
     SupervivenciasModule,
     NutricionModule,
     MeritoModule,
+    ReportesModule,
   ],
 })
 export class AppModule {}

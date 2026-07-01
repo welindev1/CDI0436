@@ -48,8 +48,8 @@ export default function BeneficiariosPage() {
       setIsLoading(true);
       const data = await beneficiariosApi.getAll();
       setBeneficiarios(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar beneficiarios');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al cargar beneficiarios');
     } finally {
       setIsLoading(false);
     }
@@ -69,8 +69,8 @@ export default function BeneficiariosPage() {
       }
       setShowModal(false);
       loadBeneficiarios();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || 'Error al guardar');
+    } catch (err: unknown) {
+      throw new Error(err instanceof Error ? err.message : 'Error al guardar');
     }
   };
 
@@ -92,8 +92,8 @@ export default function BeneficiariosPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err: any) {
-      setError(err.message || 'Error al exportar');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al exportar');
     } finally {
       setIsExporting(false);
     }

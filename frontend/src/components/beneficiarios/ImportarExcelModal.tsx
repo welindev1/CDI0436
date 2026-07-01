@@ -7,6 +7,7 @@ import Alert from '@/components/ui/Alert';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { Upload, Download, FileSpreadsheet, CheckCircle, XCircle, AlertCircle, FileDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import type { ImportarResultado } from '@/lib/types';
 
 interface ImportarExcelModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [resultado, setResultado] = useState<any>(null);
+  const [resultado, setResultado] = useState<ImportarResultado | null>(null);
   const [actualizarExistentes, setActualizarExistentes] = useState(false);
   const [omitirErrores, setOmitirErrores] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +59,7 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Error al descargar la plantilla');
     } finally {
       setIsLoading(false);
@@ -92,8 +93,8 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
           }
         }, 2000);
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al importar el archivo');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al importar el archivo');
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +112,7 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
   const handleDescargarReporteErrores = () => {
     if (!resultado?.errores || resultado.errores.length === 0) return;
 
-    const datosErrores = resultado.errores.map((err: any) => ({
+    const datosErrores = resultado.errores.map((err) => ({
       FILA: err.fila,
       ERROR: err.error,
       CODIGO: err.datos?.CODIGO || '',
@@ -278,7 +279,7 @@ export default function ImportarExcelModal({ isOpen, onClose, onImportComplete }
                   <span className="font-medium text-yellow-900">Errores encontrados:</span>
                 </div>
                 <div className="space-y-2">
-                  {resultado.errores.map((error: any, index: number) => (
+                  {resultado.errores.map((error, index: number) => (
                     <div key={index} className="text-sm text-yellow-800">
                       <span className="font-medium">Fila {error.fila}:</span> {error.error}
                       {error.datos?.CODIGO && (

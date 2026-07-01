@@ -1,11 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as express from 'express';
+
+// Custom exception filter and validation pipe
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ValidationPipe } from './common/pipes/validation.pipe';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -35,12 +39,29 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  // ========================================
+  // Global Exception Filter
+  // ========================================
+  app.useGlobalFilters(new HttpExceptionFilter());
 
+  // ========================================
+  // Global Validation Pipe (custom)
+  // ========================================
+  app.useGlobalPipes(new ValidationPipe());
+
+  // ========================================
+  // Security Headers (helmet-like, manual)
+  // ========================================
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains',
+    );
+    next();
+  });
 
   const config = new DocumentBuilder()
     .setTitle('CDI')

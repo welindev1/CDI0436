@@ -1,3 +1,41 @@
+// ── Asistencia report inner types ──────────────────────────────────────────
+
+export interface ReporteAsistenciaFechaItem {
+  estado?: string;
+  fecha: string;
+  observaciones?: string;
+}
+
+export interface ReporteAsistenciaBeneficiarioItem {
+  beneficiario: {
+    id: string;
+    nombre: string;
+    codigo: string;
+  };
+  registros: ReporteAsistenciaFechaItem[];
+}
+
+export interface ReporteAsistenciaClaseItem {
+  clase: {
+    id: string;
+    nombre: string;
+    codigo?: string;
+  };
+  registros: ReporteAsistenciaFechaItem[];
+}
+
+// Cumpleaños
+export interface CumpleanosItem {
+  id: string;
+  codigo: string;
+  nombre: string;
+  dia: number;
+  fecha_nacimiento: string;
+  edad: number;
+  telefono: string | null;
+  padre_tutor: string | null;
+}
+
 // Enums
 export enum EstadoAsistencia {
   PRESENTE = 'presente',
@@ -187,6 +225,97 @@ export interface AuthResponse {
   usuario: Usuario;
 }
 
+// ============ Ayudas ============
+
+export type EstadoFiltroAyuda = 'pendiente' | 'aprobada' | 'rechazada' | 'todos';
+
+export interface Ayuda {
+  id: string;
+  nombre_beneficiario: string;
+  codigo_beneficiario: string;
+  nombre_madre: string;
+  nombre_tutor: string;
+  telefono?: string;
+  tipo: 'medica' | 'alimentos' | 'pequeno_negocio' | 'educacion' | 'otros';
+  tipo_especificacion?: string;
+  detalle: string;
+  foto_url?: string;
+  foto_entrega_url?: string;
+  estado: 'pendiente' | 'aprobada' | 'rechazada';
+  creado_en: string;
+}
+
+export interface ComentarioAyuda {
+  id: string;
+  contenido: string;
+  autor: string;
+  ayuda_id: string;
+  creado_en: string;
+}
+
+// ============ Mérito ============
+
+export interface PeriodoMerito {
+  id: string;
+  nombre: string;
+  anio: number;
+  estado: string;
+  creado_en: string;
+}
+
+export interface NotaMerito {
+  id: string;
+  beneficiario_id: string;
+  codigo: string;
+  nombre: string;
+  apellido: string;
+  ciclo: 'Primaria' | 'Secundaria';
+  curso: number;
+  matematicas: number;
+  lengua_espanola: number;
+  naturales: number;
+  sociales: number;
+  promedio: number;
+}
+
+export interface BeneficiarioPendiente {
+  id: string;
+  codigo: string;
+  nombre: string;
+  apellido: string;
+}
+
+export interface PeriodoDashboard {
+  periodo: PeriodoMerito;
+  faltan_por_entregar: BeneficiarioPendiente[];
+  notas_registradas: NotaMerito[];
+}
+
+export interface GanadorMerito {
+  id: string;
+  codigo: string;
+  nombre: string;
+  curso: number;
+  promedio: number;
+}
+
+export interface GanadoresResponse {
+  primaria: GanadorMerito[];
+  secundaria: GanadorMerito[];
+}
+
+export interface AgregarNotaData {
+  beneficiario_id: string;
+  ciclo: string;
+  curso: number;
+  matematicas: number;
+  lengua_espanola: number;
+  naturales: number;
+  sociales: number;
+}
+
+// ============ Asistencia Reportes ============
+
 export interface ReporteAsistenciaClase {
   clase: {
     id: string;
@@ -205,7 +334,158 @@ export interface ReporteAsistenciaClase {
     ausentes: number;
     porcentajeAsistencia: string;
   };
-  asistenciasPorBeneficiario: any[];
+  asistenciasPorBeneficiario: ReporteAsistenciaBeneficiarioItem[];
+}
+
+// ── Expediente types ─────────────────────────────────────────────────────────
+export type ExpedienteTipo = 'educativo' | 'registro' | 'documentos' | 'otros' | 'galeria' | 'libre';
+
+export interface ImagenGaleria {
+  base64: string;
+  titulo?: string;
+  descripcion?: string;
+}
+
+export interface PdfAdjunto {
+  nombre: string;
+  base64_pdf: string;
+}
+
+export interface ExpedientePayload {
+  tipo: string;
+  titulo: string | null;
+  mostrar_titulo: boolean;
+  contenido: string | null;
+  fecha_evento: string | null;
+  etiqueta_color: string;
+  imagen_base64: null;
+  imagenes_galeria: ImagenGaleria[] | null;
+  pdfs: PdfAdjunto[] | null;
+}
+
+export interface ExpedienteEditPayload {
+  titulo: string | null;
+  mostrar_titulo: boolean;
+  contenido: string | null;
+  fecha_evento: string | null;
+  etiqueta_color: string;
+  imagen_base64: null;
+  imagenes_galeria: ImagenGaleria[] | null;
+  pdfs: PdfAdjunto[] | null;
+}
+
+export interface ExpedienteEntry {
+  id: string;
+  tipo: ExpedienteTipo;
+  titulo?: string | null;
+  mostrar_titulo?: boolean;
+  contenido?: string | null;
+  fecha_evento?: string | null;
+  etiqueta_color?: string;
+  imagen_base64?: string | null;
+  imagenes_galeria?: ImagenGaleria[] | null;
+  pdfs?: PdfAdjunto[] | null;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface ColorMapEntry {
+  dot: string;
+  badge: string;
+  text: string;
+}
+
+export interface TipoMetaEntry {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+}
+
+export interface FiltroEntry {
+  key: string;
+  label: string;
+}
+
+// ── Reporte filters types ──────────────────────────────────────────────────────
+
+export interface FiltrosReportePayload {
+  id: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  fechaReporte?: string;
+}
+
+export type TipoFiltroFecha = 'todo' | 'fecha' | 'rango' | 'mes';
+
+// ── Usuario form types ─────────────────────────────────────────────────────────
+
+export interface UsuarioFormValues {
+  nombre: string;
+  correo: string;
+  password: string;
+  rol_id: string;
+}
+
+// ─── Clase Detalle ───────────────────────────────────────────────────────────
+export interface FotoAsistencia {
+  id: string;
+  imagen_url: string;
+  [key: string]: unknown;
+}
+
+// ─── Bonos ────────────────────────────────────────────────────────────────────
+export interface BeneficiarioRow {
+  id: string;
+  codigo: string;
+  beneficiario: string;
+  padre: string;
+  cedula: string;
+  monto: string;
+}
+
+export interface BondCardProps {
+  row: BeneficiarioRow;
+  mes: string;
+  expira: string;
+}
+
+// ─── Nutrición ────────────────────────────────────────────────────────────────
+export type TandaNutricion = 'matutina' | 'vespertina';
+
+export interface MenuNutricion {
+  id: string;
+  fecha: string;
+  tanda: TandaNutricion;
+  titulo_menu: string;
+  meriendas_servidas: number | null;
+  observaciones: string | null;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface ResumenClase {
+  claseId: string;
+  nombre: string;
+  codigo: string | null;
+  tutor: string | null;
+  totalInscritos: number;
+  totalPresentes: number;
+}
+
+// Supervivencia-specific types
+export type TabType = 'beneficiarios' | 'asistencia';
+
+export interface AsistenciaLocal {
+  beneficiario_id: string;
+  presente: boolean;
+  observaciones: string;
+}
+
+export interface SupervivenciaFoto {
+  id: string;
+  imagen_url: string;
+  fecha: string;
+  creado_en: string;
 }
 
 export interface ReporteAsistenciaBeneficiario {
@@ -227,5 +507,148 @@ export interface ReporteAsistenciaBeneficiario {
     ausentes: number;
     porcentajeAsistencia: string;
   };
-  asistenciasPorClase: any[];
+  asistenciasPorClase: ReporteAsistenciaClaseItem[];
+}
+
+import type { ComponentType } from 'react';
+
+// ── Sidebar types ────────────────────────────────────────────────────────────
+
+export interface MenuItem {
+  title: string;
+  icon: ComponentType<{ className?: string }>;
+  href?: string;
+  permisos?: string[];
+  subItems?: MenuItem[];
+}
+
+// ── NotaForm types ───────────────────────────────────────────────────────────
+export interface NotaFormValues {
+  ciclo: string;
+  curso: number;
+  matematicas: string;
+  lengua_espanola: string;
+  naturales: string;
+  sociales: string;
+}
+
+// ── Reportes types ──────────────────────────────────────────────────────────
+export type TipoPeriodo = 'dia' | 'mes' | 'anio' | 'rango' | 'todo';
+export type TipoReporteGlobal = 'estadistico' | 'detallado';
+export type TipoReportePrincipal = 'clase' | 'beneficiario' | 'tutor' | 'global' | 'ausencias';
+
+export interface ReporteFiltrosClase {
+  id: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  fechaReporte?: string;
+}
+
+export interface ReporteFiltrosGlobal {
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+export interface ReporteContextClase {
+  tipo: 'clase';
+  filtros: ReporteFiltrosClase;
+  fechaReporte: string;
+}
+
+export interface ReporteContextBeneficiario {
+  tipo: 'beneficiario';
+  filtros: ReporteFiltrosClase;
+  fechaReporte: string;
+}
+
+export interface ReporteContextTutor {
+  tipo: 'tutor';
+  filtros: ReporteFiltrosClase;
+  fechaReporte: string;
+}
+
+export interface ReporteContextGlobal {
+  tipo: 'global';
+  tipoGlobal: TipoReporteGlobal;
+  periodoDescripcion: string;
+  fechaReporte: string;
+}
+
+export interface ReporteContextAusencias {
+  tipo: 'ausencias';
+  periodoDescripcion: string;
+  fechaReporte: string;
+}
+
+export type ReportContext =
+  | ReporteContextClase
+  | ReporteContextBeneficiario
+  | ReporteContextTutor
+  | ReporteContextGlobal
+  | ReporteContextAusencias;
+
+export interface StatItem {
+  label: string;
+  value: string | number;
+}
+
+export interface TableRow {
+  cells: React.ReactNode[];
+  key: string;
+}
+
+export interface MesOption {
+  value: string;
+  label: string;
+}
+
+export interface BeneficiarioSugerido {
+  id: string;
+  codigo: string;
+  nombre: string;
+  apellido?: string;
+  padre_tutor?: string;
+  telefono?: string;
+  profesor_nombre?: string;
+}
+
+// ─── Importación ─────────────────────────────────────────────────────────────
+export interface ImportarResultado {
+  exitosos: number;
+  fallidos: number;
+  errores?: Array<{ fila: number; error: string; datos?: Record<string, string> }>;
+}
+
+// ─── Reporte Carpetas ─────────────────────────────────────────────────────────
+export interface CarpetaRegistroItem {
+  beneficiario: {
+    id: string;
+    nombre: string;
+    codigo: string;
+  };
+  tieneRegistros: boolean;
+  expedientes: Array<{
+    tipo: string;
+    titulo: string;
+  }>;
+}
+
+export interface ReporteCarpetasEstadisticas {
+  totalEvaluados: number;
+  conRegistros: number;
+  sinRegistros: number;
+}
+
+export interface ReporteCarpetasData {
+  registros: CarpetaRegistroItem[];
+  estadisticas: ReporteCarpetasEstadisticas;
+}
+
+// ─── Estadísticas ─────────────────────────────────────────────────────────────
+export interface EstadisticasGenerales {
+  totalRegistros?: number;
+  presentes?: number;
+  ausentes?: number;
+  porcentajeAsistencia?: string;
+  [key: string]: unknown;
 }

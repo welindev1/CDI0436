@@ -1,5 +1,10 @@
 import apiClient from './client';
-import { Supervivencia, AsistenciaSupervivenciaResponse } from '../types';
+import {
+  Supervivencia,
+  AsistenciaSupervivenciaResponse,
+  EstadisticasGenerales,
+  SupervivenciaFoto,
+} from '../types';
 
 interface AsistenciaBeneficiario {
   beneficiario_id: string;
@@ -13,7 +18,7 @@ interface RegistrarAsistenciaData {
 }
 
 export const supervivenciasApi = {
-  getAll: async (filters?: any): Promise<Supervivencia[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Supervivencia[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -55,7 +60,7 @@ export const supervivenciasApi = {
     return response.data;
   },
 
-  getEstadisticas: async (id: string): Promise<any> => {
+  getEstadisticas: async (id: string): Promise<EstadisticasGenerales> => {
     const response = await apiClient.get(`/supervivencias/${id}/estadisticas`);
     return response.data;
   },
@@ -70,7 +75,7 @@ export const supervivenciasApi = {
   },
 
   // Métodos de asistencia
-  registrarAsistencia: async (id: string, data: RegistrarAsistenciaData): Promise<any> => {
+  registrarAsistencia: async (id: string, data: RegistrarAsistenciaData): Promise<AsistenciaSupervivenciaResponse> => {
     const response = await apiClient.post(`/supervivencias/${id}/asistencias`, data);
     return response.data;
   },
@@ -80,7 +85,7 @@ export const supervivenciasApi = {
     return response.data;
   },
 
-  getHistorialAsistencias: async (id: string, fechaInicio?: string, fechaFin?: string): Promise<any> => {
+  getHistorialAsistencias: async (id: string, fechaInicio?: string, fechaFin?: string): Promise<AsistenciaSupervivenciaResponse[]> => {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
@@ -95,7 +100,7 @@ export const supervivenciasApi = {
 
   // ===================== FOTOS DE ASISTENCIA =====================
 
-  subirFoto: async (supervivenciaId: string, fecha: string, imagenBase64: string): Promise<any> => {
+  subirFoto: async (supervivenciaId: string, fecha: string, imagenBase64: string): Promise<SupervivenciaFoto> => {
     const response = await apiClient.post(`/supervivencias/${supervivenciaId}/asistencias/foto`, {
       fecha,
       imagen: imagenBase64,
@@ -103,7 +108,7 @@ export const supervivenciasApi = {
     return response.data;
   },
 
-  getFoto: async (supervivenciaId: string, fecha: string): Promise<any> => {
+  getFoto: async (supervivenciaId: string, fecha: string): Promise<SupervivenciaFoto> => {
     const response = await apiClient.get(`/supervivencias/${supervivenciaId}/asistencias/foto/${fecha}`);
     return response.data;
   },

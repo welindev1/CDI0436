@@ -56,7 +56,7 @@ export default function ClaseFechaSelector({ onSelect, initialClaseId, initialFe
   const loadClases = async () => {
     try {
       setIsLoading(true);
-      const data = await clasesApi.getAll({ activo: true });
+      const data = await clasesApi.getAll({ activo: 'true' });
       setClases(data);
     } catch (err) {
       console.error('Error al cargar clases', err);

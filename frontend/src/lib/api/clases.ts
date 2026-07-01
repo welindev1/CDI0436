@@ -1,8 +1,8 @@
 import apiClient from './client';
-import { Clase } from '../types';
+import { Clase, EstadisticasGenerales } from '../types';
 
 export const clasesApi = {
-  getAll: async (filters?: any): Promise<Clase[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Clase[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -47,7 +47,7 @@ export const clasesApi = {
     return response.data;
   },
 
-  getEstadisticas: async (id: string): Promise<any> => {
+  getEstadisticas: async (id: string): Promise<EstadisticasGenerales> => {
     const response = await apiClient.get(`/clases/${id}/estadisticas`);
     return response.data;
   },

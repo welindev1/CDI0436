@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
 import Alert from '@/components/ui/Alert';
-import { Horario } from '@/lib/types';
+import Select from '@/components/ui/Select';
+import { Horario, DiaSemana } from '@/lib/types';
 
 interface HorarioFormProps {
   horario?: Horario;
@@ -57,18 +57,19 @@ export default function HorarioForm({ horario, onSubmit, onCancel }: HorarioForm
     setIsLoading(true);
 
     try {
-      const data: any = { ...formData };
+      const data: Partial<Horario> = { ...formData, dia: formData.dia as DiaSemana };
 
       // Remover campos vacíos
-      Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === undefined) {
-          delete data[key];
+      for (const key of Object.keys(data)) {
+        const k = key as keyof typeof data;
+        if (data[k] === '' || data[k] === undefined) {
+          delete data[k];
         }
-      });
+      }
 
       await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar horario');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar horario');
     } finally {
       setIsLoading(false);
     }

@@ -36,7 +36,7 @@ export default function AgregarBeneficiariosSupervivenciaModal({
   const loadBeneficiarios = async () => {
     try {
       setIsLoading(true);
-      const data = await beneficiariosApi.getAll({ activo: true });
+      const data = await beneficiariosApi.getAll({ activo: 'true' });
       // Filtrar los que ya están en el curso actual, los que pertenecen a clases activas o a cursos de supervivencia activos
       const disponibles = data.filter(b => {
         // No debe estar en el curso actual
@@ -48,7 +48,7 @@ export default function AgregarBeneficiariosSupervivenciaModal({
         return !tieneClaseActiva && !tieneSupervivenciaActiva;
       });
       setBeneficiarios(disponibles);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Error al cargar beneficiarios');
     } finally {
       setIsLoading(false);
@@ -67,8 +67,8 @@ export default function AgregarBeneficiariosSupervivenciaModal({
       await onAgregar(selectedIds);
       setSelectedIds([]);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Error al agregar beneficiarios');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al agregar beneficiarios');
     } finally {
       setIsLoading(false);
     }

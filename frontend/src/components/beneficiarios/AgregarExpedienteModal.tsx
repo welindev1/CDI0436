@@ -3,25 +3,14 @@
 import { useState, useRef } from 'react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
-import { X, ImagePlus, Images, FileText, GraduationCap, FilePlus, FileArchive } from 'lucide-react';
-
-type TipoExpediente = 'educativo' | 'registro' | 'documentos';
-
-interface ImagenGaleria {
-  base64: string;
-  titulo?: string;
-  descripcion?: string;
-}
-
-interface PdfAdjunto {
-  nombre: string;
-  base64_pdf: string;
-}
+import { X, Images, FileText, GraduationCap, FilePlus, FileArchive } from 'lucide-react';
+import type { ExpedienteTipo, ImagenGaleria, PdfAdjunto, ExpedientePayload } from '@/lib/types';
+import { compressImage, readPdfAsBase64 } from '@/lib/utils/files';
 
 interface AgregarExpedienteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: ExpedientePayload) => Promise<void>;
 }
 
 const COLORES = [
@@ -33,7 +22,7 @@ const COLORES = [
   { value: 'gris',     label: 'Gris',     bg: 'bg-gray-400' },
 ];
 
-const TIPOS: { value: TipoExpediente; icon: any; label: string; desc: string; color: string }[] = [
+const TIPOS: { value: ExpedienteTipo; icon: React.ComponentType<{ className?: string }>; label: string; desc: string; color: string }[] = [
   {
     value: 'educativo',
     icon: GraduationCap,
@@ -57,36 +46,8 @@ const TIPOS: { value: TipoExpediente; icon: any; label: string; desc: string; co
   },
 ];
 
-const compressImage = (file: File, maxWidth = 900): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
-
-const readPdfAsBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = reject;
-  });
-
 export default function AgregarExpedienteModal({ isOpen, onClose, onSave }: AgregarExpedienteModalProps) {
-  const [tipo, setTipo] = useState<TipoExpediente>('educativo');
+  const [tipo, setTipo] = useState<ExpedienteTipo>('educativo');
   const [titulo, setTitulo] = useState('');
   const [mostrarTitulo, setMostrarTitulo] = useState(true);
   const [contenido, setContenido] = useState('');
@@ -152,7 +113,6 @@ export default function AgregarExpedienteModal({ isOpen, onClose, onSave }: Agre
     }
   };
 
-  const tipoActual = TIPOS.find(t => t.value === tipo)!;
   const colorMap: Record<string, string> = {
     blue: 'border-blue-500 bg-blue-50 text-blue-700',
     emerald: 'border-emerald-500 bg-emerald-50 text-emerald-700',

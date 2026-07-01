@@ -1,6 +1,8 @@
 'use client';
 
-import PrimerLoginModal from '@/components/auth/PrimerLoginModal';
+import { Suspense, lazy } from 'react';
+
+const PrimerLoginModal = lazy(() => import('@/components/auth/PrimerLoginModal'));
 
 export default function DashboardLayoutPage({
   children,
@@ -9,7 +11,9 @@ export default function DashboardLayoutPage({
 }) {
   return (
     <>
-      <PrimerLoginModal />
+      <Suspense fallback={null}>
+        <PrimerLoginModal />
+      </Suspense>
       {children}
     </>
   );

@@ -6,6 +6,10 @@ import { authApi } from '@/lib/api/auth';
 import { changePassword } from '@/lib/api/usuarios';
 import { Usuario, LoginCredentials, RegisterData } from '@/lib/types';
 
+interface UsuarioConPrimerLogin extends Usuario {
+  primer_login?: boolean;
+}
+
 interface AuthContextType {
   usuario: Usuario | null;
   isLoading: boolean;
@@ -49,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const parsed = JSON.parse(cachedUser);
             setUsuario(parsed);
-            setPrimerLogin(!!(parsed as any).primer_login);
+            setPrimerLogin(!!(parsed as UsuarioConPrimerLogin).primer_login);
           } catch {
             // cache corrupto, ignorar
           }
@@ -62,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { usuario } = await authApi.validateToken();
           setUsuario(usuario);
-          setPrimerLogin(!!(usuario as any).primer_login);
+          setPrimerLogin(!!(usuario as UsuarioConPrimerLogin).primer_login);
           // Actualizar el cache con datos frescos del servidor
           storage.setItem('usuario', JSON.stringify(usuario));
         } catch {
@@ -74,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUsuario(null);
           setPrimerLogin(false);
         }
-      } catch (error) {
+      } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('usuario');
         sessionStorage.removeItem('token');
@@ -97,15 +101,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       storage.setItem('usuario', JSON.stringify(usuario));
 
       setUsuario(usuario);
-      setPrimerLogin(!!(usuario as any).primer_login);
+      setPrimerLogin(!!(usuario as UsuarioConPrimerLogin).primer_login);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; response?: { data?: { message?: string }; status?: number } };
       console.error('Login error detailed:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
       });
-      throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
+      throw new Error(err.response?.data?.message || 'Error al iniciar sesión');
     }
   };
 
@@ -116,8 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('usuario', JSON.stringify(usuario));
       setUsuario(usuario);
       router.push('/dashboard');
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Error al registrarse');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      throw new Error(err.response?.data?.message || 'Error al registrarse');
     }
   };
 

@@ -1,73 +1,61 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Alert from '@/components/ui/Alert';
-import { Table, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import ClaseForm from '@/components/clases/ClaseForm';
-import { clasesApi } from '@/lib/api/clases';
+import ClaseList from '@/components/clases/ClaseList';
+import ClaseFilters from '@/components/clases/ClaseFilters';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  useClases,
+  useCreateClase,
+  useUpdateClase,
+  useDeleteClase,
+} from '@/lib/hooks';
 import { Clase } from '@/lib/types';
 import {
   Plus,
-  Search,
-  Edit,
-  Trash2,
   BookOpen,
   Users,
-  Calendar,
-  Clock,
-  Eye,
-  UserCircle
 } from 'lucide-react';
+import { getTurnoLabel } from '@/lib/utils/formatters';
 
 const diasLabel: Record<string, string> = {
   lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
   jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo',
 };
 
-function getTurnoLabel(hora_inicio: string): string {
-  const hora = parseInt(hora_inicio.split(':')[0]);
-  if (hora < 12) return 'Mañana';
-  if (hora < 18) return 'Tarde';
-  return 'Noche';
-}
-
 export default function ClasesPage() {
   const { tienePermiso } = useAuth();
-  const [clases, setClases] = useState<Clase[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: clases = [], isLoading, error: loadError } = useClases();
+  const createClase = useCreateClase();
+  const updateClase = useUpdateClase();
+  const deleteClase = useDeleteClase();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedClase, setSelectedClase] = useState<Clase | undefined>();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [claseToDelete, setClaseToDelete] = useState<string | null>(null);
+  const [pageError, setPageError] = useState('');
 
+  const error = loadError || pageError;
   const puedeCrear = tienePermiso('clases:crear');
   const puedeEditar = tienePermiso('clases:editar');
   const puedeEliminar = tienePermiso('clases:eliminar');
 
-  useEffect(() => {
-    loadClases();
-  }, []);
-
-  const loadClases = async () => {
-    try {
-      setIsLoading(true);
-      const data = await clasesApi.getAll();
-      setClases(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar clases');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const filteredClases = useMemo(() =>
+    clases.filter(c =>
+      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.tutor?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [clases, searchTerm]
+  );
 
   const handleCreate = () => {
     setSelectedClase(undefined);
@@ -82,14 +70,16 @@ export default function ClasesPage() {
   const handleSubmit = async (data: Partial<Clase>) => {
     try {
       if (selectedClase) {
-        await clasesApi.update(selectedClase.id, data);
+        await updateClase.mutateAsync({ id: selectedClase.id, data });
       } else {
-        await clasesApi.create(data);
+        await createClase.mutateAsync(data);
       }
       setShowModal(false);
-      loadClases();
-    } catch (err: any) {
-      throw new Error(err.response?.data?.message || 'Error al guardar');
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || err.message
+        : 'Error al guardar';
+      throw new Error(msg);
     }
   };
 
@@ -102,20 +92,16 @@ export default function ClasesPage() {
     if (!claseToDelete) return;
 
     try {
-      await clasesApi.delete(claseToDelete);
+      await deleteClase.mutateAsync(claseToDelete);
       setShowDeleteConfirm(false);
       setClaseToDelete(null);
-      loadClases();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar clase');
+    } catch (err: unknown) {
+      const msg = err instanceof Error
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || err.message
+        : 'Error al eliminar clase';
+      setPageError(msg);
     }
   };
-
-  const filteredClases = clases.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.codigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.tutor?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <ProtectedRoute requiredPermisos={['clases:ver']}>
@@ -186,133 +172,26 @@ export default function ClasesPage() {
 
           {error && (
             <Alert variant="error" className="mb-4">
-              {error}
+              {error instanceof Error ? error.message : 'Error al cargar las clases'}
             </Alert>
           )}
 
           {/* Search */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, código o tutor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          <ClaseFilters searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
           {/* Lista de Clases */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : filteredClases.length === 0 ? (
-              <div className="text-center py-12">
-                <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No se encontraron clases</p>
-                {puedeCrear && (
-                  <Button onClick={handleCreate} className="mt-4">
-                    Crear Primera Clase
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                {filteredClases.map((clase) => (
-                  <div key={clase.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
-                    {/* Header de la tarjeta */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-900">{clase.nombre}</h3>
-                        {clase.codigo && (
-                          <p className="text-sm text-gray-500">Código: {clase.codigo}</p>
-                        )}
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        clase.activo
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {clase.activo ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </div>
-
-                    {/* Descripción */}
-                    {clase.descripcion && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {clase.descripcion}
-                      </p>
-                    )}
-
-                    {/* Info del tutor */}
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <UserCircle className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">
-                          {clase.tutor?.nombre} {clase.tutor?.apellido}
-                        </span>
-                      </div>
-
-                      {/* Horarios */}
-                      {clase.horarios?.map((h, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span className="text-gray-700">
-                            {diasLabel[h.dia] || h.dia} - {getTurnoLabel(h.hora_inicio)}
-                          </span>
-                        </div>
-                      ))}
-
-                      {/* Inscritos */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Users className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-700">
-                          {clase.beneficiarios?.length || 0} inscrito(s)
-                          {clase.capacidad_maxima > 0 && ` / ${clase.capacidad_maxima}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Botones de acción */}
-                    <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
-                      <Link href={`/dashboard/clases/${clase.id}`} className="flex-1">
-                        <Button
-                          variant="outline"
-                          className="w-full flex items-center justify-center gap-2"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Ver Detalle
-                        </Button>
-                      </Link>
-                      {puedeEditar && (
-                        <button
-                          onClick={() => handleEdit(clase)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      )}
-                      {puedeEliminar && (
-                        <button
-                          onClick={() => handleDeleteClick(clase.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ClaseList
+            clases={filteredClases}
+            isLoading={isLoading}
+            puedeEditar={puedeEditar}
+            puedeEliminar={puedeEliminar}
+            puedeCrear={puedeCrear}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+            onCreate={handleCreate}
+            diasLabel={diasLabel}
+            getTurnoLabel={getTurnoLabel}
+          />
         </div>
 
         {/* Modal Crear/Editar */}
@@ -341,16 +220,10 @@ export default function ClasesPage() {
               ¿Estás seguro de que deseas eliminar esta clase? Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
                 Cancelar
               </Button>
-              <Button
-                variant="danger"
-                onClick={handleDelete}
-              >
+              <Button variant="danger" onClick={handleDelete}>
                 Eliminar
               </Button>
             </div>

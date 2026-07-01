@@ -3,19 +3,12 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Users, BookOpen, ClipboardCheck, TrendingUp, Calendar, Clock, UserCheck, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, BookOpen, ClipboardCheck, TrendingUp, Calendar, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { clasesApi } from '@/lib/api/clases';
 import { Beneficiario, Clase } from '@/lib/types';
-
-function calcularEdad(fechaNacimiento: string): number {
-  const nac = new Date(fechaNacimiento);
-  const hoy = new Date();
-  let edad = hoy.getFullYear() - nac.getFullYear();
-  if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
-  return edad;
-}
+import { calcularEdad } from '@/lib/utils/formatters';
 
 export default function DashboardPage() {
   const { usuario } = useAuth();
@@ -50,7 +43,7 @@ export default function DashboardPage() {
   // Edad promedio
   const beneficiariosConFecha = beneficiarios.filter(b => b.fecha_nacimiento);
   const edadPromedio = beneficiariosConFecha.length > 0
-    ? Math.round(beneficiariosConFecha.reduce((acc, b) => acc + calcularEdad(b.fecha_nacimiento!), 0) / beneficiariosConFecha.length)
+    ? Math.round(beneficiariosConFecha.reduce((acc, b) => acc + (calcularEdad(b.fecha_nacimiento!) ?? 0), 0) / beneficiariosConFecha.length)
     : 0;
 
   // Últimos beneficiarios registrados

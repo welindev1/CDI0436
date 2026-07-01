@@ -1,17 +1,7 @@
 import apiClient from './client';
+import type { MenuNutricion, TandaNutricion } from '@/lib/types';
 
-export type TandaNutricion = 'matutina' | 'vespertina';
-
-export interface MenuNutricion {
-  id: string;
-  fecha: string;
-  tanda: TandaNutricion;
-  titulo_menu: string;
-  meriendas_servidas: number | null;
-  observaciones: string | null;
-  creado_en: string;
-  actualizado_en: string;
-}
+export type { MenuNutricion, TandaNutricion };
 
 export const nutricionApi = {
   // Obtener todos los menús de un mes
@@ -25,8 +15,9 @@ export const nutricionApi = {
     try {
       const response = await apiClient.get(`/nutricion/menus/fecha/${fecha}/${tanda}`);
       return response.data;
-    } catch (err: any) {
-      if (err.response?.status === 404) return null;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr.response?.status === 404) return null;
       throw err;
     }
   },

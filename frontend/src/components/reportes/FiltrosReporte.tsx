@@ -8,14 +8,13 @@ import { clasesApi } from '@/lib/api/clases';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { tutoresApi } from '@/lib/api/tutores';
 import { FileDown, FileSpreadsheet, Calendar } from 'lucide-react';
+import type { FiltrosReportePayload, TipoFiltroFecha } from '@/lib/types';
 
 interface FiltrosReporteProps {
   tipoReporte: 'clase' | 'beneficiario' | 'tutor';
-  onGenerar: (filtros: any) => void;
+  onGenerar: (filtros: FiltrosReportePayload) => void;
   isLoading?: boolean;
 }
-
-type TipoFiltroFecha = 'todo' | 'fecha' | 'rango' | 'mes';
 
 export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: FiltrosReporteProps) {
   const [filtros, setFiltros] = useState({
@@ -27,10 +26,6 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
     mes: '', // formato: YYYY-MM
   });
   const [opciones, setOpciones] = useState<{ value: string; label: string }[]>([]);
-
-  useEffect(() => {
-    loadOpciones();
-  }, [tipoReporte]);
 
   const loadOpciones = async () => {
     try {
@@ -57,6 +52,12 @@ export default function FiltrosReporte({ tipoReporte, onGenerar, isLoading }: Fi
       console.error('Error al cargar opciones:', error);
     }
   };
+
+  useEffect(() => {
+    // Async state updates from an effect are safe — they don't cascade renders.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOpciones();
+  }, [tipoReporte]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFiltros(prev => ({

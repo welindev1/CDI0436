@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Alert from '@/components/ui/Alert';
 import { asistenciasApi } from '@/lib/api/asistencias';
 import { clasesApi } from '@/lib/api/clases';
@@ -32,9 +32,7 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   const [searchTerm, setSearchTerm] = useState('');
   const [modalObservacion, setModalObservacion] = useState<{ nombre: string; observacion: string } | null>(null);
 
-  useEffect(() => { loadClaseYAsistencias(); }, [claseId, fecha]);
-
-  const loadClaseYAsistencias = async () => {
+  const loadClaseYAsistencias = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
@@ -46,12 +44,14 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
         map.set(a.beneficiario.id, { estado: a.estado, observaciones: a.observaciones || '' });
       });
       setAsistencias(map);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar datos');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al cargar datos');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [claseId, fecha]);
+
+  useEffect(() => { loadClaseYAsistencias(); }, [loadClaseYAsistencias]);
 
   const handleEstadoChange = (beneficiarioId: string, estado: EstadoAsistencia | null) => {
     setAsistencias(prev => {
@@ -83,8 +83,9 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
       await asistenciasApi.marcarTodos({ claseId, fecha, estado });
       setSuccess(`Todos marcados como ${estado}`);
       loadClaseYAsistencias();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al marcar asistencias');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || 'Error al marcar asistencias');
     } finally {
       setIsSaving(false);
     }
@@ -116,8 +117,9 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
           : 'Asistencias guardadas correctamente'
       );
       if (onSaved) onSaved();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al guardar asistencias');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setError(axiosErr.response?.data?.message || 'Error al guardar asistencias');
     } finally {
       setIsSaving(false);
     }
@@ -147,9 +149,6 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
   }
 
   const stats = getStats();
-  const fechaFormateada = new Date(fecha + 'T12:00:00').toLocaleDateString('es-DO', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
 
   const beneficiariosFiltrados = (clase.beneficiarios || []).filter(b => {
     if (!searchTerm.trim()) return true;
@@ -245,7 +244,6 @@ export default function RegistroAsistencia({ claseId, fecha, onSaved }: Registro
               {beneficiariosFiltrados.map((b, idx) => {
                 const asistencia = asistencias.get(b.id);
                 const estadoActual = asistencia?.estado ?? null;
-                const estadoInfo = ESTADOS.find(e => e.valor === estadoActual);
 
                 return (
                   <tr

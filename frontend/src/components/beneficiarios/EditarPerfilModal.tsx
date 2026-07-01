@@ -5,32 +5,13 @@ import { X, ImagePlus, UserCircle } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { Beneficiario } from '@/lib/types';
+import { compressImage } from '@/lib/utils/files';
 
 interface EditarPerfilModalProps {
   beneficiario: Beneficiario;
   onClose: () => void;
   onSave: (data: Partial<Beneficiario> & { newFotoBase64?: string }) => Promise<void>;
 }
-
-const compressImage = (file: File, maxWidth = 600): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
 
 export default function EditarPerfilModal({ beneficiario, onClose, onSave }: EditarPerfilModalProps) {
   const [nombre, setNombre] = useState(beneficiario.nombre || '');
@@ -58,21 +39,14 @@ export default function EditarPerfilModal({ beneficiario, onClose, onSave }: Edi
     e.preventDefault();
     setIsSaving(true);
     try {
-      const payload: any = {};
+      const payload: Partial<Beneficiario> & { foto_url?: string } = {};
       if (nombre) payload.nombre = nombre;
-      
-      // Enviar como null o string dependiendo si está vacío, para evitar errores de validación
-      payload.apellido = apellido || null;
-      payload.telefono = telefono || null;
-      payload.correo = correo || null;
-      payload.padre_tutor = padreTutor || null;
-      payload.direccion = direccion || null;
-      
-      if (fechaNacimiento) {
-        payload.fecha_nacimiento = fechaNacimiento;
-      } else {
-        payload.fecha_nacimiento = null;
-      }
+      if (apellido) payload.apellido = apellido;
+      if (telefono) payload.telefono = telefono;
+      if (correo) payload.correo = correo;
+      if (padreTutor) payload.padre_tutor = padreTutor;
+      if (direccion) payload.direccion = direccion;
+      if (fechaNacimiento) payload.fecha_nacimiento = fechaNacimiento;
       
       if (newFotoBase64) payload.foto_url = newFotoBase64;
       await onSave(payload);

@@ -48,7 +48,7 @@ export default function MeritoPage() {
       setModalOpen(false);
       setNuevoPeriodo({ nombre: '', anio: new Date().getFullYear() });
       fetchPeriodos();
-    } catch (error) {
+    } catch {
       alert('Error al crear el periodo');
     } finally {
       setIsSubmitting(false);
@@ -63,7 +63,7 @@ export default function MeritoPage() {
       setDeleteModalOpen(false);
       setPeriodoToDelete(null);
       fetchPeriodos();
-    } catch (error) {
+    } catch {
       alert('Error al eliminar el periodo. Puede que tenga notas registradas.');
     } finally {
       setIsDeleting(false);
