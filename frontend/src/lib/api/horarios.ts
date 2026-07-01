@@ -2,7 +2,7 @@ import apiClient from './client';
 import { Horario } from '../types';
 
 export const horariosApi = {
-  getAll: async (filters?: any): Promise<Horario[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Horario[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {

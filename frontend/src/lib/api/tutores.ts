@@ -2,7 +2,7 @@ import apiClient from './client';
 import { Tutor } from '../types';
 
 export const tutoresApi = {
-  getAll: async (filters?: any): Promise<Tutor[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Tutor[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {

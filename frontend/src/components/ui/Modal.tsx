@@ -14,28 +14,27 @@ interface ModalProps {
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Render-phase state update: when isOpen becomes true, show immediately.
+  // This is safe in React 19 — not inside an effect — so it doesn't trigger
+  // the set-state-in-effect warning.
+  if (isOpen && !isVisible) {
+    setIsVisible(true);
+  }
 
   useEffect(() => {
     if (isOpen) {
-      setIsVisible(true);
-      // Small delay to trigger CSS transition
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsAnimating(true);
-        });
-      });
       document.body.style.overflow = 'hidden';
-    } else {
-      setIsAnimating(false);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 200); // Match transition duration
-      document.body.style.overflow = 'unset';
-      return () => clearTimeout(timer);
+      return () => { document.body.style.overflow = 'unset'; };
     }
-
+    // When isOpen transitions to false, delay the hide so the exit animation
+    // can play.  The setTimeout callback is async, so it's not flagged.
+    const timer = setTimeout(() => {
+      setIsVisible(false);
+    }, 200); // Match transition duration
+    document.body.style.overflow = 'unset';
     return () => {
+      clearTimeout(timer);
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
@@ -55,7 +54,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       <div
         className={cn(
           'fixed inset-0 backdrop-blur-sm transition-all duration-200',
-          isAnimating ? 'bg-black/10' : 'bg-transparent'
+          isOpen ? 'bg-black/10' : 'bg-transparent'
         )}
         onClick={onClose}
       />
@@ -66,7 +65,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
           className={cn(
             'relative bg-white rounded-xl shadow-2xl w-full transition-all duration-200',
             sizes[size],
-            isAnimating
+            isOpen
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 translate-y-4'
           )}

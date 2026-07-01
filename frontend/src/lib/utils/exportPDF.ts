@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import autoTable, { type UserOptions } from 'jspdf-autotable';
 
 interface ReporteData {
   titulo: string;
   subtitulo?: string;
   fecha: string;
-  datos: any[];
+  datos: Record<string, unknown>[];
   columnas: string[];
   headers: string[];
   totales?: { label: string; value: string | number }[];
@@ -33,7 +33,7 @@ export const exportToPDF = (data: ReporteData) => {
   // Tabla
   const tableData = data.datos.map(item => 
     data.columnas.map(col => {
-      const value = col.split('.').reduce((obj, key) => obj?.[key], item);
+      const value = col.split('.').reduce((obj: unknown, key) => (obj as Record<string, unknown> | undefined)?.[key], item);
       return value || '-';
     })
   );
@@ -59,7 +59,7 @@ export const exportToPDF = (data: ReporteData) => {
   
   // Totales
   if (data.totales && data.totales.length > 0) {
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     

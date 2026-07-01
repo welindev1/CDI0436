@@ -5,7 +5,7 @@ interface ExcelData {
   nombreArchivo: string;
   hojas: {
     nombre: string;
-    datos: any[];
+    datos: Record<string, unknown>[];
     columnas?: string[];
   }[];
 }

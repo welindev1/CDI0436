@@ -5,21 +5,15 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Alert from '@/components/ui/Alert';
-import { Clase } from '@/lib/types';
+import type { Clase, Tutor, Horario } from '@/lib/types';
 import { tutoresApi } from '@/lib/api/tutores';
 import { horariosApi } from '@/lib/api/horarios';
+import { getTurnoLabel } from '@/lib/utils/formatters';
 
 const diasLabel: Record<string, string> = {
   lunes: 'Lunes', martes: 'Martes', miercoles: 'Miércoles',
   jueves: 'Jueves', viernes: 'Viernes', sabado: 'Sábado', domingo: 'Domingo',
 };
-
-function getTurnoLabel(hora_inicio: string): string {
-  const hora = parseInt(hora_inicio.split(':')[0]);
-  if (hora < 12) return 'Mañana';
-  if (hora < 18) return 'Tarde';
-  return 'Noche';
-}
 
 interface ClaseFormProps {
   clase?: Clase;
@@ -30,8 +24,8 @@ interface ClaseFormProps {
 export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [tutores, setTutores] = useState<any[]>([]);
-  const [horarios, setHorarios] = useState<any[]>([]);
+  const [tutores, setTutores] = useState<Tutor[]>([]);
+  const [horarios, setHorarios] = useState<Horario[]>([]);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -66,7 +60,7 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
       ]);
       setTutores(tutoresData);
       setHorarios(horariosData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Error al cargar tutores y horarios');
     }
   };
@@ -83,21 +77,21 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
     setIsLoading(true);
 
     try {
-      const data: any = {
+      const data: Partial<Clase> & Record<string, unknown> = {
         ...formData,
         capacidad_maxima: formData.capacidad_maxima ? parseInt(formData.capacidad_maxima) : 0,
       };
 
       // Remover campos vacíos (excepto horarioIds que es un array)
-      Object.keys(data).forEach(key => {
+      for (const key of Object.keys(data)) {
         if (key !== 'horarioIds' && (data[key] === '' || data[key] === undefined)) {
           delete data[key];
         }
-      });
+      }
 
-      await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar clase');
+      await onSubmit(data as Partial<Clase>);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar clase');
     } finally {
       setIsLoading(false);
     }

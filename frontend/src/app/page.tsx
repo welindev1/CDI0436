@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import Alert from '@/components/ui/Alert';
 
 export default function LoginPage() {
   const { login, isLoading: authLoading } = useAuth();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -18,12 +17,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     const savedCorreo = localStorage.getItem('cdi_correo');
-    const savedPassword = localStorage.getItem('cdi_password');
-    if (savedCorreo && savedPassword) {
-      setFormData({
-        correo: savedCorreo,
-        password: atob(savedPassword),
-      });
+    if (savedCorreo) {
+      setFormData(prev => ({ ...prev, correo: savedCorreo }));
       setRememberMe(true);
     }
   }, []);
@@ -36,14 +31,13 @@ export default function LoginPage() {
     try {
       if (rememberMe) {
         localStorage.setItem('cdi_correo', formData.correo);
-        localStorage.setItem('cdi_password', btoa(formData.password));
       } else {
         localStorage.removeItem('cdi_correo');
-        localStorage.removeItem('cdi_password');
       }
+      localStorage.removeItem('cdi_password');
       await login(formData);
-    } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +69,7 @@ export default function LoginPage() {
           <div className="mb-10 text-center lg:text-left">
             <div className="mb-6 flex justify-center lg:justify-start">
               <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100 shadow-sm">
-                <img src="/logo.svg" alt="CDI Logo" className="h-10 w-auto" />
+                <Image src="/logo.svg" alt="CDI Logo" className="h-10 w-auto" width={40} height={40} priority />
               </div>
             </div>
             <h2 className="text-[32px] font-extrabold text-gray-900 tracking-tight mb-2">

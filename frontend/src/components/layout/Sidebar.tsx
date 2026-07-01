@@ -1,211 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils/cn';
-import {
-  Users,
-  ClipboardCheck,
-  BookOpen,
-  Clock,
-  FileText,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  UserCircle,
-  Shield,
-  UserCog,
-  UtensilsCrossed,
-  Tent,
-  BarChart3,
-  Cake,
-  ChevronDown,
-  HeartPulse,
-  Home,
-  Award,
-  Gift,
-} from 'lucide-react';
-
-interface MenuItem {
-  title: string;
-  icon: any;
-  href?: string;
-  permisos?: string[];
-  subItems?: MenuItem[];
-}
-
-const menuGroups: MenuItem[] = [
-  {
-    title: 'Inicio',
-    icon: Home,
-    href: '/dashboard',
-  },
-  {
-    title: 'Gestión de Personas',
-    icon: Users,
-    subItems: [
-      {
-        title: 'Beneficiarios',
-        icon: Users,
-        href: '/dashboard/beneficiarios',
-        permisos: ['beneficiarios:ver'],
-      },
-      {
-        title: 'Tutores',
-        icon: UserCircle,
-        href: '/dashboard/tutores',
-        permisos: ['tutores:ver'],
-      },
-      {
-        title: 'Cumpleaños',
-        icon: Cake,
-        href: '/dashboard/cumpleanos',
-        permisos: ['cumpleanos:ver'],
-      },
-    ],
-  },
-  {
-    title: 'Académico y Operativa',
-    icon: BookOpen,
-    subItems: [
-      {
-        title: 'Clases',
-        icon: BookOpen,
-        href: '/dashboard/clases',
-        permisos: ['clases:ver'],
-      },
-      {
-        title: 'Horarios',
-        icon: Clock,
-        href: '/dashboard/horarios',
-        permisos: ['horarios:ver'],
-      },
-      {
-        title: 'Mérito Estudiantil',
-        icon: Award,
-        href: '/dashboard/merito',
-        permisos: ['merito:ver'],
-      },
-    ],
-  },
-  {
-    title: 'Bienestar Integral',
-    icon: HeartPulse,
-    subItems: [
-      {
-        title: 'Solicitudes de Ayuda',
-        icon: FileText,
-        href: '/dashboard/ayudas',
-        permisos: ['ayudas:ver'],
-      },
-      {
-        title: 'Supervivencia',
-        icon: Tent,
-        href: '/dashboard/supervivencia',
-        permisos: ['supervivencia:ver'],
-      },
-      {
-        title: 'Nutrición',
-        icon: UtensilsCrossed,
-        href: '/dashboard/nutricion',
-        permisos: ['nutricion:ver'],
-      },
-    ],
-  },
-  {
-    title: 'Análisis y Reportes',
-    icon: BarChart3,
-    subItems: [
-      {
-        title: 'Centro de Reportes',
-        icon: FileText,
-        href: '/dashboard/reportes',
-        permisos: ['reportes:ver'],
-      },
-      {
-        title: 'Reporte de Carpetas',
-        icon: FileText,
-        href: '/dashboard/reportes/carpetas',
-        permisos: ['reportes:ver'],
-      },
-      {
-        title: 'Bonos de Regalo',
-        icon: Gift,
-        href: '/dashboard/bonos',
-        permisos: ['bonos:ver'],
-      },
-    ],
-  },
-];
-
-const adminGroup: MenuItem = {
-  title: 'Administración',
-  icon: Settings,
-  subItems: [
-    {
-      title: 'Usuarios',
-      icon: UserCog,
-      href: '/dashboard/usuarios',
-      permisos: ['usuarios:ver'],
-    },
-    {
-      title: 'Roles y Permisos',
-      icon: Shield,
-      href: '/dashboard/roles',
-      permisos: ['roles:ver'],
-    },
-  ],
-};
+import { LogOut, UserCircle, Menu, X, ChevronDown } from 'lucide-react';
+import { useSidebar } from '@/lib/hooks/useSidebar';
+import type { MenuItem } from '@/lib/types';
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
-  const { usuario, logout, tieneAlgunPermiso, esSuperAdmin } = useAuth();
+  const { isOpen, openMenus, usuario, logout, filterItems, toggleMenu, setIsOpen, menuGroups, adminGroup } = useSidebar();
   const pathname = usePathname();
-
-  // Abrir menú padre automáticamente si un hijo está activo
-  useEffect(() => {
-    const newOpenMenus = { ...openMenus };
-    let hasChanges = false;
-
-    const checkActive = (group: MenuItem) => {
-      if (group.subItems) {
-        const isActive = group.subItems.some((sub) => sub.href === pathname);
-        if (isActive && !newOpenMenus[group.title]) {
-          newOpenMenus[group.title] = true;
-          hasChanges = true;
-        }
-      }
-    };
-
-    menuGroups.forEach(checkActive);
-    checkActive(adminGroup);
-
-    if (hasChanges) {
-      setOpenMenus(newOpenMenus);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  const toggleMenu = (title: string) => {
-    setOpenMenus((prev) => ({
-      ...prev,
-      [title]: !prev[title],
-    }));
-  };
-
-  const filterItems = (items?: MenuItem[]): MenuItem[] => {
-    if (!items) return [];
-    return items.filter((item) => {
-      if (!item.permisos || item.permisos.length === 0) return true;
-      if (esSuperAdmin()) return true;
-      return tieneAlgunPermiso(item.permisos);
-    });
-  };
 
   const renderMenuItem = (item: MenuItem, isSubItem = false) => {
     const Icon = item.icon;
@@ -316,7 +121,6 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-lg"
@@ -324,7 +128,6 @@ export default function Sidebar() {
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
-      {/* Overlay para móvil */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/10 backdrop-blur-sm z-40"
@@ -332,7 +135,6 @@ export default function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           'fixed top-0 left-0 z-40 h-screen transition-transform bg-[#f8fafc] border-r border-gray-200 flex flex-col',
@@ -340,7 +142,6 @@ export default function Sidebar() {
           'lg:translate-x-0 w-[280px]',
         )}
       >
-        {/* Header */}
         <div className="p-6 border-b border-gray-200 shrink-0">
           <Link
             href="/dashboard"
@@ -362,7 +163,6 @@ export default function Sidebar() {
           </Link>
         </div>
 
-        {/* User info */}
         <div className="p-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -379,11 +179,9 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {menuGroups.map((group) => renderMenuItem(group))}
 
-          {/* Sección de Administración */}
           {filterItems(adminGroup.subItems).length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
@@ -394,7 +192,6 @@ export default function Sidebar() {
           )}
         </nav>
 
-        {/* Logout */}
         <div className="p-4 border-t border-gray-200 shrink-0">
           <button
             onClick={logout}

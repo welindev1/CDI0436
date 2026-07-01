@@ -1,0 +1,31 @@
+name: CI Pipeline
+
+# 1. ¿Cuándo se va a ejecutar este pipeline?
+on:
+  pull_request:
+    branches: [ "main" ] # Se activa cuando alguien hace un PR hacia main
+
+# 2. ¿Qué tareas (jobs) va a realizar?
+jobs:
+  build:
+    name: Instalación y Construcción
+    runs-on: ubuntu-latest # Una máquina virtual gratuita de GitHub
+
+    steps:
+    # Paso A: Traer el código de tu repositorio a la máquina virtual
+    - name: Clonar el repositorio
+      uses: actions/checkout@v4
+
+    # Paso B: Preparar el entorno con Node.js
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # Aquí pones la versión que uses en tu proyecto
+
+    # Paso C: Instalar las librerías
+    - name: Instalar dependencias
+      run: npm install
+
+    # Paso D: Verificar que el proyecto se construye sin errores
+    - name: Ejecutar Build
+      run: npm run build

@@ -8,8 +8,42 @@ import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { exportToPDF } from '@/lib/utils/exportPDF';
 import { exportToExcel } from '@/lib/utils/exportExcel';
 import { 
-  FileText, Folder, Eye, Download, TrendingUp
+  Folder, Eye, Download, TrendingUp
 } from 'lucide-react';
+
+// ── Tipos locales ─────────────────────────────────────────────────────────
+interface ExpedienteResumen {
+  tipo: string;
+  titulo: string;
+}
+
+interface CarpetaRegistroItem {
+  beneficiario: {
+    id: string;
+    nombre: string;
+    codigo: string;
+  };
+  tieneRegistros: boolean;
+  expedientes: ExpedienteResumen[];
+}
+
+interface ReporteCarpetasEstadisticas {
+  totalEvaluados: number;
+  conRegistros: number;
+  sinRegistros: number;
+}
+
+interface ReporteCarpetasData {
+  registros: CarpetaRegistroItem[];
+  estadisticas: ReporteCarpetasEstadisticas;
+}
+
+interface ActiveReportContext {
+  tipo: string;
+  fechaReporte: string;
+  tipoExpediente: string;
+  condicionCarpeta: string;
+}
 
 export default function ReporteCarpetasPage() {
   const [tipoExpediente, setTipoExpediente] = useState('todos');
@@ -19,8 +53,8 @@ export default function ReporteCarpetasPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const [reportData, setReportData] = useState<any>(null);
-  const [activeReportContext, setActiveReportContext] = useState<any>(null);
+  const [reportData, setReportData] = useState<ReporteCarpetasData | null>(null);
+  const [activeReportContext, setActiveReportContext] = useState<ActiveReportContext | null>(null);
 
   const handleGenerarCarpetas = async () => {
     try {
@@ -29,20 +63,20 @@ export default function ReporteCarpetasPage() {
       const data = await beneficiariosApi.getReporteCarpetas(tipoExpediente, condicionCarpeta);
       setReportData(data);
       setActiveReportContext({ tipo: 'carpetas', fechaReporte, tipoExpediente, condicionCarpeta });
-    } catch (err: any) {
-      setError(err.message || 'Error al generar reporte de carpetas');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al generar reporte de carpetas');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generarPDFCarpetas = (data: any, tipoExped: string, condicion: string, fechaReporte: string) => {
+  const generarPDFCarpetas = (data: ReporteCarpetasData, tipoExped: string, condicion: string, fechaReporte: string) => {
     const subtitulo = `Tipo: ${tipoExped === 'todos' ? 'Todos' : tipoExped.toUpperCase()} | Condición: ${condicion === 'todos' ? 'Todos' : condicion === 'con_registros' ? 'Con Registros' : 'Sin Registros'}`;
-    const registros = data.registros.map((item: any) => ({
+    const registros = data.registros.map((item: CarpetaRegistroItem) => ({
       beneficiario: item.beneficiario.nombre,
       codigo: item.beneficiario.codigo || '-',
       tieneRegistros: item.tieneRegistros ? 'Sí' : 'No',
-      detalles: item.expedientes.map((e: any) => e.titulo).join(', ') || 'Ninguno'
+      detalles: item.expedientes.map((e: ExpedienteResumen) => e.titulo).join(', ') || 'Ninguno'
     }));
 
     exportToPDF({
@@ -60,12 +94,12 @@ export default function ReporteCarpetasPage() {
     });
   };
 
-  const generarExcelCarpetas = (data: any, tipoExped: string, condicion: string) => {
-    const registros = data.registros.map((item: any) => ({
+  const generarExcelCarpetas = (data: ReporteCarpetasData, tipoExped: string, condicion: string) => {
+    const registros = data.registros.map((item: CarpetaRegistroItem) => ({
       'Beneficiario': item.beneficiario.nombre,
       'Código': item.beneficiario.codigo || '-',
       'Tiene Registros': item.tieneRegistros ? 'Sí' : 'No',
-      'Detalles de Expedientes': item.expedientes.map((e: any) => e.titulo).join(', ') || 'Ninguno'
+      'Detalles de Expedientes': item.expedientes.map((e: ExpedienteResumen) => e.titulo).join(', ') || 'Ninguno'
     }));
 
     const estadisticas = [
@@ -93,13 +127,13 @@ export default function ReporteCarpetasPage() {
       else generarExcelCarpetas(reportData, ctxTipo, ctxCond);
       
       setSuccess(`Reporte exportado exitosamente en formato ${formato.toUpperCase()}`);
-    } catch(err: any) {
+    } catch {
       setError('Error al exportar. Verifica los datos.');
     }
   };
 
   const renderPreview = () => {
-    if (!reportData) return null;
+    if (!reportData || !activeReportContext) return null;
 
     const stats = [
       { label: 'Total Evaluados', value: reportData.estadisticas?.totalEvaluados || 0 },
@@ -109,7 +143,7 @@ export default function ReporteCarpetasPage() {
     
     const subtitle = `Módulo: ${activeReportContext.tipoExpediente === 'todos' ? 'Todos' : activeReportContext.tipoExpediente.toUpperCase()} | Condición: ${activeReportContext.condicionCarpeta === 'todos' ? 'Todos' : activeReportContext.condicionCarpeta === 'con_registros' ? 'Con Registros' : 'Sin Registros'}`;
     const tableHeaders = ['Beneficiario', 'Código', 'Tiene Registros', 'Detalles de Expedientes'];
-    const tableRows = reportData.registros?.map((item: any) => ({
+    const tableRows = reportData.registros?.map((item: CarpetaRegistroItem) => ({
       cells: [
         <span className="font-bold text-gray-900" key={`nom-${item.beneficiario.id}`}>{item.beneficiario.nombre}</span>,
         <span className="font-mono text-xs" key={`cod-${item.beneficiario.id}`}>{item.beneficiario.codigo || '-'}</span>,
@@ -118,7 +152,7 @@ export default function ReporteCarpetasPage() {
         </span>,
         <div className="flex flex-col gap-1 text-xs" key={`det-${item.beneficiario.id}`}>
           {item.expedientes && item.expedientes.length > 0 ? (
-            item.expedientes.map((e: any, i: number) => (
+            item.expedientes.map((e: ExpedienteResumen, i: number) => (
               <span key={i} className="text-gray-600 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
                 <span className="font-semibold text-gray-700">{e.tipo.toUpperCase()}:</span> {e.titulo}
               </span>
@@ -159,7 +193,7 @@ export default function ReporteCarpetasPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-100 border-b border-gray-100 bg-white">
-          {stats.map((stat: any, i: number) => (
+          {stats.map((stat, i: number) => (
             <div key={i} className="p-4 flex flex-col items-center justify-center text-center">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{stat.label}</span>
               <span className="text-3xl font-black text-indigo-600">{stat.value}</span>
@@ -181,9 +215,9 @@ export default function ReporteCarpetasPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {tableRows.map((row: any, i: number) => (
+                  {tableRows.map((row, i: number) => (
                     <tr key={row.key || i} className="hover:bg-gray-50">
-                      {row.cells.map((cell: any, cellIndex: number) => (
+                      {row.cells.map((cell, cellIndex: number) => (
                         <td key={cellIndex} className="px-4 py-3">
                           {cell}
                         </td>

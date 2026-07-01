@@ -8,6 +8,7 @@ import Alert from '@/components/ui/Alert';
 import { ayudasApi } from '@/lib/api/ayudas';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { FileText, LogIn, Search, User, Upload, X } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 interface BeneficiarioSugerido {
@@ -18,6 +19,18 @@ interface BeneficiarioSugerido {
   padre_tutor?: string;
   telefono?: string;
   profesor_nombre?: string;
+}
+
+interface FormData {
+  nombre_beneficiario: string;
+  codigo_beneficiario: string;
+  nombre_madre: string;
+  nombre_tutor: string;
+  telefono: string;
+  tipo: 'medica' | 'alimentos' | 'pequeno_negocio' | 'educacion' | 'otros';
+  tipo_especificacion?: string;
+  detalle: string;
+  foto_url?: string;
 }
 
 export default function AyudasPage() {
@@ -37,7 +50,7 @@ export default function AyudasPage() {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<any>();
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>();
 
   const tipoSeleccionado = watch('tipo');
 
@@ -140,7 +153,7 @@ export default function AyudasPage() {
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: FormData) => {
     try {
       if (!beneficiarioSeleccionado) {
         setError('Por favor, busca y selecciona un beneficiario válido de la lista.');
@@ -165,7 +178,7 @@ export default function AyudasPage() {
       setBeneficiarioSeleccionado(null);
       setFotoPreview(null);
       setFotoBase64(null);
-    } catch (err: any) {
+    } catch {
       setError('Error al registrar la solicitud. Por favor intenta nuevamente.');
     } finally {
       setLoading(false);
@@ -395,10 +408,13 @@ export default function AyudasPage() {
                     </div>
                   ) : (
                     <div className="relative inline-block">
-                      <img
+                      <Image
                         src={fotoPreview}
                         alt="Preview"
-                        className="max-h-48 rounded-lg border border-gray-200"
+                        width={400}
+                        height={300}
+                        className="max-h-48 w-auto h-auto rounded-lg border border-gray-200"
+                        unoptimized
                       />
                       <button
                         type="button"

@@ -34,8 +34,9 @@ export default function PrimerLoginModal() {
     try {
       setIsLoading(true);
       await cambiarPasswordPrimerLogin(passwordActual, passwordNueva);
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Error al cambiar la contraseña');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || axiosErr.message || 'Error al cambiar la contraseña');
     } finally {
       setIsLoading(false);
     }

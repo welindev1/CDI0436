@@ -1,8 +1,16 @@
 import apiClient from './client';
-import { Asistencia, EstadoAsistencia } from '../types';
+import {
+  Asistencia,
+  EstadoAsistencia,
+  ReporteAsistenciaClase,
+  ReporteAsistenciaBeneficiario,
+  ResumenClase,
+  FotoAsistencia,
+  EstadisticasGenerales,
+} from '../types';
 
 export const asistenciasApi = {
-  getAll: async (filters?: any): Promise<Asistencia[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Asistencia[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -18,12 +26,12 @@ export const asistenciasApi = {
     return response.data;
   },
 
-  create: async (data: any): Promise<Asistencia> => {
+  create: async (data: Partial<Asistencia>): Promise<Asistencia> => {
     const response = await apiClient.post('/asistencias', data);
     return response.data;
   },
 
-  update: async (id: string, data: any): Promise<Asistencia> => {
+  update: async (id: string, data: Partial<Asistencia>): Promise<Asistencia> => {
     const response = await apiClient.patch(`/asistencias/${id}`, data);
     return response.data;
   },
@@ -79,7 +87,7 @@ export const asistenciasApi = {
     claseId: string, 
     fechaInicio?: string, 
     fechaFin?: string
-  ): Promise<any> => {
+  ): Promise<ReporteAsistenciaClase> => {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
@@ -91,7 +99,7 @@ export const asistenciasApi = {
     beneficiarioId: string,
     fechaInicio?: string,
     fechaFin?: string
-  ): Promise<any> => {
+  ): Promise<ReporteAsistenciaBeneficiario> => {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
@@ -99,11 +107,11 @@ export const asistenciasApi = {
     return response.data;
   },
 
-  getEstadisticasMensuales: async (mes: number, anio: number): Promise<any> => {
+  getEstadisticasMensuales: async (mes: number, anio: number): Promise<EstadisticasGenerales> => {
     const response = await apiClient.get(`/asistencias/estadisticas/mensuales/${mes}/${anio}`);
     return response.data;
   },
-  getResumenPorFecha: async (fecha: string): Promise<any[]> => {
+  getResumenPorFecha: async (fecha: string): Promise<ResumenClase[]> => {
     const response = await apiClient.get(`/asistencias/resumen/fecha/${fecha}`);
     return response.data;
   },
@@ -140,7 +148,7 @@ export const asistenciasApi = {
   // ===================== FOTOS DE ASISTENCIA =====================
 
   // Subir foto de asistencia (Base64)
-  subirFoto: async (claseId: string, fecha: string, imagenBase64: string): Promise<any> => {
+  subirFoto: async (claseId: string, fecha: string, imagenBase64: string): Promise<FotoAsistencia> => {
     const response = await apiClient.post('/asistencias/foto', {
       claseId,
       fecha,
@@ -150,7 +158,7 @@ export const asistenciasApi = {
   },
 
   // Obtener foto por clase y fecha
-  getFoto: async (claseId: string, fecha: string): Promise<any> => {
+  getFoto: async (claseId: string, fecha: string): Promise<FotoAsistencia> => {
     const response = await apiClient.get(`/asistencias/foto/${claseId}/${fecha}`);
     return response.data;
   },

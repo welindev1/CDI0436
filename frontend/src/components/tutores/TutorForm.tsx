@@ -41,18 +41,19 @@ export default function TutorForm({ tutor, onSubmit, onCancel }: TutorFormProps)
     setIsLoading(true);
 
     try {
-      const data: any = { ...formData };
+      const data: Partial<Tutor> = { ...formData };
 
       // Remover campos vacíos
-      Object.keys(data).forEach(key => {
-        if (data[key] === '' || data[key] === undefined) {
-          delete data[key];
+      for (const key of Object.keys(data)) {
+        const k = key as keyof typeof data;
+        if (data[k] === '' || data[k] === undefined) {
+          delete data[k];
         }
-      });
+      }
 
       await onSubmit(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al guardar tutor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al guardar tutor');
     } finally {
       setIsLoading(false);
     }

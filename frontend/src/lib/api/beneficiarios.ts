@@ -1,8 +1,16 @@
 import apiClient from './client';
+import type {
+  BeneficiarioSugerido,
+  ExpedienteEntry,
+  CumpleanosItem,
+  ImportarResultado,
+  ReporteCarpetasData,
+  EstadisticasGenerales,
+} from '../types';
 import { Beneficiario } from '../types';
 
 export const beneficiariosApi = {
-  getAll: async (filters?: any): Promise<Beneficiario[]> => {
+  getAll: async (filters?: Record<string, string>): Promise<Beneficiario[]> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.keys(filters).forEach(key => {
@@ -42,7 +50,7 @@ export const beneficiariosApi = {
     return response.data;
   },
 
-  getEstadisticas: async (id: string): Promise<any> => {
+  getEstadisticas: async (id: string): Promise<EstadisticasGenerales> => {
     const response = await apiClient.get(`/beneficiarios/${id}/estadisticas`);
     return response.data;
   },
@@ -57,7 +65,7 @@ export const beneficiariosApi = {
     file: File,
     actualizarExistentes: boolean = false,
     omitirErrores: boolean = true
-  ): Promise<any> => {
+  ): Promise<ImportarResultado> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('actualizarExistentes', actualizarExistentes.toString());
@@ -78,7 +86,7 @@ export const beneficiariosApi = {
     return response.data;
   },
 
-  exportarAExcel: async (filters?: any): Promise<Blob> => {
+  exportarAExcel: async (filters?: Record<string, string>): Promise<Blob> => {
     let url = '/beneficiarios/exportar';
     
     if (filters && Object.keys(filters).length > 0) {
@@ -98,17 +106,17 @@ export const beneficiariosApi = {
     return response.data;
   },
 
-  buscarPublico: async (nombre: string): Promise<any[]> => {
+  buscarPublico: async (nombre: string): Promise<BeneficiarioSugerido[]> => {
     const response = await apiClient.get(`/beneficiarios/buscar-publico?nombre=${encodeURIComponent(nombre)}`);
     return response.data;
   },
 
-  getCumpleanosPorMes: async (mes: number): Promise<any[]> => {
+  getCumpleanosPorMes: async (mes: number): Promise<CumpleanosItem[]> => {
     const response = await apiClient.get(`/beneficiarios/cumpleanos/${mes}`);
     return response.data;
   },
 
-  getReporteCarpetas: async (tipoExpediente?: string, condicion?: string): Promise<any> => {
+  getReporteCarpetas: async (tipoExpediente?: string, condicion?: string): Promise<ReporteCarpetasData> => {
     const params = new URLSearchParams();
     if (tipoExpediente) params.append('tipoExpediente', tipoExpediente);
     if (condicion) params.append('condicion', condicion);
@@ -118,12 +126,12 @@ export const beneficiariosApi = {
     return response.data;
   },
 
-  getExpedientes: async (id: string): Promise<any[]> => {
+  getExpedientes: async (id: string): Promise<ExpedienteEntry[]> => {
     const response = await apiClient.get(`/beneficiarios/${id}/expediente`);
     return response.data;
   },
 
-  addExpediente: async (id: string, data: any): Promise<any> => {
+  addExpediente: async (id: string, data: Record<string, unknown>): Promise<ExpedienteEntry> => {
     const response = await apiClient.post(`/beneficiarios/${id}/expediente`, data);
     return response.data;
   },
@@ -132,7 +140,7 @@ export const beneficiariosApi = {
     await apiClient.delete(`/beneficiarios/expediente/${expedienteId}`);
   },
 
-  updateExpediente: async (expedienteId: string, data: any): Promise<any> => {
+  updateExpediente: async (expedienteId: string, data: Record<string, unknown>): Promise<ExpedienteEntry> => {
     const response = await apiClient.patch(`/beneficiarios/expediente/${expedienteId}`, data);
     return response.data;
   },

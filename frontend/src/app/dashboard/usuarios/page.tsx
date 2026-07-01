@@ -3,42 +3,21 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
 import Alert from '@/components/ui/Alert';
-import { Table, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  getUsuarios,
-  createUsuario,
-  updateUsuario,
-  deleteUsuario,
-  resetPassword,
-} from '@/lib/api/usuarios';
 import { getRoles } from '@/lib/api/roles';
-import { Plus, Search, Edit, Trash2, Key, UserCog, Users, UserX, UserCheck, Wand2, Copy } from 'lucide-react';
-
-interface Usuario {
-  id: string;
-  nombre: string;
-  correo: string;
-  rol: { id: string; nombre: string; es_super_admin: boolean } | null;
-  rol_id: string | null;
-  activo: boolean;
-}
-
-interface Rol {
-  id: string;
-  nombre: string;
-  es_super_admin: boolean;
-  activo: boolean;
-}
+import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario, useResetPassword } from '@/lib/hooks';
+import { UsuarioTable } from '@/components/usuarios/UsuarioTable';
+import { UsuarioForm } from '@/components/usuarios/UsuarioForm';
+import { UsuarioFilters } from '@/components/usuarios/UsuarioFilters';
+import { Plus, Users, UserCheck, UserX, Wand2 } from 'lucide-react';
+import type { Usuario, Rol } from '@/lib/types';
 
 export default function UsuariosPage() {
   const { tienePermiso } = useAuth();
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -48,34 +27,21 @@ export default function UsuariosPage() {
   const [resetPasswordUsuario, setResetPasswordUsuario] = useState<Usuario | null>(null);
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
   const [newPassword, setNewPassword] = useState('');
-  const [formData, setFormData] = useState({
-    nombre: '',
-    correo: '',
-    password: '',
-    rol_id: '',
-  });
+  const [formData, setFormData] = useState({ nombre: '', correo: '', password: '', rol_id: '' });
   const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Hooks
+  const { data: usuarios = [], isLoading } = useUsuarios();
+  const createUsuario = useCreateUsuario();
+  const updateUsuario = useUpdateUsuario();
+  const deleteUsuario = useDeleteUsuario();
+  const resetPasswordMutation = useResetPassword();
 
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      setError('');
-      const [usuariosData, rolesData] = await Promise.all([
-        getUsuarios(),
-        getRoles(),
-      ]);
-      setUsuarios(usuariosData);
-      setRoles(rolesData.filter((r: Rol) => r.activo));
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar datos');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useEffect(() => {
+    getRoles()
+      .then((rolesData) => setRoles(rolesData.filter((r: Rol) => r.activo)))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Error al cargar roles'));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,19 +49,17 @@ export default function UsuariosPage() {
 
     try {
       if (editingUsuario) {
-        await updateUsuario(editingUsuario.id, {
-          nombre: formData.nombre,
-          correo: formData.correo,
-          rol_id: formData.rol_id,
+        await updateUsuario.mutateAsync({
+          id: editingUsuario.id,
+          data: { nombre: formData.nombre, correo: formData.correo, rol_id: formData.rol_id },
         });
       } else {
-        await createUsuario(formData);
+        await createUsuario.mutateAsync(formData);
       }
       setShowModal(false);
       resetForm();
-      loadData();
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Error al guardar usuario');
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : 'Error al guardar usuario');
     }
   };
 
@@ -103,42 +67,37 @@ export default function UsuariosPage() {
     e.preventDefault();
     if (!resetPasswordUsuario || !newPassword) return;
 
-    try {
-      await resetPassword(resetPasswordUsuario.id, newPassword);
-      setShowPasswordModal(false);
-      setResetPasswordUsuario(null);
-      setNewPassword('');
-    } catch (err: any) {
-      setFormError(err.response?.data?.message || 'Error al cambiar contraseña');
-    }
-  };
-
-  const handleDeleteClick = (usuario: Usuario) => {
-    setUsuarioToDelete(usuario);
-    setShowDeleteConfirm(true);
+    resetPasswordMutation.mutate(
+      { id: resetPasswordUsuario.id, password: newPassword },
+      {
+        onSuccess: () => {
+          setShowPasswordModal(false);
+          setResetPasswordUsuario(null);
+          setNewPassword('');
+        },
+        onError: (err: Error) => {
+          setFormError(err.message || 'Error al cambiar contraseña');
+        },
+      }
+    );
   };
 
   const handleDelete = async () => {
     if (!usuarioToDelete) return;
-
-    try {
-      await deleteUsuario(usuarioToDelete.id);
-      setShowDeleteConfirm(false);
-      setUsuarioToDelete(null);
-      loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar usuario');
-    }
+    deleteUsuario.mutate(usuarioToDelete.id, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false);
+        setUsuarioToDelete(null);
+      },
+      onError: (err: Error) => {
+        setError(err.message || 'Error al eliminar usuario');
+      },
+    });
   };
 
   const openEditModal = (usuario: Usuario) => {
     setEditingUsuario(usuario);
-    setFormData({
-      nombre: usuario.nombre,
-      correo: usuario.correo,
-      password: '',
-      rol_id: usuario.rol_id || '',
-    });
+    setFormData({ nombre: usuario.nombre, correo: usuario.correo, password: '', rol_id: usuario.rol_id || '' });
     setFormError('');
     setShowModal(true);
   };
@@ -146,13 +105,6 @@ export default function UsuariosPage() {
   const openCreateModal = () => {
     resetForm();
     setShowModal(true);
-  };
-
-  const openResetPasswordModal = (usuario: Usuario) => {
-    setResetPasswordUsuario(usuario);
-    setNewPassword('');
-    setFormError('');
-    setShowPasswordModal(true);
   };
 
   const resetForm = () => {
@@ -163,8 +115,8 @@ export default function UsuariosPage() {
 
   const generatePassword = () => {
     const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let retVal = "";
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+    let retVal = '';
     for (let i = 0, n = charset.length; i < length; ++i) {
       retVal += charset.charAt(Math.floor(Math.random() * n));
     }
@@ -174,7 +126,7 @@ export default function UsuariosPage() {
   const handleGeneratePassword = (field: 'create' | 'reset') => {
     const password = generatePassword();
     if (field === 'create') {
-      setFormData(prev => ({ ...prev, password }));
+      setFormData((prev) => ({ ...prev, password }));
     } else {
       setNewPassword(password);
     }
@@ -221,9 +173,7 @@ export default function UsuariosPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Activos</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {usuarios.filter((u) => u.activo).length}
-                  </p>
+                  <p className="text-2xl font-bold text-green-600">{usuarios.filter((u) => u.activo).length}</p>
                 </div>
                 <UserCheck className="w-8 h-8 text-green-500" />
               </div>
@@ -232,227 +182,43 @@ export default function UsuariosPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Inactivos</p>
-                  <p className="text-2xl font-bold text-gray-600">
-                    {usuarios.filter((u) => !u.activo).length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-600">{usuarios.filter((u) => !u.activo).length}</p>
                 </div>
                 <UserX className="w-8 h-8 text-gray-500" />
               </div>
             </div>
           </div>
 
-          {error && (
-            <Alert variant="error" className="mb-4">
-              {error}
-            </Alert>
-          )}
+          {error && <Alert variant="error">{error}</Alert>}
 
-          {/* Search */}
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o correo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          <UsuarioFilters searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
-          {/* Table */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : filteredUsuarios.length === 0 ? (
-              <div className="text-center py-12">
-                <UserCog className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">
-                  {searchTerm ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
-                </p>
-                {!searchTerm && tienePermiso('usuarios:crear') && (
-                  <Button onClick={openCreateModal}>Crear Primer Usuario</Button>
-                )}
-              </div>
-            ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell isHeader>Usuario</TableCell>
-                    <TableCell isHeader>Rol</TableCell>
-                    <TableCell isHeader>Estado</TableCell>
-                    <TableCell isHeader>Acciones</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredUsuarios.map((usuario) => (
-                    <TableRow key={usuario.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <UserCog className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{usuario.nombre}</p>
-                            <p className="text-sm text-gray-500">{usuario.correo}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            usuario.rol?.es_super_admin
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-blue-100 text-blue-800'
-                          }`}
-                        >
-                          {usuario.rol?.nombre || 'Sin rol'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            usuario.activo
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {usuario.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {tienePermiso('usuarios:editar') && (
-                            <>
-                              <button
-                                onClick={() => openResetPasswordModal(usuario)}
-                                className="p-1 text-yellow-600 hover:bg-yellow-50 rounded"
-                                title="Cambiar contraseña"
-                              >
-                                <Key className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => openEditModal(usuario)}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                                title="Editar"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                            </>
-                          )}
-                          {tienePermiso('usuarios:eliminar') && !usuario.rol?.es_super_admin && (
-                            <button
-                              onClick={() => handleDeleteClick(usuario)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+          <UsuarioTable
+            usuarios={filteredUsuarios}
+            loading={isLoading}
+            searchTerm={searchTerm}
+            hasCreatePermission={tienePermiso('usuarios:crear')}
+            hasEditPermission={tienePermiso('usuarios:editar')}
+            hasDeletePermission={tienePermiso('usuarios:eliminar')}
+            onEdit={openEditModal}
+            onDelete={(usuario) => { setUsuarioToDelete(usuario); setShowDeleteConfirm(true); }}
+            onResetPassword={(usuario) => { setResetPasswordUsuario(usuario); setNewPassword(''); setFormError(''); setShowPasswordModal(true); }}
+            onCreate={openCreateModal}
+          />
         </div>
 
         {/* Modal Crear/Editar Usuario */}
-        <Modal
-          isOpen={showModal}
+        <UsuarioForm
+          showModal={showModal}
+          editingUsuario={editingUsuario}
+          formData={formData}
+          formError={formError}
+          roles={roles}
           onClose={() => setShowModal(false)}
-          title={editingUsuario ? 'Editar Usuario' : 'Nuevo Usuario'}
-          size="md"
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {formError && (
-              <Alert variant="error">{formError}</Alert>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
-              </label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo
-              </label>
-              <input
-                type="email"
-                value={formData.correo}
-                onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            {!editingUsuario && (
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleGeneratePassword('create')}
-                  className="absolute right-2 top-8 p-1 text-gray-400 hover:text-blue-600"
-                  title="Generar y copiar contraseña"
-                >
-                  <Wand2 className="w-5 h-5" />
-                </button>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rol
-              </label>
-              <select
-                value={formData.rol_id}
-                onChange={(e) => setFormData({ ...formData, rol_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Seleccionar rol</option>
-                {roles.map((rol) => (
-                  <option key={rol.id} value={rol.id}>
-                    {rol.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingUsuario ? 'Guardar Cambios' : 'Crear Usuario'}
-              </Button>
-            </div>
-          </form>
-        </Modal>
+          onChange={setFormData}
+          onSubmit={handleSubmit}
+          onGeneratePassword={() => handleGeneratePassword('create')}
+        />
 
         {/* Modal Reset Password */}
         <Modal
@@ -469,9 +235,7 @@ export default function UsuariosPage() {
             {formError && <Alert variant="error">{formError}</Alert>}
 
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nueva Contraseña
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
               <input
                 type="password"
                 value={newPassword}

@@ -4,23 +4,27 @@ import { useState, useRef } from 'react';
 import { X, Images, FilePlus, GraduationCap, FileText, FileArchive } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import type { ImagenGaleria, PdfAdjunto, ExpedienteEditPayload } from '@/lib/types';
+import { compressImage, readPdfAsBase64 } from '@/lib/utils/files';
 
-interface ImagenGaleria {
-  base64: string;
-  titulo?: string;
-  descripcion?: string;
-}
-
-interface PdfAdjunto {
-  nombre: string;
-  base64_pdf: string;
+interface EntradaExpediente {
+  id: string;
+  tipo: string;
+  titulo?: string | null;
+  mostrar_titulo?: boolean;
+  contenido?: string | null;
+  fecha_evento?: string | null;
+  etiqueta_color?: string;
+  imagen_base64?: string | null;
+  imagenes_galeria?: ImagenGaleria[] | null;
+  pdfs?: PdfAdjunto[] | null;
 }
 
 interface EditarExpedienteModalProps {
   isOpen: boolean;
-  entrada: any | null;
+  entrada: EntradaExpediente | null;
   onClose: () => void;
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: ExpedienteEditPayload) => Promise<void>;
 }
 
 const COLORES = [
@@ -32,35 +36,7 @@ const COLORES = [
   { value: 'gris',     label: 'Gris',     bg: 'bg-gray-400' },
 ];
 
-const compressImage = (file: File, maxWidth = 900): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height;
-        if (w > maxWidth) { h = (h * maxWidth) / w; w = maxWidth; }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = reject;
-    };
-    reader.onerror = reject;
-  });
-
-const readPdfAsBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = reject;
-  });
-
-const TIPO_ICONS: Record<string, any> = {
+const TIPO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   educativo: GraduationCap,
   registro: FileText,
   documentos: FileArchive,
