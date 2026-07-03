@@ -24,8 +24,10 @@ jobs:
 
     # Paso C: Instalar las librerías
     - name: Instalar dependencias
+      working-directory: backend
       run: npm install
 
     # Paso D: Verificar que el proyecto se construye sin errores
     - name: Ejecutar Build
+      working-directory: backend
       run: npm run build
