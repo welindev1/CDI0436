@@ -1,4 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Usuario } from '../usuarios/usuario.entity';
 import { Clase } from '../clases/clase.entity';
 
@@ -29,7 +39,7 @@ export class Tutor {
   @JoinColumn({ name: 'usuarioId' })
   usuario: Usuario;
 
-  @OneToMany(() => Clase, clase => clase.tutor)
+  @OneToMany(() => Clase, (clase) => clase.tutor)
   clases: Clase[];
 
   @Column({ default: true })

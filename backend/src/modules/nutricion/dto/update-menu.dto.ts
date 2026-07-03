@@ -1,5 +1,4 @@
-import { IsString, IsEnum, IsOptional, IsInt, Min } from 'class-validator';
-import { TandaNutricion } from '../menu-nutricion.entity';
+import { IsString, IsOptional, IsInt, Min } from 'class-validator';
 
 export class UpdateMenuNutricionDto {
   @IsOptional()

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MenuNutricion, TandaNutricion } from './menu-nutricion.entity';
@@ -56,7 +60,10 @@ export class NutricionService {
       .getOne();
   }
 
-  async update(id: string, dto: UpdateMenuNutricionDto): Promise<MenuNutricion> {
+  async update(
+    id: string,
+    dto: UpdateMenuNutricionDto,
+  ): Promise<MenuNutricion> {
     const menu = await this.menuRepository.findOne({ where: { id } });
 
     if (!menu) {

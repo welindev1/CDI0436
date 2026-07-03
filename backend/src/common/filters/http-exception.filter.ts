@@ -22,7 +22,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       typeof exceptionResponse === 'string'
         ? exceptionResponse
         : typeof exceptionResponse === 'object' &&
-          'message' in exceptionResponse
+            'message' in exceptionResponse
           ? (exceptionResponse as any).message
           : exception.message;
 

@@ -103,7 +103,9 @@ async function seedUsers() {
   console.log('├──────────────────────────────┼──────────────┤');
   console.log('│ admin@cdi.com                │ admin123     │');
   console.log('└──────────────────────────────┴──────────────┘');
-  console.log('\n⚠️  IMPORTANTE: Cambia la contraseña después del primer login!\n');
+  console.log(
+    '\n⚠️  IMPORTANTE: Cambia la contraseña después del primer login!\n',
+  );
 
   await app.close();
 }

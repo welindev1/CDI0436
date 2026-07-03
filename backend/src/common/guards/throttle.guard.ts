@@ -82,7 +82,10 @@ export class ThrottleGuard implements CanActivate {
   private getClientKey(request: Request): string {
     // Use X-Forwarded-For if behind a proxy, fallback to IP
     const forwarded = request.headers['x-forwarded-for'];
-    const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : request.ip;
+    const ip =
+      typeof forwarded === 'string'
+        ? forwarded.split(',')[0].trim()
+        : request.ip;
     return ip || 'unknown';
   }
 

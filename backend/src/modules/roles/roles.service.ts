@@ -115,7 +115,9 @@ export class RolesService {
 
     // Verificar si es super admin
     if (rol.es_super_admin) {
-      throw new BadRequestException('No se puede eliminar el rol de Super Administrador');
+      throw new BadRequestException(
+        'No se puede eliminar el rol de Super Administrador',
+      );
     }
 
     // Verificar si tiene usuarios asignados

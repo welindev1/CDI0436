@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 
 export enum DiaSemana {
@@ -20,7 +28,7 @@ export class Horario {
 
   @Column({
     type: 'enum',
-    enum: DiaSemana
+    enum: DiaSemana,
   })
   dia: DiaSemana;
 
@@ -33,7 +41,7 @@ export class Horario {
   @Column({ type: 'text', nullable: true })
   descripcion: string;
 
-  @ManyToMany(() => Clase, clase => clase.horarios)
+  @ManyToMany(() => Clase, (clase) => clase.horarios)
   clases: Clase[];
 
   @Column({ default: true })
