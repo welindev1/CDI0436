@@ -31,7 +31,7 @@ export class Supervivencia {
   codigo: string;
 
   @ManyToOne(() => Tutor, { nullable: true, eager: true })
-  @JoinColumn({ name: 'tutorId' })
+  @JoinColumn({ name: 'tutor_id' })
   tutor: Tutor;
 
   @ManyToMany(() => Beneficiario, (beneficiario) => beneficiario.supervivencias)

@@ -34,3 +34,4 @@ postgres_data/
 # Misc
 .claude/
 .gemini/
+.opencode/
