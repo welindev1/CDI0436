@@ -1,33 +1,44 @@
 name: CI Pipeline
 
-# 1. ¿Cuándo se va a ejecutar este pipeline?
 on:
   pull_request:
-    branches: [ "main" ] # Se activa cuando alguien hace un PR hacia main
+    branches: [ "main" ]
 
-# 2. ¿Qué tareas (jobs) va a realizar?
 jobs:
-  build:
-    name: Instalación y Construcción
-    runs-on: ubuntu-latest # Una máquina virtual gratuita de GitHub
+  backend:
+    name: Backend — Build & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
     steps:
-    # Paso A: Traer el código de tu repositorio a la máquina virtual
-    - name: Clonar el repositorio
-      uses: actions/checkout@v4
-
-    # Paso B: Preparar el entorno con Node.js
-    - name: Configurar Node.js
-      uses: actions/setup-node@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: '20' # Aquí pones la versión que uses en tu proyecto
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
 
-    # Paso C: Instalar las librerías
-    - name: Instalar dependencias
-      working-directory: backend
-      run: npm install
+    - run: npm ci
+    - run: npm run build
+    - run: npm run lint
 
-    # Paso D: Verificar que el proyecto se construye sin errores
-    - name: Ejecutar Build
-      working-directory: backend
-      run: npm run build
+  frontend:
+    name: Frontend — Build & Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - run: npm ci
+    - run: npm run build
+    - run: npm run lint
