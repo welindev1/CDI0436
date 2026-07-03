@@ -26,7 +26,7 @@ export class Tutor {
   especialidad: string;
 
   @OneToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'usuario_id' })
+  @JoinColumn({ name: 'usuarioId' })
   usuario: Usuario;
 
   @OneToMany(() => Clase, clase => clase.tutor)
