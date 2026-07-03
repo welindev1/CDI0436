@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tutor } from './tutor.entity';
@@ -25,7 +29,9 @@ export class TutoresService {
         where: { id: createTutorDto.usuarioId },
       });
       if (!usuario) {
-        throw new NotFoundException(`Usuario con ID ${createTutorDto.usuarioId} no encontrado`);
+        throw new NotFoundException(
+          `Usuario con ID ${createTutorDto.usuarioId} no encontrado`,
+        );
       }
       tutor.usuario = usuario;
     }
@@ -34,21 +40,28 @@ export class TutoresService {
   }
 
   async findAll(filters?: FilterTutorDto): Promise<Tutor[]> {
-    const query = this.tutoresRepository.createQueryBuilder('tutor')
+    const query = this.tutoresRepository
+      .createQueryBuilder('tutor')
       .leftJoinAndSelect('tutor.usuario', 'usuario')
       .leftJoinAndSelect('tutor.clases', 'clases');
 
     if (filters) {
       if (filters.nombre) {
-        query.andWhere('tutor.nombre ILIKE :nombre', { nombre: `%${filters.nombre}%` });
+        query.andWhere('tutor.nombre ILIKE :nombre', {
+          nombre: `%${filters.nombre}%`,
+        });
       }
 
       if (filters.correo) {
-        query.andWhere('tutor.correo ILIKE :correo', { correo: `%${filters.correo}%` });
+        query.andWhere('tutor.correo ILIKE :correo', {
+          correo: `%${filters.correo}%`,
+        });
       }
 
       if (filters.especialidad) {
-        query.andWhere('tutor.especialidad ILIKE :especialidad', { especialidad: `%${filters.especialidad}%` });
+        query.andWhere('tutor.especialidad ILIKE :especialidad', {
+          especialidad: `%${filters.especialidad}%`,
+        });
       }
 
       if (filters.activo !== undefined) {
@@ -81,7 +94,9 @@ export class TutoresService {
         where: { id: updateTutorDto.usuarioId },
       });
       if (!usuario) {
-        throw new NotFoundException(`Usuario con ID ${updateTutorDto.usuarioId} no encontrado`);
+        throw new NotFoundException(
+          `Usuario con ID ${updateTutorDto.usuarioId} no encontrado`,
+        );
       }
       tutor.usuario = usuario;
     }

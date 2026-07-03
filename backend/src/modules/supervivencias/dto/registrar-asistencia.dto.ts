@@ -1,4 +1,12 @@
-import { IsUUID, IsDateString, IsBoolean, IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsUUID,
+  IsDateString,
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AsistenciaBeneficiarioDto {

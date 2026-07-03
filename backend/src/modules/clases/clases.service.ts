@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Clase } from './clase.entity';
@@ -26,54 +31,65 @@ export class ClasesService {
   async create(createClaseDto: CreateClaseDto): Promise<Clase> {
     // Verificar que el tutor existe
     const tutor = await this.tutoresRepository.findOne({
-      where: { id: createClaseDto.tutorId, activo: true }
+      where: { id: createClaseDto.tutorId, activo: true },
     });
 
     if (!tutor) {
-      throw new NotFoundException(`Tutor con ID ${createClaseDto.tutorId} no encontrado o inactivo`);
+      throw new NotFoundException(
+        `Tutor con ID ${createClaseDto.tutorId} no encontrado o inactivo`,
+      );
     }
 
     // Verificar que los horarios existen
     const horarios = await this.horariosRepository.find({
-      where: { id: In(createClaseDto.horarioIds), activo: true }
+      where: { id: In(createClaseDto.horarioIds), activo: true },
     });
 
     if (horarios.length !== createClaseDto.horarioIds.length) {
-      throw new NotFoundException('Uno o más horarios no fueron encontrados o están inactivos');
+      throw new NotFoundException(
+        'Uno o más horarios no fueron encontrados o están inactivos',
+      );
     }
 
     if (createClaseDto.codigo) {
       const codigoExiste = await this.clasesRepository.findOne({
-        where: { codigo: createClaseDto.codigo }
+        where: { codigo: createClaseDto.codigo },
       });
 
       if (codigoExiste) {
-        throw new ConflictException(`Ya existe una clase con el código ${createClaseDto.codigo}`);
+        throw new ConflictException(
+          `Ya existe una clase con el código ${createClaseDto.codigo}`,
+        );
       }
     }
 
     const clase = this.clasesRepository.create({
       ...createClaseDto,
       tutor,
-      horarios
+      horarios,
     });
 
     return await this.clasesRepository.save(clase);
   }
 
   async findAll(filters?: FilterClaseDto): Promise<Clase[]> {
-    const query = this.clasesRepository.createQueryBuilder('clase')
+    const query = this.clasesRepository
+      .createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
       .leftJoinAndSelect('clase.horarios', 'horario')
       .orderBy('clase.nombre', 'ASC');
 
     if (filters) {
       if (filters.nombre) {
-        query.andWhere('clase.nombre ILIKE :nombre', { nombre: `%${filters.nombre}%` });
+        query.andWhere('clase.nombre ILIKE :nombre', {
+          nombre: `%${filters.nombre}%`,
+        });
       }
 
       if (filters.codigo) {
-        query.andWhere('clase.codigo ILIKE :codigo', { codigo: `%${filters.codigo}%` });
+        query.andWhere('clase.codigo ILIKE :codigo', {
+          codigo: `%${filters.codigo}%`,
+        });
       }
 
       if (filters.tutorId) {
@@ -81,7 +97,9 @@ export class ClasesService {
       }
 
       if (filters.horarioId) {
-        query.andWhere('horario.id = :horarioId', { horarioId: filters.horarioId });
+        query.andWhere('horario.id = :horarioId', {
+          horarioId: filters.horarioId,
+        });
       }
 
       if (filters.activo !== undefined) {
@@ -93,7 +111,8 @@ export class ClasesService {
   }
 
   async findOne(id: string): Promise<Clase> {
-    const clase = await this.clasesRepository.createQueryBuilder('clase')
+    const clase = await this.clasesRepository
+      .createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
       .leftJoinAndSelect('tutor.usuario', 'usuario')
       .leftJoinAndSelect('clase.horarios', 'horario')
@@ -109,7 +128,8 @@ export class ClasesService {
   }
 
   async findByCodigo(codigo: string): Promise<Clase> {
-    const clase = await this.clasesRepository.createQueryBuilder('clase')
+    const clase = await this.clasesRepository
+      .createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
       .leftJoinAndSelect('clase.horarios', 'horario')
       .where('clase.codigo = :codigo', { codigo })
@@ -128,11 +148,13 @@ export class ClasesService {
     // Si se cambia el tutor, verificar que existe
     if (updateClaseDto.tutorId && updateClaseDto.tutorId !== clase.tutor.id) {
       const tutor = await this.tutoresRepository.findOne({
-        where: { id: updateClaseDto.tutorId, activo: true }
+        where: { id: updateClaseDto.tutorId, activo: true },
       });
 
       if (!tutor) {
-        throw new NotFoundException(`Tutor con ID ${updateClaseDto.tutorId} no encontrado o inactivo`);
+        throw new NotFoundException(
+          `Tutor con ID ${updateClaseDto.tutorId} no encontrado o inactivo`,
+        );
       }
 
       clase.tutor = tutor;
@@ -141,11 +163,13 @@ export class ClasesService {
     // Si se cambian los horarios, verificar que existen
     if (updateClaseDto.horarioIds && updateClaseDto.horarioIds.length > 0) {
       const horarios = await this.horariosRepository.find({
-        where: { id: In(updateClaseDto.horarioIds), activo: true }
+        where: { id: In(updateClaseDto.horarioIds), activo: true },
       });
 
       if (horarios.length !== updateClaseDto.horarioIds.length) {
-        throw new NotFoundException('Uno o más horarios no fueron encontrados o están inactivos');
+        throw new NotFoundException(
+          'Uno o más horarios no fueron encontrados o están inactivos',
+        );
       }
 
       clase.horarios = horarios;
@@ -153,11 +177,13 @@ export class ClasesService {
 
     if (updateClaseDto.codigo && updateClaseDto.codigo !== clase.codigo) {
       const codigoExiste = await this.clasesRepository.findOne({
-        where: { codigo: updateClaseDto.codigo }
+        where: { codigo: updateClaseDto.codigo },
       });
 
       if (codigoExiste) {
-        throw new ConflictException(`Ya existe una clase con el código ${updateClaseDto.codigo}`);
+        throw new ConflictException(
+          `Ya existe una clase con el código ${updateClaseDto.codigo}`,
+        );
       }
     }
 
@@ -168,7 +194,7 @@ export class ClasesService {
   async remove(id: string): Promise<void> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios'],
     });
 
     if (!clase) {
@@ -178,7 +204,7 @@ export class ClasesService {
     // Verificar que no tenga beneficiarios
     if (clase.beneficiarios && clase.beneficiarios.length > 0) {
       throw new BadRequestException(
-        `No se puede eliminar la clase porque tiene ${clase.beneficiarios.length} beneficiario(s) inscrito(s)`
+        `No se puede eliminar la clase porque tiene ${clase.beneficiarios.length} beneficiario(s) inscrito(s)`,
       );
     }
 
@@ -192,10 +218,13 @@ export class ClasesService {
   }
 
   // Agregar beneficiarios a la clase
-  async agregarBeneficiarios(id: string, agregarBeneficiariosDto: AgregarBeneficiariosDto): Promise<Clase> {
+  async agregarBeneficiarios(
+    id: string,
+    agregarBeneficiariosDto: AgregarBeneficiariosDto,
+  ): Promise<Clase> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios'],
     });
 
     if (!clase) {
@@ -204,20 +233,24 @@ export class ClasesService {
 
     // Buscar los beneficiarios
     const beneficiarios = await this.beneficiariosRepository.find({
-      where: { 
+      where: {
         id: In(agregarBeneficiariosDto.beneficiarioIds),
-        activo: true 
-      }
+        activo: true,
+      },
     });
 
-    if (beneficiarios.length !== agregarBeneficiariosDto.beneficiarioIds.length) {
-      throw new NotFoundException('Uno o más beneficiarios no fueron encontrados o están inactivos');
+    if (
+      beneficiarios.length !== agregarBeneficiariosDto.beneficiarioIds.length
+    ) {
+      throw new NotFoundException(
+        'Uno o más beneficiarios no fueron encontrados o están inactivos',
+      );
     }
 
     // Verificar capacidad máxima
     const beneficiariosActuales = clase.beneficiarios?.length || 0;
     const nuevosBeneficiarios = beneficiarios.filter(
-      b => !clase.beneficiarios?.some(cb => cb.id === b.id)
+      (b) => !clase.beneficiarios?.some((cb) => cb.id === b.id),
     );
 
     if (clase.capacidad_maxima > 0) {
@@ -225,34 +258,43 @@ export class ClasesService {
       if (totalDespues > clase.capacidad_maxima) {
         throw new BadRequestException(
           `La clase solo puede tener ${clase.capacidad_maxima} beneficiarios. ` +
-          `Actualmente tiene ${beneficiariosActuales} y se intentan agregar ${nuevosBeneficiarios.length}`
+            `Actualmente tiene ${beneficiariosActuales} y se intentan agregar ${nuevosBeneficiarios.length}`,
         );
       }
     }
 
     // Agregar beneficiarios sin duplicar
-    clase.beneficiarios = [...(clase.beneficiarios || []), ...nuevosBeneficiarios];
+    clase.beneficiarios = [
+      ...(clase.beneficiarios || []),
+      ...nuevosBeneficiarios,
+    ];
     return await this.clasesRepository.save(clase);
   }
 
   // Remover un beneficiario de la clase
-  async removerBeneficiario(id: string, beneficiarioId: string): Promise<Clase> {
+  async removerBeneficiario(
+    id: string,
+    beneficiarioId: string,
+  ): Promise<Clase> {
     const clase = await this.clasesRepository.findOne({
       where: { id },
-      relations: ['beneficiarios']
+      relations: ['beneficiarios'],
     });
 
     if (!clase) {
       throw new NotFoundException(`Clase con ID ${id} no encontrada`);
     }
 
-    clase.beneficiarios = clase.beneficiarios.filter(b => b.id !== beneficiarioId);
+    clase.beneficiarios = clase.beneficiarios.filter(
+      (b) => b.id !== beneficiarioId,
+    );
     return await this.clasesRepository.save(clase);
   }
 
   // Obtener estadísticas de una clase
   async getEstadisticas(id: string): Promise<any> {
-    const clase = await this.clasesRepository.createQueryBuilder('clase')
+    const clase = await this.clasesRepository
+      .createQueryBuilder('clase')
       .leftJoinAndSelect('clase.tutor', 'tutor')
       .leftJoinAndSelect('clase.horarios', 'horario')
       .where('clase.id = :id', { id })
@@ -279,13 +321,15 @@ export class ClasesService {
         .then((result) => Number(result?.total || 0)),
     ]);
 
-    const capacidadDisponible = clase.capacidad_maxima > 0 
-      ? clase.capacidad_maxima - totalBeneficiarios 
-      : null;
+    const capacidadDisponible =
+      clase.capacidad_maxima > 0
+        ? clase.capacidad_maxima - totalBeneficiarios
+        : null;
 
-    const porcentajeOcupacion = clase.capacidad_maxima > 0
-      ? ((totalBeneficiarios / clase.capacidad_maxima) * 100).toFixed(2)
-      : null;
+    const porcentajeOcupacion =
+      clase.capacidad_maxima > 0
+        ? ((totalBeneficiarios / clase.capacidad_maxima) * 100).toFixed(2)
+        : null;
 
     return {
       clase: {
@@ -294,22 +338,24 @@ export class ClasesService {
         codigo: clase.codigo,
         tutor: {
           id: clase.tutor.id,
-          nombre: `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim()
+          nombre: `${clase.tutor.nombre} ${clase.tutor.apellido || ''}`.trim(),
         },
-        horarios: clase.horarios.map(h => ({
+        horarios: clase.horarios.map((h) => ({
           id: h.id,
           dia: h.dia,
           hora_inicio: h.hora_inicio,
-          hora_fin: h.hora_fin
-        }))
+          hora_fin: h.hora_fin,
+        })),
       },
       estadisticas: {
         totalBeneficiarios,
         capacidadMaxima: clase.capacidad_maxima || 'Sin límite',
         capacidadDisponible,
-        porcentajeOcupacion: porcentajeOcupacion ? `${porcentajeOcupacion}%` : 'N/A',
-        totalAsistenciasRegistradas: totalAsistencias
-      }
+        porcentajeOcupacion: porcentajeOcupacion
+          ? `${porcentajeOcupacion}%`
+          : 'N/A',
+        totalAsistenciasRegistradas: totalAsistencias,
+      },
     };
   }
 
@@ -317,7 +363,7 @@ export class ClasesService {
   async findByTutor(tutorId: string): Promise<Clase[]> {
     return await this.clasesRepository.find({
       where: { tutor: { id: tutorId }, activo: true },
-      relations: ['horarios', 'beneficiarios']
+      relations: ['horarios', 'beneficiarios'],
     });
   }
 }

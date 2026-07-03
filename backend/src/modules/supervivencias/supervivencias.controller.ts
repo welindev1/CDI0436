@@ -63,7 +63,7 @@ export class SupervivenciasController {
   @RequierePermiso('supervivencia:editar')
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateSupervivenciaDto: UpdateSupervivenciaDto
+    @Body() updateSupervivenciaDto: UpdateSupervivenciaDto,
   ) {
     return this.supervivenciasService.update(id, updateSupervivenciaDto);
   }
@@ -72,9 +72,12 @@ export class SupervivenciasController {
   @RequierePermiso('supervivencia:editar')
   agregarBeneficiarios(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() agregarBeneficiariosDto: AgregarBeneficiariosSupervivenciaDto
+    @Body() agregarBeneficiariosDto: AgregarBeneficiariosSupervivenciaDto,
   ) {
-    return this.supervivenciasService.agregarBeneficiarios(id, agregarBeneficiariosDto);
+    return this.supervivenciasService.agregarBeneficiarios(
+      id,
+      agregarBeneficiariosDto,
+    );
   }
 
   @Delete(':id/beneficiarios/:beneficiarioId')
@@ -82,7 +85,7 @@ export class SupervivenciasController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removerBeneficiario(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string
+    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
   ) {
     return this.supervivenciasService.removerBeneficiario(id, beneficiarioId);
   }
@@ -106,16 +109,19 @@ export class SupervivenciasController {
   @HttpCode(HttpStatus.CREATED)
   registrarAsistencia(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() registrarAsistenciaDto: RegistrarAsistenciaSupervivenciaDto
+    @Body() registrarAsistenciaDto: RegistrarAsistenciaSupervivenciaDto,
   ) {
-    return this.supervivenciasService.registrarAsistencia(id, registrarAsistenciaDto);
+    return this.supervivenciasService.registrarAsistencia(
+      id,
+      registrarAsistenciaDto,
+    );
   }
 
   @Get(':id/asistencias')
   @RequierePermiso('supervivencia:ver')
   getAsistenciasPorFecha(
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('fecha') fecha: string
+    @Query('fecha') fecha: string,
   ) {
     return this.supervivenciasService.getAsistenciasPorFecha(id, fecha);
   }
@@ -125,9 +131,13 @@ export class SupervivenciasController {
   getHistorialAsistencias(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('fechaInicio') fechaInicio?: string,
-    @Query('fechaFin') fechaFin?: string
+    @Query('fechaFin') fechaFin?: string,
   ) {
-    return this.supervivenciasService.getHistorialAsistencias(id, fechaInicio, fechaFin);
+    return this.supervivenciasService.getHistorialAsistencias(
+      id,
+      fechaInicio,
+      fechaFin,
+    );
   }
 
   @Get(':id/asistencias/fechas')
@@ -146,9 +156,13 @@ export class SupervivenciasController {
     @Body('fecha') fecha: string,
     @Body('imagen') imagen: string,
   ) {
-    if (!imagen) throw new BadRequestException('No se proporcionó ninguna imagen');
+    if (!imagen)
+      throw new BadRequestException('No se proporcionó ninguna imagen');
     if (!fecha) throw new BadRequestException('Debe proporcionar la fecha');
-    if (!imagen.startsWith('data:image/')) throw new BadRequestException('Formato de imagen inválido. Debe ser Base64');
+    if (!imagen.startsWith('data:image/'))
+      throw new BadRequestException(
+        'Formato de imagen inválido. Debe ser Base64',
+      );
 
     return this.supervivenciasService.subirFotoAsistencia(id, fecha, imagen);
   }
@@ -165,9 +179,7 @@ export class SupervivenciasController {
   @Delete(':id/asistencias/foto/:fotoId')
   @RequierePermiso('supervivencia:eliminar')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async eliminarFotoAsistencia(
-    @Param('fotoId', ParseUUIDPipe) fotoId: string,
-  ) {
+  async eliminarFotoAsistencia(@Param('fotoId', ParseUUIDPipe) fotoId: string) {
     return this.supervivenciasService.eliminarFotoAsistencia(fotoId);
   }
 }

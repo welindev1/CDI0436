@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 import { Asistencia } from '../asistencias/asistencia.entity';
 import { Supervivencia } from '../supervivencias/supervivencia.entity';
@@ -38,16 +47,22 @@ export class Beneficiario {
   @Column({ length: 100, nullable: true })
   correo: string;
 
-  @ManyToMany(() => Clase, clase => clase.beneficiarios)
+  @ManyToMany(() => Clase, (clase) => clase.beneficiarios)
   clases: Clase[];
 
-  @ManyToMany(() => Supervivencia, supervivencia => supervivencia.beneficiarios)
+  @ManyToMany(
+    () => Supervivencia,
+    (supervivencia) => supervivencia.beneficiarios,
+  )
   supervivencias: Supervivencia[];
 
-  @OneToMany(() => Asistencia, asistencia => asistencia.beneficiario)
+  @OneToMany(() => Asistencia, (asistencia) => asistencia.beneficiario)
   asistencias: Asistencia[];
 
-  @OneToMany(() => BeneficiarioExpediente, expediente => expediente.beneficiario)
+  @OneToMany(
+    () => BeneficiarioExpediente,
+    (expediente) => expediente.beneficiario,
+  )
   expedientes: BeneficiarioExpediente[];
 
   @OneToMany('NotaMerito', 'beneficiario')

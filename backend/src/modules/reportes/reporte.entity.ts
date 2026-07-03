@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, Index, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  Index,
+  JoinColumn,
+} from 'typeorm';
 import { Usuario } from '../usuarios/usuario.entity';
 
 export enum TipoReporte {
@@ -24,13 +32,13 @@ export class Reporte {
 
   @Column({
     type: 'enum',
-    enum: TipoReporte
+    enum: TipoReporte,
   })
   tipo: TipoReporte;
 
   @Column({
     type: 'enum',
-    enum: FormatoReporte
+    enum: FormatoReporte,
   })
   formato: FormatoReporte;
 

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Res, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Res,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { AyudasService } from './ayudas.service';
 import { CreateAyudaDto } from './dto/create-ayuda.dto';
 import { UpdateEstadoAyudaDto } from './dto/update-estado-ayuda.dto';
@@ -34,7 +45,8 @@ export class AyudasController {
 
     const fecha = new Date().toISOString().split('T')[0];
     res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename=ayudas_${fecha}.xlsx`,
       'Content-Length': buffer.length,
     });
@@ -50,13 +62,19 @@ export class AyudasController {
 
   @Patch(':id/estado')
   @RequierePermiso('ayudas:editar')
-  updateEstado(@Param('id', ParseUUIDPipe) id: string, @Body() updateEstadoDto: UpdateEstadoAyudaDto) {
+  updateEstado(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateEstadoDto: UpdateEstadoAyudaDto,
+  ) {
     return this.ayudasService.updateEstado(id, updateEstadoDto);
   }
 
   @Patch(':id/foto-entrega')
   @RequierePermiso('ayudas:editar')
-  updateFotoEntrega(@Param('id', ParseUUIDPipe) id: string, @Body() updateFotoEntregaDto: UpdateFotoEntregaDto) {
+  updateFotoEntrega(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateFotoEntregaDto: UpdateFotoEntregaDto,
+  ) {
     return this.ayudasService.updateFotoEntrega(id, updateFotoEntregaDto);
   }
 

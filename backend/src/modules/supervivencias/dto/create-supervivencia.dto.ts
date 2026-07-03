@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsInt, Min, MaxLength, IsBoolean, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  Min,
+  MaxLength,
+  IsBoolean,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateSupervivenciaDto {
   @IsString()

@@ -18,7 +18,10 @@ export class CreateAyudaDto {
   @IsNotEmpty({ message: 'El nombre del tutor es requerido' })
   nombre_tutor: string;
 
-  @IsEnum(TipoAyuda, { message: 'El tipo de ayuda debe ser valida (medica, alimentos, pequeno_negocio, educacion, otros)' })
+  @IsEnum(TipoAyuda, {
+    message:
+      'El tipo de ayuda debe ser valida (medica, alimentos, pequeno_negocio, educacion, otros)',
+  })
   @IsNotEmpty({ message: 'El tipo de ayuda es requerido' })
   tipo: TipoAyuda;
 

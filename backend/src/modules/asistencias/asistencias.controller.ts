@@ -80,7 +80,11 @@ export class AsistenciasController {
     @Query('fechaInicio') fechaInicio?: string,
     @Query('fechaFin') fechaFin?: string,
   ) {
-    return this.asistenciasService.getReportePorClase(claseId, fechaInicio, fechaFin);
+    return this.asistenciasService.getReportePorClase(
+      claseId,
+      fechaInicio,
+      fechaFin,
+    );
   }
 
   @Get('reporte/beneficiario/:beneficiarioId')
@@ -194,7 +198,9 @@ export class AsistenciasController {
 
     // Validar que sea una imagen Base64 válida
     if (!imagen.startsWith('data:image/')) {
-      throw new BadRequestException('Formato de imagen inválido. Debe ser Base64');
+      throw new BadRequestException(
+        'Formato de imagen inválido. Debe ser Base64',
+      );
     }
 
     return this.asistenciasService.subirFotoAsistencia(claseId, fecha, imagen);

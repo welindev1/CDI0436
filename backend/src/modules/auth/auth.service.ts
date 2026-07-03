@@ -28,8 +28,7 @@ export class AuthService {
     this.logger.log(`Usuario logueado exitosamente: ${usuario.correo}`);
 
     // Extraer códigos de permisos
-    const permisos =
-      usuario.rol?.permisos?.map((p) => p.codigo) || [];
+    const permisos = usuario.rol?.permisos?.map((p) => p.codigo) || [];
 
     const payload = {
       sub: usuario.id,
@@ -66,8 +65,7 @@ export class AuthService {
         throw new UnauthorizedException();
       }
 
-      const permisos =
-        usuario.rol?.permisos?.map((p) => p.codigo) || [];
+      const permisos = usuario.rol?.permisos?.map((p) => p.codigo) || [];
 
       return {
         id: usuario.id,
@@ -83,7 +81,7 @@ export class AuthService {
           : null,
         permisos: usuario.rol?.es_super_admin ? ['*'] : permisos,
       };
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Token inválido');
     }
   }

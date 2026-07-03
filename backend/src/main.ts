@@ -9,7 +9,6 @@ import * as express from 'express';
 // Custom exception filter and validation pipe
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from './common/pipes/validation.pipe';
-import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -38,7 +37,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-  
+
   // ========================================
   // Global Exception Filter
   // ========================================
