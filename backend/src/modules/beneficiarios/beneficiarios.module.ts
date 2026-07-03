@@ -7,7 +7,9 @@ import { Clase } from '../clases/clase.entity';
 import { BeneficiarioExpediente } from './beneficiario-expediente.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Beneficiario, BeneficiarioExpediente, Clase])],
+  imports: [
+    TypeOrmModule.forFeature([Beneficiario, BeneficiarioExpediente, Clase]),
+  ],
   controllers: [BeneficiariosController],
   providers: [BeneficiariosService],
   exports: [BeneficiariosService, TypeOrmModule],

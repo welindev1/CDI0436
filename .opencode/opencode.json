@@ -1,52 +1,50 @@
 {
-  "agents": {
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
     "architect": {
       "description": "Arquitecto de software que define arquitectura, revisa estructura y produce planes de implementación.",
-      "system": "file://./agents/architect-agent.md",
-      "label": "Architect",
-      "fileRegex": "backend/src/**/*.ts"
+      "mode": "subagent",
+      "prompt": "{file:./agents/architect-agent.md}"
     },
     "qa": {
       "description": "Agente de calidad que encuentra bugs, edge cases y genera checklists de regresión.",
-      "system": "file://./agents/qa-agent.md",
-      "label": "QA"
+      "mode": "subagent",
+      "prompt": "{file:./agents/qa-agent.md}"
     },
     "refactor": {
       "description": "Encargado de refactorización eliminando duplicación, mejorando naming y aplicando SOLID.",
-      "system": "file://./agents/refactor-agent.md",
-      "label": "Refactor"
+      "mode": "subagent",
+      "prompt": "{file:./agents/refactor-agent.md}"
     },
     "backend": {
       "description": "Experto en NestJS con controladores, servicios, módulos, JWT, validación y DTOs.",
-      "system": "file://./agents/backend-agent.md",
-      "label": "Backend",
-      "fileRegex": "backend/**/*.ts"
+      "mode": "subagent",
+      "prompt": "{file:./agents/backend-agent.md}"
     },
     "frontend": {
       "description": "Experto en Next.js, React, TypeScript y Tailwind para componentes reutilizables y UI responsive.",
-      "system": "file://./agents/frontend-agent.md",
-      "label": "Frontend",
-      "fileRegex": "frontend/**/*.tsx"
+      "mode": "subagent",
+      "prompt": "{file:./agents/frontend-agent.md}"
     },
     "database": {
       "description": "Experto en PostgreSQL/Neon para esquemas, índices, migraciones y optimización de consultas.",
-      "system": "file://./agents/database-agent.md",
-      "label": "Database"
+      "mode": "subagent",
+      "prompt": "{file:./agents/database-agent.md}"
     },
     "documentation": {
       "description": "Encargado de documentación técnica incluyendo README, API docs, changelog y docs de arquitectura.",
-      "system": "file://./agents/documentation-agent.md",
-      "label": "Documentation"
+      "mode": "subagent",
+      "prompt": "{file:./agents/documentation-agent.md}"
     },
     "performance": {
       "description": "Especialista en optimización de rendimiento con lazy loading, imports dinámicos y reducción de renders.",
-      "system": "file://./agents/performance-agent.md",
-      "label": "Performance"
+      "mode": "subagent",
+      "prompt": "{file:./agents/performance-agent.md}"
     },
     "security": {
       "description": "Especialista en seguridad revisando autenticación, secretos, XSS, CSRF e inyección.",
-      "system": "file://./agents/security-agent.md",
-      "label": "Security"
+      "mode": "subagent",
+      "prompt": "{file:./agents/security-agent.md}"
     }
   }
 }

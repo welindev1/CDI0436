@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  Index,
+} from 'typeorm';
 import { NotaMerito } from './nota-merito.entity';
 
 @Entity('periodos_merito')
@@ -17,7 +25,7 @@ export class PeriodoMerito {
   @Column({ default: 'activo' })
   estado: string; // 'activo' | 'cerrado'
 
-  @OneToMany(() => NotaMerito, nota => nota.periodo)
+  @OneToMany(() => NotaMerito, (nota) => nota.periodo)
   notas: NotaMerito[];
 
   @CreateDateColumn()

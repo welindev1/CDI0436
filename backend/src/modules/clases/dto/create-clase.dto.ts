@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsUUID, IsInt, Min, MaxLength, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsInt,
+  Min,
+  MaxLength,
+  IsArray,
+} from 'class-validator';
 
 export class CreateClaseDto {
   @IsString()

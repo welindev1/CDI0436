@@ -44,20 +44,25 @@ export class WebhookService {
         timeout: 10000, // 10 segundos timeout
       });
 
-      this.logger.log(`Webhook enviado exitosamente. Status: ${response.status}`);
+      this.logger.log(
+        `Webhook enviado exitosamente. Status: ${response.status}`,
+      );
       return true;
     } catch (error: any) {
       this.logger.error(`Error enviando webhook a n8n: ${error.message}`);
       if (error.response) {
         this.logger.error(`Response status: ${error.response.status}`);
-        this.logger.error(`Response data: ${JSON.stringify(error.response.data)}`);
+        this.logger.error(
+          `Response data: ${JSON.stringify(error.response.data)}`,
+        );
       }
       return false;
     }
   }
 
-  async notificarCambioEstado(ayuda: any, nuevoEstado: string): Promise<void> {
-    const evento = nuevoEstado === 'aprobada' ? 'ayuda_aprobada' : 'ayuda_rechazada';
+  notificarCambioEstado(ayuda: any, nuevoEstado: string): void {
+    const evento =
+      nuevoEstado === 'aprobada' ? 'ayuda_aprobada' : 'ayuda_rechazada';
 
     const payload: WebhookPayload = {
       evento,
@@ -77,7 +82,7 @@ export class WebhookService {
     };
 
     // Enviar de forma asíncrona (no bloquea la respuesta)
-    this.enviarWebhook(payload).catch(err => {
+    this.enviarWebhook(payload).catch((err) => {
       this.logger.error('Error en webhook asíncrono:', err);
     });
   }

@@ -9,14 +9,18 @@ export class WhatsappService {
   private readonly apiUrl: string;
 
   constructor(private configService: ConfigService) {
-    this.phoneNumberId = this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID') || '';
-    this.accessToken = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN') || '';
+    this.phoneNumberId =
+      this.configService.get<string>('WHATSAPP_PHONE_NUMBER_ID') || '';
+    this.accessToken =
+      this.configService.get<string>('WHATSAPP_ACCESS_TOKEN') || '';
     this.apiUrl = `https://graph.facebook.com/v22.0/${this.phoneNumberId}/messages`;
   }
 
   async enviarMensaje(telefono: string, mensaje: string): Promise<boolean> {
     if (!this.phoneNumberId || !this.accessToken) {
-      this.logger.warn('WhatsApp no configurado: faltan WHATSAPP_PHONE_NUMBER_ID o WHATSAPP_ACCESS_TOKEN');
+      this.logger.warn(
+        'WhatsApp no configurado: faltan WHATSAPP_PHONE_NUMBER_ID o WHATSAPP_ACCESS_TOKEN',
+      );
       return false;
     }
 
@@ -32,7 +36,7 @@ export class WhatsappService {
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  JoinColumn,
+} from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
 import { Usuario } from '../usuarios/usuario.entity';
@@ -9,7 +18,9 @@ export enum EstadoAsistencia {
 }
 
 @Entity('asistencias')
-@Index('IDX_ASISTENCIAS_UNICA', ['clase', 'beneficiario', 'fecha'], { unique: true })
+@Index('IDX_ASISTENCIAS_UNICA', ['clase', 'beneficiario', 'fecha'], {
+  unique: true,
+})
 @Index('IDX_ASISTENCIAS_CLASE_ID', ['clase'])
 @Index('IDX_ASISTENCIAS_BENEFICIARIO_ID', ['beneficiario'])
 @Index('IDX_ASISTENCIAS_FECHA', ['fecha'])
@@ -19,10 +30,12 @@ export class Asistencia {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Clase, clase => clase.asistencias, { eager: true })
+  @ManyToOne(() => Clase, (clase) => clase.asistencias, { eager: true })
   clase: Clase;
 
-  @ManyToOne(() => Beneficiario, beneficiario => beneficiario.asistencias, { eager: true })
+  @ManyToOne(() => Beneficiario, (beneficiario) => beneficiario.asistencias, {
+    eager: true,
+  })
   beneficiario: Beneficiario;
 
   @Column({ type: 'date' })
@@ -31,7 +44,7 @@ export class Asistencia {
   @Column({
     type: 'enum',
     enum: EstadoAsistencia,
-    default: EstadoAsistencia.AUSENTE
+    default: EstadoAsistencia.AUSENTE,
   })
   estado: EstadoAsistencia;
 
