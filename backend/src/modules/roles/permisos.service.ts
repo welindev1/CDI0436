@@ -105,42 +105,46 @@ export class PermisosService implements OnModuleInit {
   }
 
   async seedRolesAndAdmin(): Promise<void> {
-    // Crear rol Super Admin si no existe
-    let rolSuperAdmin = await this.rolesRepository.findOne({
-      where: { es_super_admin: true },
-    });
-
-    if (!rolSuperAdmin) {
-      const todosLosPermisos = await this.permisosRepository.find();
-      rolSuperAdmin = this.rolesRepository.create({
-        nombre: 'Super Administrador',
-        descripcion: 'Acceso completo a todas las funcionalidades del sistema',
-        es_super_admin: true,
-        activo: true,
-        permisos: todosLosPermisos,
+    try {
+      // Crear rol Super Admin si no existe
+      let rolSuperAdmin = await this.rolesRepository.findOne({
+        where: { es_super_admin: true },
       });
-      await this.rolesRepository.save(rolSuperAdmin);
-      console.log('[Seed] Rol Super Administrador creado');
-    }
 
-    // Crear usuario admin si no existe
-    const adminEmail = 'admin@cdi.com';
-    const adminUser = await this.usuariosRepository.findOne({
-      where: { correo: adminEmail },
-    });
+      if (!rolSuperAdmin) {
+        const todosLosPermisos = await this.permisosRepository.find();
+        rolSuperAdmin = this.rolesRepository.create({
+          nombre: 'Super Administrador',
+          descripcion: 'Acceso completo a todas las funcionalidades del sistema',
+          es_super_admin: true,
+          activo: true,
+          permisos: todosLosPermisos,
+        });
+        await this.rolesRepository.save(rolSuperAdmin);
+        console.log('[Seed] Rol Super Administrador creado');
+      }
 
-    if (!adminUser) {
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash('admin123', salt);
-      const newUser = this.usuariosRepository.create({
-        nombre: 'Super Administrador',
-        correo: adminEmail,
-        password_hash: passwordHash,
-        rol_id: rolSuperAdmin.id,
-        activo: true,
+      // Crear usuario admin si no existe
+      const adminEmail = 'admin@cdi.com';
+      const adminUser = await this.usuariosRepository.findOne({
+        where: { correo: adminEmail },
       });
-      await this.usuariosRepository.save(newUser);
-      console.log('[Seed] Usuario admin creado: admin@cdi.com / admin123');
+
+      if (!adminUser) {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash('admin123', salt);
+        const newUser = this.usuariosRepository.create({
+          nombre: 'Super Administrador',
+          correo: adminEmail,
+          password_hash: passwordHash,
+          rol_id: rolSuperAdmin.id,
+          activo: true,
+        });
+        await this.usuariosRepository.save(newUser);
+        console.log('[Seed] Usuario admin creado: admin@cdi.com / admin123');
+      }
+    } catch (error) {
+      console.error('[Seed] Error (non-critical):', error.message);
     }
   }
 
