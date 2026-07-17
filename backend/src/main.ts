@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as express from 'express';
+import { DataSource } from 'typeorm';
 
 // Custom exception filter and validation pipe
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -14,6 +15,23 @@ import { Logger } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
+  // Run migrations on startup (only in production)
+  if (configService.get('NODE_ENV') === 'production') {
+    const logger = new Logger('Migration');
+    try {
+      const dataSource = app.get(DataSource);
+      logger.log('Running pending migrations...');
+      const migrations = await dataSource.runMigrations();
+      if (migrations.length === 0) {
+        logger.log('No pending migrations.');
+      } else {
+        logger.log(`${migrations.length} migration(s) executed successfully.`);
+      }
+    } catch (error) {
+      logger.error('Failed to run migrations:', error);
+    }
+  }
 
   // Aumentar limite para fotos en base64 (10MB)
   app.use(express.json({ limit: '10mb' }));
