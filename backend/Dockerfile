@@ -8,7 +8,8 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+# Force clean build - remove any stale dist artifacts before compiling
+RUN rm -rf dist && npm run build
 
 EXPOSE 3001
 
