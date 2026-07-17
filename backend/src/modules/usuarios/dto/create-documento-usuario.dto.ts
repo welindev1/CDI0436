@@ -6,7 +6,6 @@ import {
   Max,
   MaxLength,
   IsEnum,
-  IsUUID,
 } from 'class-validator';
 import { TipoDocumentoUsuario } from '../documento-usuario.entity';
 
