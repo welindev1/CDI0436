@@ -50,7 +50,7 @@ export class Tutor {
   tipo: TipoTutor;
 
   @OneToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'usuarioId' })
+  @JoinColumn({ name: 'usuario_id' })
   usuario: Usuario;
 
   @OneToMany(() => Clase, (clase) => clase.tutor)
