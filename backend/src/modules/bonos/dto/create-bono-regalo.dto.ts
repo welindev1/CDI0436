@@ -28,7 +28,7 @@ export class CreateBonoRegaloDto {
 
   @Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return 0;
-    const cleaned = String(value).replace(/[^0-9.\-]/g, '');
+    const cleaned = String(value).replace(/[^0-9.-]/g, '');
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : num;
   })
