@@ -33,4 +33,4 @@ postgres_data/
 
 # Misc
 .claude/
-.gemini/
+.gemini/backend/_check_db.js
