@@ -1,5 +1,6 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsBoolean, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { TipoTutor } from '../tutor.entity';
 
 export class FilterTutorDto {
   @IsOptional()
@@ -22,4 +23,8 @@ export class FilterTutorDto {
   @IsOptional()
   @IsString()
   especialidad?: string;
+
+  @IsOptional()
+  @IsEnum(TipoTutor)
+  tipo?: TipoTutor;
 }

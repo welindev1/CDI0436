@@ -88,6 +88,25 @@ export {
   horariosKeys,
 } from './useHorarios';
 
+// Clubs
+export {
+  useClubs,
+  useClub,
+  useCreateClub,
+  useUpdateClub,
+  useDeleteClub,
+  useRegistrarAsistenciaClub,
+  useAsistenciasClub,
+  useClubEstadisticas,
+  useFechasConAsistenciaClub,
+  useFotosClub,
+  useSubirFotoClub,
+  useEliminarFotoClub,
+  useAgregarBeneficiariosClub,
+  useRemoverBeneficiarioClub,
+  clubsKeys,
+} from './useClubs';
+
 // Supervivencias
 export {
   useSupervivencias,
@@ -150,6 +169,29 @@ export {
   dashboardKeys,
 } from './useDashboard';
 
+// Asistencia Personal
+export {
+  useTrabajadores,
+  useCreateTrabajador,
+  useUpdateTrabajador,
+  useDeleteTrabajador,
+  useAsistenciaPersonal,
+  useMarcarEntrada,
+  useMarcarSalida,
+  useEliminarAsistencia,
+  useActualizarNotas,
+  asistenciaPersonalKeys,
+} from './useAsistenciaPersonal';
+
+// Documentos de Usuarios
+export {
+  useDocumentosUsuario,
+  useSubirDocumento,
+  useEliminarDocumento,
+  useTiposDocumento,
+  documentosKeys,
+} from './useDocumentosUsuario';
+
 // Reportes
 export {
   useReporteClase,
@@ -159,3 +201,13 @@ export {
   useReporteAusencias,
   reportesKeys,
 } from './useReportes';
+
+// Bonos
+export {
+  useBonosRegalos,
+  useBonosEstadisticas,
+  useCrearBonosLote,
+  useMarcarEntregado,
+  useEliminarBono,
+  bonosKeys,
+} from './useBonos';

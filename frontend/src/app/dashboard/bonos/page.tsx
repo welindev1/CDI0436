@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import BonoFilters from '@/components/bonos/BonoFilters';
 import BonoList from '@/components/bonos/BonoList';
-import { calcularFechaExpiracion } from '@/lib/utils/exportBonoPDF';
+import { calcularFechaExpiracion, imprimirBonos } from '@/lib/utils/exportBonoPDF';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import type { BeneficiarioRow } from '@/lib/types';
 import { Gift, X } from 'lucide-react';
@@ -128,37 +128,12 @@ export default function BonosPage() {
       setError('No hay bonos para imprimir. Carga un archivo Excel primero.');
       return;
     }
-    window.print();
+    imprimirBonos(rows, mes, expira);
   };
 
   return (
     <ProtectedRoute requiredPermisos={['bonos:ver']}>
       <DashboardLayout>
-        {/* Print styles */}
-        <style jsx global>{`
-          @media print {
-            body * {
-              visibility: hidden !important;
-            }
-            #bonos-print-area,
-            #bonos-print-area * {
-              visibility: visible !important;
-            }
-            #bonos-print-area {
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
-              width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            @page {
-              size: letter portrait;
-              margin: 0.3in 0.3in 0.3in 0.3in;
-            }
-          }
-        `}</style>
-
         {/* Screen UI */}
         <div className="space-y-6 print:hidden">
           {/* Header */}

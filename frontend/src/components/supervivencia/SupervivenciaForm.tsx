@@ -46,7 +46,7 @@ export default function SupervivenciaForm({ supervivencia, onSubmit, onCancel }:
     try {
       setLoadingTutores(true);
       const data = await tutoresApi.getAll({ activo: 'true' });
-      setTutores(data);
+      setTutores(data.filter(t => t.tipo === 'clase' || t.tipo === 'ambos'));
     } catch (err) {
       console.error('Error al cargar tutores:', err);
     } finally {
