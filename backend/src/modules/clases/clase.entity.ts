@@ -34,7 +34,7 @@ export class Clase {
   codigo: string;
 
   @ManyToOne(() => Tutor, (tutor) => tutor.clases)
-  @JoinColumn({ name: 'tutorId' })
+  @JoinColumn({ name: 'tutor_id' })
   tutor: Tutor;
 
   @ManyToMany(() => Horario, (horario) => horario.clases)

@@ -55,7 +55,7 @@ export class Asistencia {
   hora_registro: string;
 
   @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'registradoPorId' })
+  @JoinColumn({ name: 'registrado_por_id' })
   registrado_por: Usuario;
 
   @Column({ type: 'boolean', default: false })

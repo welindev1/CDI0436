@@ -49,7 +49,7 @@ export class Reporte {
   ruta_archivo: string;
 
   @ManyToOne(() => Usuario)
-  @JoinColumn({ name: 'generadoPorId' })
+  @JoinColumn({ name: 'generado_por_id' })
   generado_por: Usuario;
 
   @Column({ type: 'date', nullable: true })
