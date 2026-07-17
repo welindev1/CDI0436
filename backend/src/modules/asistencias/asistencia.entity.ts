@@ -31,11 +31,13 @@ export class Asistencia {
   id: string;
 
   @ManyToOne(() => Clase, (clase) => clase.asistencias, { eager: true })
+  @JoinColumn({ name: 'clase_id' })
   clase: Clase;
 
   @ManyToOne(() => Beneficiario, (beneficiario) => beneficiario.asistencias, {
     eager: true,
   })
+  @JoinColumn({ name: 'beneficiario_id' })
   beneficiario: Beneficiario;
 
   @Column({ type: 'date' })

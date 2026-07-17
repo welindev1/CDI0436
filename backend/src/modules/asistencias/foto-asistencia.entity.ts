@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  JoinColumn,
 } from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 
@@ -18,6 +19,7 @@ export class FotoAsistencia {
   id: string;
 
   @ManyToOne(() => Clase, { eager: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'clase_id' })
   clase: Clase;
 
   @Column({ type: 'date' })
