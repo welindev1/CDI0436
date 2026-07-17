@@ -11,6 +11,7 @@ import {
 import { Clase } from '../clases/clase.entity';
 import { Asistencia } from '../asistencias/asistencia.entity';
 import { Supervivencia } from '../supervivencias/supervivencia.entity';
+import { Club } from '../clubs/club.entity';
 import { BeneficiarioExpediente } from './beneficiario-expediente.entity';
 
 @Entity('beneficiarios')
@@ -55,6 +56,9 @@ export class Beneficiario {
     (supervivencia) => supervivencia.beneficiarios,
   )
   supervivencias: Supervivencia[];
+
+  @ManyToMany(() => Club, (club) => club.beneficiarios)
+  clubes: Club[];
 
   @OneToMany(() => Asistencia, (asistencia) => asistencia.beneficiario)
   asistencias: Asistencia[];

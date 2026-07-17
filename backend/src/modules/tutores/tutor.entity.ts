@@ -12,10 +12,17 @@ import {
 import { Usuario } from '../usuarios/usuario.entity';
 import { Clase } from '../clases/clase.entity';
 
+export enum TipoTutor {
+  CLASE = 'clase',
+  CLUB = 'club',
+  AMBOS = 'ambos',
+}
+
 @Entity('tutores')
 @Index('IDX_TUTORES_CORREO', ['correo'])
 @Index('IDX_TUTORES_ACTIVO', ['activo'])
 @Index('IDX_TUTORES_USUARIO_ID', ['usuario'])
+@Index('IDX_TUTORES_TIPO', ['tipo'])
 export class Tutor {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,6 +41,13 @@ export class Tutor {
 
   @Column({ type: 'text', nullable: true })
   especialidad: string;
+
+  @Column({
+    type: 'enum',
+    enum: TipoTutor,
+    default: TipoTutor.CLASE,
+  })
+  tipo: TipoTutor;
 
   @OneToOne(() => Usuario, { nullable: true })
   @JoinColumn({ name: 'usuarioId' })

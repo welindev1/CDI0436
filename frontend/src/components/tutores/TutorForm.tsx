@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Alert from '@/components/ui/Alert';
-import { Tutor } from '@/lib/types';
+import { Tutor, TutorTipo } from '@/lib/types';
 
 interface TutorFormProps {
   tutor?: Tutor;
@@ -15,12 +15,20 @@ interface TutorFormProps {
 export default function TutorForm({ tutor, onSubmit, onCancel }: TutorFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    correo: string;
+    especialidad: string;
+    tipo: TutorTipo;
+  }>({
     nombre: '',
     apellido: '',
     telefono: '',
     correo: '',
     especialidad: '',
+    tipo: TutorTipo.CLASE,
   });
 
   useEffect(() => {
@@ -31,6 +39,7 @@ export default function TutorForm({ tutor, onSubmit, onCancel }: TutorFormProps)
         telefono: tutor.telefono || '',
         correo: tutor.correo || '',
         especialidad: tutor.especialidad || '',
+        tipo: (tutor.tipo as TutorTipo) || TutorTipo.CLASE,
       });
     }
   }, [tutor]);
@@ -59,10 +68,11 @@ export default function TutorForm({ tutor, onSubmit, onCancel }: TutorFormProps)
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: name === 'tipo' ? (value as TutorTipo) : value
     }));
   };
 
@@ -122,6 +132,23 @@ export default function TutorForm({ tutor, onSubmit, onCancel }: TutorFormProps)
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Matemáticas, Ciencias, Tecnología..."
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Tipo de Tutor *
+          </label>
+          <select
+            name="tipo"
+            value={formData.tipo}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="clase">Clase</option>
+            <option value="club">Club</option>
+            <option value="ambos">Ambos</option>
+          </select>
         </div>
       </div>
 

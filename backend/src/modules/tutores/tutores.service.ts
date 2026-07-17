@@ -67,6 +67,10 @@ export class TutoresService {
       if (filters.activo !== undefined) {
         query.andWhere('tutor.activo = :activo', { activo: filters.activo });
       }
+
+      if (filters.tipo) {
+        query.andWhere('tutor.tipo = :tipo', { tipo: filters.tipo });
+      }
     }
 
     return await query.getMany();

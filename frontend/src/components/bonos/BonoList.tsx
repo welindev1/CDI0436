@@ -197,68 +197,6 @@ export default function BonoList({
           </div>
         </div>
       )}
-
-      {/* Hidden Print Area */}
-      <div id="bonos-print-area" style={{ display: 'none' }}>
-        <style>{`
-          @media print {
-            #bonos-print-area {
-              display: block !important;
-            }
-            .print-page {
-              page-break-inside: avoid;
-              page-break-after: always;
-              width: 7.9in;
-              height: 10.4in;
-              display: flex;
-              flex-direction: column;
-              gap: 0.2in;
-              justify-content: flex-start;
-              align-items: stretch;
-              margin: 0 auto;
-            }
-            .print-page:last-child {
-              page-break-after: auto;
-            }
-            .print-bond {
-              width: 100%;
-              flex: 0 0 auto;
-              position: relative;
-              overflow: hidden;
-            }
-            .print-bond img {
-              width: 100%;
-              display: block;
-            }
-            .print-field {
-              position: absolute;
-              font-family: Arial, Helvetica, sans-serif;
-              color: #1a1a1a;
-              font-weight: 400;
-              line-height: 1;
-            }
-          }
-        `}</style>
-        {Array.from({ length: Math.ceil(rows.length / 2) }).map((_, pageIdx) => {
-          const pageRows = rows.slice(pageIdx * 2, pageIdx * 2 + 2);
-          return (
-            <div key={pageIdx} className="print-page">
-              {pageRows.map((row) => (
-                <div key={row.id} className="print-bond">
-                  <img src="/bond_template.png" alt="bono" />
-                  <span className="print-field" style={{ top: '35%', left: '44.5%', fontSize: '13pt' }}>{mes}</span>
-                  <span className="print-field" style={{ top: '46.3%', left: '32%', fontSize: '11pt', maxWidth: '27%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.padre}</span>
-                  <span className="print-field" style={{ top: '46.3%', left: '76%', fontSize: '11pt', maxWidth: '18%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.cedula}</span>
-                  <span className="print-field" style={{ top: '55.2%', left: '37%', fontSize: '11pt', maxWidth: '26%', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'inline-block' }}>{row.beneficiario}</span>
-                  <span className="print-field" style={{ top: '55.2%', left: '76%', fontSize: '11pt' }}>{row.codigo}</span>
-                  <span className="print-field" style={{ top: '64.5%', left: '25%', fontSize: '13pt', color: '#1a1a1a' }}>{formatMonto(row.monto)}</span>
-                  <span className="print-field" style={{ top: '80%', left: '66%', fontSize: '11pt', color: 'red' }}>{expira}</span>
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

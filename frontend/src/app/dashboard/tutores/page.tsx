@@ -27,6 +27,7 @@ export default function TutoresPage() {
   const desactivarTutor = useDesactivarTutor();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [tipoFilter, setTipoFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedTutor, setSelectedTutor] = useState<Tutor | undefined>();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -36,12 +37,14 @@ export default function TutoresPage() {
   const error = loadError || pageError;
 
   const filteredTutores = useMemo(() =>
-    tutores.filter(t =>
-      t.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.correo?.toLowerCase().includes(searchTerm.toLowerCase())
-    ),
-    [tutores, searchTerm]
+    tutores.filter(t => {
+      const matchesSearch = t.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.correo?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTipo = !tipoFilter || t.tipo === tipoFilter;
+      return matchesSearch && matchesTipo;
+    }),
+    [tutores, searchTerm, tipoFilter]
   );
 
   const handleCreate = () => {
@@ -159,7 +162,7 @@ export default function TutoresPage() {
           )}
 
           {/* Search */}
-          <TutorFilters searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+          <TutorFilters searchTerm={searchTerm} onSearchChange={setSearchTerm} tipoFilter={tipoFilter} onTipoChange={setTipoFilter} />
 
           {/* Table */}
           <TutorTable
