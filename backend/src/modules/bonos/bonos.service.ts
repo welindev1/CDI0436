@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { BonoRegalo } from './bono-regalo.entity';
 import {
-  CreateBonoRegaloDto,
   CreateBonosRegaloLoteDto,
   MarcarEntregadoDto,
 } from './dto/create-bono-regalo.dto';

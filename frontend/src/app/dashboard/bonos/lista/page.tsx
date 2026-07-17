@@ -35,10 +35,6 @@ export default function ListaRegalosPage() {
   const [paginaActual, setPaginaActual] = useState(1);
   const itemsPorPagina = 10;
 
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [filtroEntregado, filtroMes, busqueda]);
-
   const { data: bonos = [], isLoading } = useBonosRegalos({
     entregado: filtroEntregado,
     mes: filtroMes || undefined,
@@ -143,14 +139,14 @@ export default function ListaRegalosPage() {
                   type="text"
                   placeholder="Buscar por nombre del beneficiario..."
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
               <div>
                 <select
                   value={filtroMes}
-                  onChange={(e) => setFiltroMes(e.target.value)}
+                  onChange={(e) => { setFiltroMes(e.target.value); setPaginaActual(1); }}
                   className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
                   <option value="">Todos los meses</option>
@@ -161,7 +157,7 @@ export default function ListaRegalosPage() {
               </div>
               <div className="flex rounded-lg border border-gray-300 overflow-hidden">
                 <button
-                  onClick={() => setFiltroEntregado(undefined)}
+                  onClick={() => { setFiltroEntregado(undefined); setPaginaActual(1); }}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     filtroEntregado === undefined
                       ? 'bg-purple-600 text-white'
@@ -171,7 +167,7 @@ export default function ListaRegalosPage() {
                   Todos
                 </button>
                 <button
-                  onClick={() => setFiltroEntregado(false)}
+                  onClick={() => { setFiltroEntregado(false); setPaginaActual(1); }}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     filtroEntregado === false
                       ? 'bg-orange-500 text-white'
@@ -181,7 +177,7 @@ export default function ListaRegalosPage() {
                   Pendientes
                 </button>
                 <button
-                  onClick={() => setFiltroEntregado(true)}
+                  onClick={() => { setFiltroEntregado(true); setPaginaActual(1); }}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     filtroEntregado === true
                       ? 'bg-green-600 text-white'
