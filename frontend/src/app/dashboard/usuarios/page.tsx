@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Alert from '@/components/ui/Alert';
@@ -16,6 +17,7 @@ import { Plus, Users, UserCheck, UserX, Wand2 } from 'lucide-react';
 import type { Usuario, Rol } from '@/lib/types';
 
 export default function UsuariosPage() {
+  const router = useRouter();
   const { tienePermiso } = useAuth();
   const [roles, setRoles] = useState<Rol[]>([]);
   const [error, setError] = useState('');
@@ -203,6 +205,7 @@ export default function UsuariosPage() {
             onEdit={openEditModal}
             onDelete={(usuario) => { setUsuarioToDelete(usuario); setShowDeleteConfirm(true); }}
             onResetPassword={(usuario) => { setResetPasswordUsuario(usuario); setNewPassword(''); setFormError(''); setShowPasswordModal(true); }}
+            onDocuments={(usuario) => router.push(`/dashboard/usuarios/${usuario.id}/documentos`)}
             onCreate={openCreateModal}
           />
         </div>

@@ -73,6 +73,12 @@ export interface Rol {
   actualizado_en?: string;
 }
 
+export enum TutorTipo {
+  CLASE = 'clase',
+  CLUB = 'club',
+  AMBOS = 'ambos',
+}
+
 // Interfaces
 export interface Usuario {
   id: string;
@@ -93,6 +99,7 @@ export interface Tutor {
   telefono?: string;
   correo?: string;
   especialidad?: string;
+  tipo: TutorTipo;
   activo: boolean;
   clases?: Clase[];
   creado_en: string;
@@ -127,6 +134,7 @@ export interface Beneficiario {
   actualizado_en: string;
   clases?: Clase[];
   supervivencias?: Supervivencia[];
+  clubes?: Club[];
 }
 
 export interface Clase {
@@ -470,6 +478,66 @@ export interface ResumenClase {
   tutor: string | null;
   totalInscritos: number;
   totalPresentes: number;
+}
+
+// Club types
+export interface Club {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  codigo?: string;
+  tutor?: Tutor;
+  beneficiarios: Beneficiario[];
+  capacidad_maxima: number;
+  activo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface AsistenciaClub {
+  id: string;
+  club: Club;
+  beneficiario: Beneficiario;
+  fecha: string;
+  presente: boolean;
+  observaciones?: string;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+export interface AsistenciaClubBeneficiario {
+  beneficiario: {
+    id: string;
+    nombre: string;
+    apellido?: string;
+    codigo: string;
+  };
+  presente: boolean | null;
+  observaciones?: string | null;
+  asistencia_id?: string | null;
+}
+
+export interface AsistenciaClubResponse {
+  fecha: string;
+  club: {
+    id: string;
+    nombre: string;
+    codigo?: string;
+  };
+  asistencias: AsistenciaClubBeneficiario[];
+  estadisticas: {
+    total: number;
+    presentes: number;
+    ausentes: number;
+    sinRegistrar: number;
+  };
+}
+
+export interface ClubFoto {
+  id: string;
+  imagen_url: string;
+  fecha: string;
+  creado_en: string;
 }
 
 // Supervivencia-specific types

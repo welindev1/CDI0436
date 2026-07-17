@@ -283,6 +283,20 @@ export const PERMISOS_SISTEMA = [
     accion: 'generar',
     descripcion: 'Permite generar e imprimir bonos de regalo',
   },
+  {
+    codigo: 'bonos:regalos:crear',
+    nombre: 'Crear bonos de regalos',
+    modulo: 'bonos',
+    accion: 'crear',
+    descripcion: 'Permite subir Excel y guardar bonos de regalos en la base de datos',
+  },
+  {
+    codigo: 'bonos:regalos:entregar',
+    nombre: 'Entregar bonos de regalos',
+    modulo: 'bonos',
+    accion: 'entregar',
+    descripcion: 'Permite subir fotos de entrega y marcar bonos como entregados',
+  },
 
   // Reportes Generales
   {
@@ -346,6 +360,36 @@ export const PERMISOS_SISTEMA = [
     modulo: 'cumpleanos',
     accion: 'ver',
     descripcion: 'Permite ver los cumpleaños de los beneficiarios',
+  },
+
+  // Clubs
+  {
+    codigo: 'clubs:ver',
+    nombre: 'Ver clubs',
+    modulo: 'clubs',
+    accion: 'ver',
+    descripcion: 'Permite ver la lista de clubs',
+  },
+  {
+    codigo: 'clubs:crear',
+    nombre: 'Crear clubs',
+    modulo: 'clubs',
+    accion: 'crear',
+    descripcion: 'Permite crear nuevos clubs',
+  },
+  {
+    codigo: 'clubs:editar',
+    nombre: 'Editar clubs',
+    modulo: 'clubs',
+    accion: 'editar',
+    descripcion: 'Permite editar clubs existentes',
+  },
+  {
+    codigo: 'clubs:eliminar',
+    nombre: 'Eliminar clubs',
+    modulo: 'clubs',
+    accion: 'eliminar',
+    descripcion: 'Permite eliminar clubs',
   },
 
   // Mérito Estudiantil

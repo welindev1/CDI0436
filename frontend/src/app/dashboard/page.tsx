@@ -1,30 +1,40 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Users, BookOpen, ClipboardCheck, TrendingUp, Calendar, Loader2 } from 'lucide-react';
+import { Users, BookOpen, ClipboardCheck, TrendingUp, Calendar, Loader2, Gift, HeartHandshake, Camera, ChevronRight, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { beneficiariosApi } from '@/lib/api/beneficiarios';
 import { clasesApi } from '@/lib/api/clases';
+import { ayudasApi, Ayuda } from '@/lib/api/ayudas';
+import { bonosRegalosApi, BonoRegalo } from '@/lib/api/bonos';
 import { Beneficiario, Clase } from '@/lib/types';
 import { calcularEdad } from '@/lib/utils/formatters';
 
 export default function DashboardPage() {
   const { usuario } = useAuth();
+  const router = useRouter();
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [clases, setClases] = useState<Clase[]>([]);
+  const [bonosPendientes, setBonosPendientes] = useState<BonoRegalo[]>([]);
+  const [ayudasPendientes, setAyudasPendientes] = useState<Ayuda[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [bens, cls] = await Promise.all([
+        const [bens, cls, bonos, ayudas] = await Promise.all([
           beneficiariosApi.getAll(),
           clasesApi.getAll(),
+          bonosRegalosApi.getAll({ entregado: false }),
+          ayudasApi.findAll(),
         ]);
         setBeneficiarios(bens);
         setClases(cls);
+        setBonosPendientes(bonos);
+        setAyudasPendientes(ayudas.filter(a => a.estado === 'pendiente'));
       } catch (err) {
         console.error('Error cargando datos del dashboard:', err);
       } finally {
@@ -171,83 +181,108 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Bottom Grid */}
+          {/* Bottom Grid - Acceso Rápido */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Últimos Beneficiarios */}
+            {/* Bonos Pendientes */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Últimos Beneficiarios
-                </h2>
-                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">Recientes</span>
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-red-500" />
+                  <h2 className="text-lg font-semibold text-gray-900">Bonos Pendientes</h2>
+                </div>
+                <button
+                  onClick={() => router.push('/dashboard/bonos/lista')}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                >
+                  Ver todos <ChevronRight className="w-3 h-3" />
+                </button>
               </div>
-              {ultimosBeneficiarios.length === 0 ? (
+              {bonosPendientes.length === 0 ? (
                 <div className="text-center py-8">
-                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No hay beneficiarios registrados</p>
+                  <Gift className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No hay bonos pendientes</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {ultimosBeneficiarios.map((ben) => (
-                    <div key={ben.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                        {ben.nombre.charAt(0).toUpperCase()}
+                  {bonosPendientes.slice(0, 5).map((bono) => (
+                    <div
+                      key={bono.id}
+                      onClick={() => router.push('/dashboard/bonos/lista')}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-sm font-bold flex-shrink-0">
+                        {bono.beneficiario_nombre.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 text-sm truncate">
-                          {ben.nombre} {ben.apellido || ''}
+                          {bono.beneficiario_nombre}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {ben.codigo}
-                          {ben.fecha_nacimiento && ` • ${calcularEdad(ben.fecha_nacimiento)} años`}
+                          {bono.codigo} • RD${bono.monto.toLocaleString('es-DO')}
                         </p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${ben.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {ben.activo ? 'Activo' : 'Inactivo'}
-                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Camera className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      </div>
                     </div>
                   ))}
+                  {bonosPendientes.length > 5 && (
+                    <p className="text-xs text-center text-gray-400 pt-1">
+                      y {bonosPendientes.length - 5} bonos más...
+                    </p>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Clases */}
+            {/* Ayudas Pendientes */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Clases Registradas
-                </h2>
-                <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{clasesActivas} activas</span>
+                <div className="flex items-center gap-2">
+                  <HeartHandshake className="w-5 h-5 text-orange-500" />
+                  <h2 className="text-lg font-semibold text-gray-900">Ayudas Pendientes</h2>
+                </div>
+                <button
+                  onClick={() => router.push('/dashboard/ayudas')}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                >
+                  Ver todas <ChevronRight className="w-3 h-3" />
+                </button>
               </div>
-              {clases.length === 0 ? (
+              {ayudasPendientes.length === 0 ? (
                 <div className="text-center py-8">
-                  <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No hay clases registradas</p>
+                  <HeartHandshake className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No hay ayudas pendientes</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {clases.slice(0, 5).map((clase) => (
-                    <div key={clase.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      <div className="w-9 h-9 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                        <BookOpen className="w-4 h-4" />
+                  {ayudasPendientes.slice(0, 5).map((ayuda) => (
+                    <div
+                      key={ayuda.id}
+                      onClick={() => router.push('/dashboard/ayudas')}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-orange-50 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-sm font-bold flex-shrink-0">
+                        {ayuda.nombre_beneficiario.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 text-sm truncate">
-                          {clase.nombre}
+                          {ayuda.nombre_beneficiario}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {clase.codigo || 'Sin código'}
-                          {clase.beneficiarios && ` • ${clase.beneficiarios.length} beneficiarios`}
+                          {ayuda.tipo.replace('_', ' ')} • {ayuda.nombre_madre || ayuda.nombre_tutor || 'Sin contacto'}
                         </p>
                       </div>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${clase.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'}`}>
-                        {clase.activo ? 'Activa' : 'Inactiva'}
-                      </span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Clock className="w-4 h-4 text-orange-400" />
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      </div>
                     </div>
                   ))}
-                  {clases.length > 5 && (
+                  {ayudasPendientes.length > 5 && (
                     <p className="text-xs text-center text-gray-400 pt-1">
-                      y {clases.length - 5} clases más...
+                      y {ayudasPendientes.length - 5} ayudas más...
                     </p>
                   )}
                 </div>

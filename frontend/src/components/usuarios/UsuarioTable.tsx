@@ -1,6 +1,6 @@
 'use client';
 
-import { UserCog, Key, Edit, Trash2 } from 'lucide-react';
+import { UserCog, Key, Edit, Trash2, Folder } from 'lucide-react';
 import { Table, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/Table';
 import Button from '@/components/ui/Button';
 import type { Usuario } from '@/lib/types';
@@ -15,6 +15,7 @@ interface UsuarioTableProps {
   onEdit: (usuario: Usuario) => void;
   onDelete: (usuario: Usuario) => void;
   onResetPassword: (usuario: Usuario) => void;
+  onDocuments: (usuario: Usuario) => void;
   onCreate: () => void;
 }
 
@@ -28,6 +29,7 @@ export function UsuarioTable({
   onEdit,
   onDelete,
   onResetPassword,
+  onDocuments,
   onCreate,
 }: UsuarioTableProps) {
   if (loading) {
@@ -105,6 +107,13 @@ export function UsuarioTable({
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onDocuments(usuario)}
+                    className="p-1 text-amber-600 hover:bg-amber-50 rounded"
+                    title="Documentos"
+                  >
+                    <Folder className="w-4 h-4" />
+                  </button>
                   {hasEditPermission && (
                     <>
                       <button
