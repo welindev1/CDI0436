@@ -18,18 +18,17 @@ async function bootstrap() {
 
   // Run migrations on startup (only in production)
   if (configService.get('NODE_ENV') === 'production') {
-    const logger = new Logger('Migration');
     try {
       const dataSource = app.get(DataSource);
-      logger.log('Running pending migrations...');
+      console.log('[Migration] Running pending migrations...');
       const migrations = await dataSource.runMigrations();
       if (migrations.length === 0) {
-        logger.log('No pending migrations.');
+        console.log('[Migration] No pending migrations.');
       } else {
-        logger.log(`${migrations.length} migration(s) executed successfully.`);
+        console.log(`[Migration] ${migrations.length} migration(s) executed successfully.`);
       }
     } catch (error) {
-      logger.error('Failed to run migrations:', error);
+      console.error('[Migration] Failed to run migrations:', error);
     }
   }
 
