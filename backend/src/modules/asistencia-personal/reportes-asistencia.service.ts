@@ -1,18 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { AsistenciaPersonal, TurnoPersonal } from './asistencia-personal.entity';
+import {
+  AsistenciaPersonal,
+  TurnoPersonal,
+} from './asistencia-personal.entity';
 import { Trabajador } from './trabajador.entity';
 import PDFDocument from 'pdfkit';
 
 const DIAS_ES = [
-  'Domingo', 'Lunes', 'Martes', 'Miércoles',
-  'Jueves', 'Viernes', 'Sábado',
+  'Domingo',
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
 ];
 
 const MESES_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 @Injectable()
@@ -24,7 +42,10 @@ export class ReportesAsistenciaService {
     private readonly trabajadorRepo: Repository<Trabajador>,
   ) {}
 
-  async generarPdfDiario(fecha: string, turno?: TurnoPersonal): Promise<Buffer> {
+  async generarPdfDiario(
+    fecha: string,
+    turno?: TurnoPersonal,
+  ): Promise<Buffer> {
     const fechaDate = new Date(`${fecha}T12:00:00`);
     const diaSemana = DIAS_ES[fechaDate.getDay()];
     const mes = MESES_ES[fechaDate.getMonth()];
@@ -46,7 +67,9 @@ export class ReportesAsistenciaService {
     });
 
     const turnoLabel = turno
-      ? turno === TurnoPersonal.MATUTINO ? 'MATUTINO' : 'VESPERTINO'
+      ? turno === TurnoPersonal.MATUTINO
+        ? 'MATUTINO'
+        : 'VESPERTINO'
       : 'MATUTINO / VESPERTINO';
 
     return this.generarPdf({
@@ -59,7 +82,10 @@ export class ReportesAsistenciaService {
     });
   }
 
-  async generarPdfSemana(fechaInicio: string, fechaFin: string): Promise<Buffer> {
+  async generarPdfSemana(
+    fechaInicio: string,
+    fechaFin: string,
+  ): Promise<Buffer> {
     const inicio = new Date(`${fechaInicio}T00:00:00`);
     const fin = new Date(`${fechaFin}T23:59:59`);
     const mesInicio = MESES_ES[inicio.getMonth()];
@@ -79,9 +105,10 @@ export class ReportesAsistenciaService {
       order: { nombre: 'ASC' },
     });
 
-    const rangoMeses = mesInicio === mesFin
-      ? `${mesInicio} ${anio}`
-      : `${mesInicio} - ${mesFin} ${anio}`;
+    const rangoMeses =
+      mesInicio === mesFin
+        ? `${mesInicio} ${anio}`
+        : `${mesInicio} - ${mesFin} ${anio}`;
 
     return this.generarPdf({
       titulo: 'CONTROL DE ASISTENCIA - SEMANAL',
@@ -147,13 +174,19 @@ export class ReportesAsistenciaService {
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-      doc.fontSize(16).font('Helvetica-Bold').text('CDI caminando con Jesús DR0436', {
-        align: 'center',
-      });
+      doc
+        .fontSize(16)
+        .font('Helvetica-Bold')
+        .text('CDI caminando con Jesús DR0436', {
+          align: 'center',
+        });
       doc.moveDown(0.3);
       doc.fontSize(14).text(opts.titulo, { align: 'center' });
       doc.moveDown(0.3);
-      doc.fontSize(11).font('Helvetica').text(opts.subtitulo, { align: 'center' });
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .text(opts.subtitulo, { align: 'center' });
       doc.moveDown(0.2);
       doc.text(`Turno: ${opts.turno}`, { align: 'center' });
       doc.moveDown(0.8);
@@ -189,7 +222,10 @@ export class ReportesAsistenciaService {
     doc.text('SALIDA', colSalida, startY, { width: 70 });
     doc.text('FIRMA', colFirma, startY, { width: 70 });
 
-    doc.moveTo(50, startY + 14).lineTo(562, startY + 14).stroke();
+    doc
+      .moveTo(50, startY + 14)
+      .lineTo(562, startY + 14)
+      .stroke();
 
     let y = startY + 20;
     doc.font('Helvetica').fontSize(9);
@@ -212,7 +248,10 @@ export class ReportesAsistenciaService {
       doc.text(asistencia?.hora_entrada || '', colEntrada, y, { width: 70 });
       doc.text(asistencia?.hora_salida || '', colSalida, y, { width: 70 });
 
-      doc.moveTo(colFirma, y + 10).lineTo(colFirma + 50, y + 10).stroke();
+      doc
+        .moveTo(colFirma, y + 10)
+        .lineTo(colFirma + 50, y + 10)
+        .stroke();
 
       y += 22;
     });
@@ -259,12 +298,14 @@ export class ReportesAsistenciaService {
     doc.text('No.', colNo, startY, { width: 30 });
     doc.text('NOMBRE', colNombre, startY, { width: 130 });
 
-    const diasUnicos = [...new Set(
-      opts.asistencias.map((a) => {
-        const d = new Date(a.fecha);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      }),
-    )].sort();
+    const diasUnicos = [
+      ...new Set(
+        opts.asistencias.map((a) => {
+          const d = new Date(a.fecha);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }),
+      ),
+    ].sort();
 
     const diasMes: { fecha: string; label: string; diaNum: number }[] = [];
 
@@ -307,7 +348,10 @@ export class ReportesAsistenciaService {
     });
 
     const totalWidth = xPos - colNombre - 130 + 130;
-    doc.moveTo(50, startY + 12).lineTo(50 + totalWidth, startY + 12).stroke();
+    doc
+      .moveTo(50, startY + 12)
+      .lineTo(50 + totalWidth, startY + 12)
+      .stroke();
 
     let y = startY + 18;
     doc.font('Helvetica').fontSize(8);
@@ -331,14 +375,12 @@ export class ReportesAsistenciaService {
           const asistencia = opts.asistencias.find((a) => {
             const aFecha = new Date(a.fecha);
             const aFechaStr = `${aFecha.getFullYear()}-${String(aFecha.getMonth() + 1).padStart(2, '0')}-${String(aFecha.getDate()).padStart(2, '0')}`;
-            return a.trabajador?.id === trabajador.id && aFechaStr === dia.fecha;
+            return (
+              a.trabajador?.id === trabajador.id && aFechaStr === dia.fecha
+            );
           });
 
-          const marca = asistencia
-            ? asistencia.hora_salida
-              ? 'X'
-              : 'P'
-            : '';
+          const marca = asistencia ? (asistencia.hora_salida ? 'X' : 'P') : '';
           doc.text(marca, xData, y, { width: colWidth, align: 'center' });
         }
         xData += colWidth;
@@ -351,6 +393,10 @@ export class ReportesAsistenciaService {
     doc.fontSize(8).font('Helvetica-Bold').text('LEYENDA:', 50, y);
     y += 12;
     doc.font('Helvetica').fontSize(8);
-    doc.text('P = Presente (con entrada)    X = Jornada Completa (entrada + salida)    (vacío) = Ausente', 60, y);
+    doc.text(
+      'P = Presente (con entrada)    X = Jornada Completa (entrada + salida)    (vacío) = Ausente',
+      60,
+      y,
+    );
   }
 }

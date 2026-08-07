@@ -112,7 +112,11 @@ export class AsistenciaPersonalController {
   async actualizarNotas(
     @Body() body: { fecha: string; turno?: TurnoPersonal; notas: string },
   ) {
-    return this.asistenciaService.actualizarNotasDia(body.fecha, body.turno, body.notas);
+    return this.asistenciaService.actualizarNotasDia(
+      body.fecha,
+      body.turno,
+      body.notas,
+    );
   }
 
   @Get('reporte/pdf/diario')
@@ -124,7 +128,10 @@ export class AsistenciaPersonalController {
   ) {
     const buffer = await this.reportesService.generarPdfDiario(fecha, turno);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=asistencia_${fecha}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=asistencia_${fecha}.pdf`,
+    );
     res.end(buffer);
   }
 
@@ -135,9 +142,15 @@ export class AsistenciaPersonalController {
     @Query('fecha_inicio') fechaInicio: string,
     @Query('fecha_fin') fechaFin: string,
   ) {
-    const buffer = await this.reportesService.generarPdfSemana(fechaInicio, fechaFin);
+    const buffer = await this.reportesService.generarPdfSemana(
+      fechaInicio,
+      fechaFin,
+    );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=asistencia_semanal_${fechaInicio}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=asistencia_semanal_${fechaInicio}.pdf`,
+    );
     res.end(buffer);
   }
 
@@ -150,7 +163,10 @@ export class AsistenciaPersonalController {
   ) {
     const buffer = await this.reportesService.generarPdfMes(mes, anio);
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=asistencia_${anio}_${String(mes).padStart(2, '0')}.pdf`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=asistencia_${anio}_${String(mes).padStart(2, '0')}.pdf`,
+    );
     res.end(buffer);
   }
 }

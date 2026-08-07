@@ -6,9 +6,15 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Trabajador } from './trabajador.entity';
-import { AsistenciaPersonal, TurnoPersonal } from './asistencia-personal.entity';
+import {
+  AsistenciaPersonal,
+  TurnoPersonal,
+} from './asistencia-personal.entity';
 import { CreateTrabajadorDto } from './dto/create-trabajador.dto';
-import { CreateAsistenciaPersonalDto, MarcarSalidaDto } from './dto/create-asistencia-personal.dto';
+import {
+  CreateAsistenciaPersonalDto,
+  MarcarSalidaDto,
+} from './dto/create-asistencia-personal.dto';
 import { FilterAsistenciaPersonalDto } from './dto/filter-asistencia-personal.dto';
 
 @Injectable()
@@ -79,7 +85,8 @@ export class AsistenciaPersonalService {
     }
 
     const now = new Date();
-    const horaEntrada = dto.hora_entrada ||
+    const horaEntrada =
+      dto.hora_entrada ||
       `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     const asistencia = this.asistenciaRepo.create({
@@ -87,7 +94,9 @@ export class AsistenciaPersonalService {
       fecha: fechaDate,
       hora_entrada: horaEntrada,
       turno,
-      registrado_por: registradoPorId ? ({ id: registradoPorId } as any) : undefined,
+      registrado_por: registradoPorId
+        ? ({ id: registradoPorId } as any)
+        : undefined,
       notas: dto.notas || undefined,
     });
 
@@ -117,9 +126,7 @@ export class AsistenciaPersonalService {
     }
 
     if (asistencia.hora_salida) {
-      throw new BadRequestException(
-        `Ya se registró salida para este día.`,
-      );
+      throw new BadRequestException(`Ya se registró salida para este día.`);
     }
 
     asistencia.hora_salida = dto.hora_salida;
@@ -183,7 +190,9 @@ export class AsistenciaPersonalService {
   async remove(id: string): Promise<void> {
     const asistencia = await this.asistenciaRepo.findOne({ where: { id } });
     if (!asistencia) {
-      throw new NotFoundException(`Registro de asistencia con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Registro de asistencia con ID ${id} no encontrado`,
+      );
     }
     await this.asistenciaRepo.remove(asistencia);
   }

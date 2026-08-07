@@ -107,13 +107,18 @@ export class UsuariosController {
     @Body('notas') notas: string,
     @CurrentUser() user: any,
   ) {
-    if (!tipo_documento || !Object.values(TipoDocumentoUsuario).includes(tipo_documento)) {
+    if (
+      !tipo_documento ||
+      !Object.values(TipoDocumentoUsuario).includes(tipo_documento)
+    ) {
       throw new BadRequestException('Tipo de documento inválido');
     }
 
     const anioNum = parseInt(anio, 10);
     if (isNaN(anioNum) || anioNum < 2000 || anioNum > 2100) {
-      throw new BadRequestException('Año inválido. Debe estar entre 2000 y 2100');
+      throw new BadRequestException(
+        'Año inválido. Debe estar entre 2000 y 2100',
+      );
     }
 
     return this.documentosService.subirDocumento(

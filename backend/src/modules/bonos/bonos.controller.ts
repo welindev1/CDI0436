@@ -36,10 +36,7 @@ export class BonosController {
   @Post('regalos')
   @RequierePermiso('bonos:generar')
   @HttpCode(HttpStatus.CREATED)
-  crearLote(
-    @Body() dto: CreateBonosRegaloLoteDto,
-    @CurrentUser() user: any,
-  ) {
+  crearLote(@Body() dto: CreateBonosRegaloLoteDto, @CurrentUser() user: any) {
     return this.bonosService.crearLote(dto, user.id);
   }
 
@@ -89,7 +86,9 @@ export class BonosController {
     @CurrentUser() user: any,
   ) {
     const dto: MarcarEntregadoDto = {
-      foto_entrega: file ? `/uploads/bonos/${file.filename}` : body.foto_entrega,
+      foto_entrega: file
+        ? `/uploads/bonos/${file.filename}`
+        : body.foto_entrega,
     };
     return this.bonosService.marcarEntregado(id, dto, user.id);
   }

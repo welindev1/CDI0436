@@ -1,44 +1,140 @@
-name: CI Pipeline
+name: CI
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bloquear archivos de entorno / claves commiteados
+        run: |
+          set -euo pipefail
+          blocked=$(
+            git ls-files \
+              | grep -E '(^|/)\.env($|[^a-z])' \
+              | grep -v '\.env\.example$' \
+            || true
+          )
+          blocked+=$'\n'$(git ls-files | grep -E '\.(pem|key|p12|pfx|p8)$' || true)
+          blocked+=$'\n'$(git ls-files | grep -E '(^|/)id_rsa$|(^|/)\.ssh/|(^|/)\.htpasswd' || true)
+          blocked=$(printf '%s\n' "$blocked" | sed '/^$/d' | sort -u)
+          if [ -n "$blocked" ]; then
+            echo "::error::Archivos sensibles commiteados (no deben existir en el repo):"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "OK - No hay archivos de entorno ni claves commiteados"
+
+      - name: Bloquear scripts de debug / basura
+        run: |
+          set -euo pipefail
+          garbage=$(
+            git ls-files \
+              | grep -E '^backend/_[^/]+\.(ts|js|js\.map|d\.ts)$' \
+            || true
+          )
+          if [ -n "$garbage" ]; then
+            echo "::error::Scripts de debug/scratch commiteados (prefijo '_'):"
+            printf '%s\n' "$garbage"
+            echo "Movelos a backend/scripts/ o agregalos a .gitignore."
+            exit 1
+          fi
+          echo "OK - No hay scripts basura commiteados"
+
+      - name: Escaneo de secretos en el arbol
+        run: |
+          set -euo pipefail
+          bad=0
+
+          # 1) Tokens / claves privadas en cualquier archivo versionado
+          files=$(
+            git ls-files \
+              | grep -vE '(\.env\.example$|\.md$|package-lock\.json$|\.map$|\.snap$|^frontend/public/)' \
+            || true
+          )
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if grep -qE 'npg_[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----' "$f"; then
+              echo "::error::Posible secreto detectado en: $f"
+              bad=1
+            fi
+          done <<< "$files"
+
+          # 2) Credenciales de BD embebidas en archivos de entorno (excepto plantilla)
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if grep -qE 'postgresql://[^:@/]+:[^:@/]+@' "$f"; then
+              echo "::error::Credenciales de BD (usuario:password) en: $f"
+              bad=1
+            fi
+          done < <(git ls-files | grep -E '(^|/)\.env' | grep -v '\.env\.example$')
+
+          if [ "$bad" -ne 0 ]; then
+            echo "::error::El escaneo de secretos falló. Revisá los archivos listados arriba."
+            exit 1
+          fi
+          echo "OK - Sin secretos detectados"
+
   backend:
-    name: Backend — Build & Lint
+    name: Backend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
-
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-    - run: npm ci
-    - run: npm run build
-    - run: npm run lint
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck + Build
+        run: npm run build
+
+      - name: Lint (sin auto-fix)
+        run: npm run lint:check
+
+      - name: Tests
+        run: npm run test -- --passWithNoTests --runInBand
 
   frontend:
-    name: Frontend — Build & Lint
+    name: Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
-
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-    - run: npm ci
-    - run: npm run build
-    - run: npm run lint
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

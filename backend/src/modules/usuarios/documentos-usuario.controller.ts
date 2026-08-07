@@ -23,9 +23,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Controller('usuarios')
 @UseGuards(JwtAuthGuard, PermisosGuard)
 export class DocumentosUsuarioController {
-  constructor(
-    private readonly documentosService: DocumentosUsuarioService,
-  ) {}
+  constructor(private readonly documentosService: DocumentosUsuarioService) {}
 
   @Post(':usuarioId/documentos')
   @UseInterceptors(FileInterceptor('archivo'))

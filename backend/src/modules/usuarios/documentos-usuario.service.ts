@@ -7,7 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { DocumentoUsuario, TipoDocumentoUsuario } from './documento-usuario.entity';
+import {
+  DocumentoUsuario,
+  TipoDocumentoUsuario,
+} from './documento-usuario.entity';
 import { FilterDocumentoUsuarioDto } from './dto/filter-documento-usuario.dto';
 
 const MIME_TYPES_PERMITIDOS = [
@@ -79,7 +82,7 @@ export class DocumentosUsuarioService {
       subido_por: subidoPorId ? ({ id: subidoPorId } as any) : undefined,
     });
 
-    return this.documentoRepo.save(documento) as Promise<DocumentoUsuario>;
+    return this.documentoRepo.save(documento);
   }
 
   async findAll(

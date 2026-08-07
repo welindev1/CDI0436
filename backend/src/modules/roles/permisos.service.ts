@@ -288,14 +288,16 @@ export const PERMISOS_SISTEMA = [
     nombre: 'Crear bonos de regalos',
     modulo: 'bonos',
     accion: 'crear',
-    descripcion: 'Permite subir Excel y guardar bonos de regalos en la base de datos',
+    descripcion:
+      'Permite subir Excel y guardar bonos de regalos en la base de datos',
   },
   {
     codigo: 'bonos:regalos:entregar',
     nombre: 'Entregar bonos de regalos',
     modulo: 'bonos',
     accion: 'entregar',
-    descripcion: 'Permite subir fotos de entrega y marcar bonos como entregados',
+    descripcion:
+      'Permite subir fotos de entrega y marcar bonos como entregados',
   },
 
   // Reportes Generales

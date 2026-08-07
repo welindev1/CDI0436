@@ -34,7 +34,9 @@ export class BonosService {
         beneficiario: b.beneficiario_id
           ? ({ id: b.beneficiario_id } as any)
           : undefined,
-        registrado_por: registradoPorId ? ({ id: registradoPorId } as any) : undefined,
+        registrado_por: registradoPorId
+          ? ({ id: registradoPorId } as any)
+          : undefined,
       }),
     );
     return await this.bonoRepo.save(bonos);

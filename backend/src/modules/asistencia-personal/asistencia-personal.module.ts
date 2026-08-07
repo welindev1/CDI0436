@@ -10,6 +10,10 @@ import { AsistenciaPersonalController } from './asistencia-personal.controller';
   imports: [TypeOrmModule.forFeature([Trabajador, AsistenciaPersonal])],
   controllers: [AsistenciaPersonalController],
   providers: [AsistenciaPersonalService, ReportesAsistenciaService],
-  exports: [AsistenciaPersonalService, ReportesAsistenciaService, TypeOrmModule],
+  exports: [
+    AsistenciaPersonalService,
+    ReportesAsistenciaService,
+    TypeOrmModule,
+  ],
 })
 export class AsistenciaPersonalModule {}

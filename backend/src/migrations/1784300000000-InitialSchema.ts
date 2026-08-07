@@ -44,8 +44,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_roles" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_ROLES_ACTIVO" ON "roles" ("activo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ROLES_SUPER_ADMIN" ON "roles" ("es_super_admin")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ROLES_ACTIVO" ON "roles" ("activo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ROLES_SUPER_ADMIN" ON "roles" ("es_super_admin")`,
+    );
 
     // permisos
     await queryRunner.query(`
@@ -60,7 +64,9 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_permisos" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_PERMISOS_MODULO" ON "permisos" ("modulo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_PERMISOS_MODULO" ON "permisos" ("modulo")`,
+    );
 
     // roles_permisos
     await queryRunner.query(`
@@ -70,8 +76,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_roles_permisos" PRIMARY KEY ("rol_id", "permiso_id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_roles_permisos_rol" ON "roles_permisos" ("rol_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_roles_permisos_permiso" ON "roles_permisos" ("permiso_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_roles_permisos_rol" ON "roles_permisos" ("rol_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_roles_permisos_permiso" ON "roles_permisos" ("permiso_id")`,
+    );
 
     // usuarios
     await queryRunner.query(`
@@ -89,8 +99,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_usuarios" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_USUARIOS_ROL_ID" ON "usuarios" ("rol_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_USUARIOS_ACTIVO" ON "usuarios" ("activo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_USUARIOS_ROL_ID" ON "usuarios" ("rol_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_USUARIOS_ACTIVO" ON "usuarios" ("activo")`,
+    );
 
     // tutores
     await queryRunner.query(`
@@ -108,8 +122,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_tutores" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_TUTORES_CORREO" ON "tutores" ("correo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_TUTORES_ACTIVO" ON "tutores" ("activo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_TUTORES_CORREO" ON "tutores" ("correo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_TUTORES_ACTIVO" ON "tutores" ("activo")`,
+    );
 
     // horarios
     await queryRunner.query(`
@@ -125,8 +143,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_horarios" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_HORARIOS_DIA" ON "horarios" ("dia")`);
-    await queryRunner.query(`CREATE INDEX "IDX_HORARIOS_ACTIVO" ON "horarios" ("activo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_HORARIOS_DIA" ON "horarios" ("dia")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_HORARIOS_ACTIVO" ON "horarios" ("activo")`,
+    );
 
     // beneficiarios
     await queryRunner.query(`
@@ -148,8 +170,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_beneficiarios" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_BENEFICIARIOS_ACTIVO" ON "beneficiarios" ("activo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_BENEFICIARIOS_NOMBRE" ON "beneficiarios" ("nombre")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_BENEFICIARIOS_ACTIVO" ON "beneficiarios" ("activo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_BENEFICIARIOS_NOMBRE" ON "beneficiarios" ("nombre")`,
+    );
 
     // beneficiario_expedientes
     await queryRunner.query(`
@@ -169,9 +195,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_beneficiario_expedientes" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_EXPEDIENTES_BENEFICIARIO_ID" ON "beneficiario_expedientes" ("beneficiario_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_EXPEDIENTES_TIPO" ON "beneficiario_expedientes" ("tipo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_EXPEDIENTES_FECHA_EVENTO" ON "beneficiario_expedientes" ("fecha_evento")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_EXPEDIENTES_BENEFICIARIO_ID" ON "beneficiario_expedientes" ("beneficiario_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_EXPEDIENTES_TIPO" ON "beneficiario_expedientes" ("tipo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_EXPEDIENTES_FECHA_EVENTO" ON "beneficiario_expedientes" ("fecha_evento")`,
+    );
 
     // clases
     await queryRunner.query(`
@@ -188,9 +220,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_clases" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_CLASES_TUTOR_ID" ON "clases" ("tutor_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_CLASES_CODIGO" ON "clases" ("codigo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_CLASES_ACTIVO" ON "clases" ("activo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_CLASES_TUTOR_ID" ON "clases" ("tutor_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_CLASES_CODIGO" ON "clases" ("codigo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_CLASES_ACTIVO" ON "clases" ("activo")`,
+    );
 
     // clase_horario
     await queryRunner.query(`
@@ -200,8 +238,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_clase_horario" PRIMARY KEY ("clase_id", "horario_id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_clase_horario_clase" ON "clase_horario" ("clase_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_clase_horario_horario" ON "clase_horario" ("horario_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_clase_horario_clase" ON "clase_horario" ("clase_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_clase_horario_horario" ON "clase_horario" ("horario_id")`,
+    );
 
     // clase_beneficiario
     await queryRunner.query(`
@@ -211,8 +253,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_clase_beneficiario" PRIMARY KEY ("clase_id", "beneficiario_id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_clase_beneficiario_clase" ON "clase_beneficiario" ("clase_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_clase_beneficiario_beneficiario" ON "clase_beneficiario" ("beneficiario_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_clase_beneficiario_clase" ON "clase_beneficiario" ("clase_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_clase_beneficiario_beneficiario" ON "clase_beneficiario" ("beneficiario_id")`,
+    );
 
     // asistencias
     await queryRunner.query(`
@@ -231,12 +277,24 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_asistencias" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_ASISTENCIAS_CLASE_ID" ON "asistencias" ("clase_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASISTENCIAS_BENEFICIARIO_ID" ON "asistencias" ("beneficiario_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASISTENCIAS_FECHA" ON "asistencias" ("fecha")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASISTENCIAS_ESTADO" ON "asistencias" ("estado")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASISTENCIAS_REGISTRADO_POR" ON "asistencias" ("registrado_por_id")`);
-    await queryRunner.query(`CREATE UNIQUE INDEX "IDX_ASISTENCIAS_UNICA" ON "asistencias" ("clase_id", "beneficiario_id", "fecha")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASISTENCIAS_CLASE_ID" ON "asistencias" ("clase_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASISTENCIAS_BENEFICIARIO_ID" ON "asistencias" ("beneficiario_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASISTENCIAS_FECHA" ON "asistencias" ("fecha")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASISTENCIAS_ESTADO" ON "asistencias" ("estado")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASISTENCIAS_REGISTRADO_POR" ON "asistencias" ("registrado_por_id")`,
+    );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_ASISTENCIAS_UNICA" ON "asistencias" ("clase_id", "beneficiario_id", "fecha")`,
+    );
 
     // fotos_asistencia
     await queryRunner.query(`
@@ -251,9 +309,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_fotos_asistencia" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_ASIST_CLASE_FECHA" ON "fotos_asistencia" ("clase_id", "fecha")`);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_ASIST_CLASE_ID" ON "fotos_asistencia" ("clase_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_ASIST_FECHA" ON "fotos_asistencia" ("fecha")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_ASIST_CLASE_FECHA" ON "fotos_asistencia" ("clase_id", "fecha")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_ASIST_CLASE_ID" ON "fotos_asistencia" ("clase_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_ASIST_FECHA" ON "fotos_asistencia" ("fecha")`,
+    );
 
     // supervivencias
     await queryRunner.query(`
@@ -270,9 +334,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_supervivencias" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_SUPERVIVENCIAS_TUTOR_ID" ON "supervivencias" ("tutor_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_SUPERVIVENCIAS_CODIGO" ON "supervivencias" ("codigo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_SUPERVIVENCIAS_ACTIVO" ON "supervivencias" ("activo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_SUPERVIVENCIAS_TUTOR_ID" ON "supervivencias" ("tutor_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_SUPERVIVENCIAS_CODIGO" ON "supervivencias" ("codigo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_SUPERVIVENCIAS_ACTIVO" ON "supervivencias" ("activo")`,
+    );
 
     // supervivencia_beneficiario
     await queryRunner.query(`
@@ -282,8 +352,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_supervivencia_beneficiario" PRIMARY KEY ("supervivencia_id", "beneficiario_id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_superv_benef_superv" ON "supervivencia_beneficiario" ("supervivencia_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_superv_benef_benef" ON "supervivencia_beneficiario" ("beneficiario_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_superv_benef_superv" ON "supervivencia_beneficiario" ("supervivencia_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_superv_benef_benef" ON "supervivencia_beneficiario" ("beneficiario_id")`,
+    );
 
     // asistencias_supervivencia
     await queryRunner.query(`
@@ -299,10 +373,18 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_asistencias_supervivencia" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_ASIS_SUPERV_SUPERVIVENCIA_ID" ON "asistencias_supervivencia" ("supervivencia_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASIS_SUPERV_BENEFICIARIO_ID" ON "asistencias_supervivencia" ("beneficiario_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASIS_SUPERV_FECHA" ON "asistencias_supervivencia" ("fecha")`);
-    await queryRunner.query(`CREATE INDEX "IDX_ASIS_SUPERV_COMPOSITE" ON "asistencias_supervivencia" ("supervivencia_id", "fecha")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASIS_SUPERV_SUPERVIVENCIA_ID" ON "asistencias_supervivencia" ("supervivencia_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASIS_SUPERV_BENEFICIARIO_ID" ON "asistencias_supervivencia" ("beneficiario_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASIS_SUPERV_FECHA" ON "asistencias_supervivencia" ("fecha")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_ASIS_SUPERV_COMPOSITE" ON "asistencias_supervivencia" ("supervivencia_id", "fecha")`,
+    );
 
     // fotos_asistencia_supervivencia
     await queryRunner.query(`
@@ -317,9 +399,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_fotos_asistencia_supervivencia" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_SUPERV_COMPOSITE" ON "fotos_asistencia_supervivencia" ("supervivencia_id", "fecha")`);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_SUPERV_SUPERVIVENCIA_ID" ON "fotos_asistencia_supervivencia" ("supervivencia_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_FOTOS_SUPERV_FECHA" ON "fotos_asistencia_supervivencia" ("fecha")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_SUPERV_COMPOSITE" ON "fotos_asistencia_supervivencia" ("supervivencia_id", "fecha")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_SUPERV_SUPERVIVENCIA_ID" ON "fotos_asistencia_supervivencia" ("supervivencia_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_FOTOS_SUPERV_FECHA" ON "fotos_asistencia_supervivencia" ("fecha")`,
+    );
 
     // reportes
     await queryRunner.query(`
@@ -336,9 +424,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_reportes" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_REPORTES_TIPO" ON "reportes" ("tipo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_REPORTES_FORMATO" ON "reportes" ("formato")`);
-    await queryRunner.query(`CREATE INDEX "IDX_REPORTES_GENERADO_POR_ID" ON "reportes" ("generado_por_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_REPORTES_TIPO" ON "reportes" ("tipo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_REPORTES_FORMATO" ON "reportes" ("formato")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_REPORTES_GENERADO_POR_ID" ON "reportes" ("generado_por_id")`,
+    );
 
     // menus_nutricion
     await queryRunner.query(`
@@ -354,7 +448,9 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_menus_nutricion" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE UNIQUE INDEX "IDX_menus_nutricion_fecha_tanda" ON "menus_nutricion" ("fecha", "tanda")`);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "IDX_menus_nutricion_fecha_tanda" ON "menus_nutricion" ("fecha", "tanda")`,
+    );
 
     // periodos_merito
     await queryRunner.query(`
@@ -368,8 +464,12 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_periodos_merito" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_PERIODOS_MERITO_ANIO" ON "periodos_merito" ("anio")`);
-    await queryRunner.query(`CREATE INDEX "IDX_PERIODOS_MERITO_ESTADO" ON "periodos_merito" ("estado")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_PERIODOS_MERITO_ANIO" ON "periodos_merito" ("anio")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_PERIODOS_MERITO_ESTADO" ON "periodos_merito" ("estado")`,
+    );
 
     // notas_merito
     await queryRunner.query(`
@@ -389,9 +489,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_notas_merito" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_NOTAS_MERITO_PERIODO_ID" ON "notas_merito" ("periodo_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_NOTAS_MERITO_BENEFICIARIO_ID" ON "notas_merito" ("beneficiario_id")`);
-    await queryRunner.query(`CREATE INDEX "IDX_NOTAS_MERITO_CICLO" ON "notas_merito" ("ciclo")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_NOTAS_MERITO_PERIODO_ID" ON "notas_merito" ("periodo_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_NOTAS_MERITO_BENEFICIARIO_ID" ON "notas_merito" ("beneficiario_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_NOTAS_MERITO_CICLO" ON "notas_merito" ("ciclo")`,
+    );
 
     // ayudas
     await queryRunner.query(`
@@ -413,9 +519,15 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_ayudas" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_AYUDAS_CODIGO_BENEF" ON "ayudas" ("codigo_beneficiario")`);
-    await queryRunner.query(`CREATE INDEX "IDX_AYUDAS_TIPO" ON "ayudas" ("tipo")`);
-    await queryRunner.query(`CREATE INDEX "IDX_AYUDAS_ESTADO" ON "ayudas" ("estado")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_AYUDAS_CODIGO_BENEF" ON "ayudas" ("codigo_beneficiario")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_AYUDAS_TIPO" ON "ayudas" ("tipo")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_AYUDAS_ESTADO" ON "ayudas" ("estado")`,
+    );
 
     // comentarios_ayuda
     await queryRunner.query(`
@@ -428,60 +540,158 @@ export class InitialSchema1784300000000 implements MigrationInterface {
         CONSTRAINT "PK_comentarios_ayuda" PRIMARY KEY ("id")
       )
     `);
-    await queryRunner.query(`CREATE INDEX "IDX_COMENTARIOS_AYUDA_ID" ON "comentarios_ayuda" ("ayuda_id")`);
+    await queryRunner.query(
+      `CREATE INDEX "IDX_COMENTARIOS_AYUDA_ID" ON "comentarios_ayuda" ("ayuda_id")`,
+    );
 
     // Foreign keys
-    await queryRunner.query(`ALTER TABLE "roles_permisos" ADD CONSTRAINT "FK_roles_permisos_rol" FOREIGN KEY ("rol_id") REFERENCES "roles"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "roles_permisos" ADD CONSTRAINT "FK_roles_permisos_permiso" FOREIGN KEY ("permiso_id") REFERENCES "permisos"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "usuarios" ADD CONSTRAINT "FK_usuarios_rol" FOREIGN KEY ("rol_id") REFERENCES "roles"("id")`);
-    await queryRunner.query(`ALTER TABLE "tutores" ADD CONSTRAINT "FK_tutores_usuario" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id")`);
-    await queryRunner.query(`ALTER TABLE "beneficiario_expedientes" ADD CONSTRAINT "FK_expedientes_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "clases" ADD CONSTRAINT "FK_clases_tutor" FOREIGN KEY ("tutor_id") REFERENCES "tutores"("id")`);
-    await queryRunner.query(`ALTER TABLE "clase_horario" ADD CONSTRAINT "FK_clase_horario_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "clase_horario" ADD CONSTRAINT "FK_clase_horario_horario" FOREIGN KEY ("horario_id") REFERENCES "horarios"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "clase_beneficiario" ADD CONSTRAINT "FK_clase_benef_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "clase_beneficiario" ADD CONSTRAINT "FK_clase_benef_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id")`);
-    await queryRunner.query(`ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id")`);
-    await queryRunner.query(`ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_registrado_por" FOREIGN KEY ("registrado_por_id") REFERENCES "usuarios"("id")`);
-    await queryRunner.query(`ALTER TABLE "fotos_asistencia" ADD CONSTRAINT "FK_fotos_asist_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "supervivencias" ADD CONSTRAINT "FK_supervivencias_tutor" FOREIGN KEY ("tutor_id") REFERENCES "tutores"("id")`);
-    await queryRunner.query(`ALTER TABLE "supervivencia_beneficiario" ADD CONSTRAINT "FK_sb_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "supervivencia_beneficiario" ADD CONSTRAINT "FK_sb_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "asistencias_supervivencia" ADD CONSTRAINT "FK_asuperv_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id")`);
-    await queryRunner.query(`ALTER TABLE "asistencias_supervivencia" ADD CONSTRAINT "FK_asuperv_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id")`);
-    await queryRunner.query(`ALTER TABLE "fotos_asistencia_supervivencia" ADD CONSTRAINT "FK_fsuperv_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "reportes" ADD CONSTRAINT "FK_reportes_generado_por" FOREIGN KEY ("generado_por_id") REFERENCES "usuarios"("id")`);
-    await queryRunner.query(`ALTER TABLE "notas_merito" ADD CONSTRAINT "FK_notas_merito_periodo" FOREIGN KEY ("periodo_id") REFERENCES "periodos_merito"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "notas_merito" ADD CONSTRAINT "FK_notas_merito_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`);
-    await queryRunner.query(`ALTER TABLE "comentarios_ayuda" ADD CONSTRAINT "FK_comentarios_ayuda" FOREIGN KEY ("ayuda_id") REFERENCES "ayudas"("id") ON DELETE CASCADE`);
+    await queryRunner.query(
+      `ALTER TABLE "roles_permisos" ADD CONSTRAINT "FK_roles_permisos_rol" FOREIGN KEY ("rol_id") REFERENCES "roles"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "roles_permisos" ADD CONSTRAINT "FK_roles_permisos_permiso" FOREIGN KEY ("permiso_id") REFERENCES "permisos"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "usuarios" ADD CONSTRAINT "FK_usuarios_rol" FOREIGN KEY ("rol_id") REFERENCES "roles"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tutores" ADD CONSTRAINT "FK_tutores_usuario" FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "beneficiario_expedientes" ADD CONSTRAINT "FK_expedientes_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clases" ADD CONSTRAINT "FK_clases_tutor" FOREIGN KEY ("tutor_id") REFERENCES "tutores"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_horario" ADD CONSTRAINT "FK_clase_horario_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_horario" ADD CONSTRAINT "FK_clase_horario_horario" FOREIGN KEY ("horario_id") REFERENCES "horarios"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_beneficiario" ADD CONSTRAINT "FK_clase_benef_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_beneficiario" ADD CONSTRAINT "FK_clase_benef_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" ADD CONSTRAINT "FK_asistencias_registrado_por" FOREIGN KEY ("registrado_por_id") REFERENCES "usuarios"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "fotos_asistencia" ADD CONSTRAINT "FK_fotos_asist_clase" FOREIGN KEY ("clase_id") REFERENCES "clases"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencias" ADD CONSTRAINT "FK_supervivencias_tutor" FOREIGN KEY ("tutor_id") REFERENCES "tutores"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencia_beneficiario" ADD CONSTRAINT "FK_sb_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencia_beneficiario" ADD CONSTRAINT "FK_sb_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias_supervivencia" ADD CONSTRAINT "FK_asuperv_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias_supervivencia" ADD CONSTRAINT "FK_asuperv_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "fotos_asistencia_supervivencia" ADD CONSTRAINT "FK_fsuperv_supervivencia" FOREIGN KEY ("supervivencia_id") REFERENCES "supervivencias"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reportes" ADD CONSTRAINT "FK_reportes_generado_por" FOREIGN KEY ("generado_por_id") REFERENCES "usuarios"("id")`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notas_merito" ADD CONSTRAINT "FK_notas_merito_periodo" FOREIGN KEY ("periodo_id") REFERENCES "periodos_merito"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notas_merito" ADD CONSTRAINT "FK_notas_merito_beneficiario" FOREIGN KEY ("beneficiario_id") REFERENCES "beneficiarios"("id") ON DELETE CASCADE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "comentarios_ayuda" ADD CONSTRAINT "FK_comentarios_ayuda" FOREIGN KEY ("ayuda_id") REFERENCES "ayudas"("id") ON DELETE CASCADE`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "comentarios_ayuda" DROP CONSTRAINT "FK_comentarios_ayuda"`);
-    await queryRunner.query(`ALTER TABLE "notas_merito" DROP CONSTRAINT "FK_notas_merito_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "notas_merito" DROP CONSTRAINT "FK_notas_merito_periodo"`);
-    await queryRunner.query(`ALTER TABLE "reportes" DROP CONSTRAINT "FK_reportes_generado_por"`);
-    await queryRunner.query(`ALTER TABLE "fotos_asistencia_supervivencia" DROP CONSTRAINT "FK_fsuperv_supervivencia"`);
-    await queryRunner.query(`ALTER TABLE "asistencias_supervivencia" DROP CONSTRAINT "FK_asuperv_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "asistencias_supervivencia" DROP CONSTRAINT "FK_asuperv_supervivencia"`);
-    await queryRunner.query(`ALTER TABLE "supervivencia_beneficiario" DROP CONSTRAINT "FK_sb_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "supervivencia_beneficiario" DROP CONSTRAINT "FK_sb_supervivencia"`);
-    await queryRunner.query(`ALTER TABLE "supervivencias" DROP CONSTRAINT "FK_supervivencias_tutor"`);
-    await queryRunner.query(`ALTER TABLE "fotos_asistencia" DROP CONSTRAINT "FK_fotos_asist_clase"`);
-    await queryRunner.query(`ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_registrado_por"`);
-    await queryRunner.query(`ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_clase"`);
-    await queryRunner.query(`ALTER TABLE "clase_beneficiario" DROP CONSTRAINT "FK_clase_benef_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "clase_beneficiario" DROP CONSTRAINT "FK_clase_benef_clase"`);
-    await queryRunner.query(`ALTER TABLE "clase_horario" DROP CONSTRAINT "FK_clase_horario_horario"`);
-    await queryRunner.query(`ALTER TABLE "clase_horario" DROP CONSTRAINT "FK_clase_horario_clase"`);
-    await queryRunner.query(`ALTER TABLE "clases" DROP CONSTRAINT "FK_clases_tutor"`);
-    await queryRunner.query(`ALTER TABLE "beneficiario_expedientes" DROP CONSTRAINT "FK_expedientes_beneficiario"`);
-    await queryRunner.query(`ALTER TABLE "tutores" DROP CONSTRAINT "FK_tutores_usuario"`);
-    await queryRunner.query(`ALTER TABLE "usuarios" DROP CONSTRAINT "FK_usuarios_rol"`);
-    await queryRunner.query(`ALTER TABLE "roles_permisos" DROP CONSTRAINT "FK_roles_permisos_permiso"`);
-    await queryRunner.query(`ALTER TABLE "roles_permisos" DROP CONSTRAINT "FK_roles_permisos_rol"`);
+    await queryRunner.query(
+      `ALTER TABLE "comentarios_ayuda" DROP CONSTRAINT "FK_comentarios_ayuda"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notas_merito" DROP CONSTRAINT "FK_notas_merito_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notas_merito" DROP CONSTRAINT "FK_notas_merito_periodo"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "reportes" DROP CONSTRAINT "FK_reportes_generado_por"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "fotos_asistencia_supervivencia" DROP CONSTRAINT "FK_fsuperv_supervivencia"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias_supervivencia" DROP CONSTRAINT "FK_asuperv_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias_supervivencia" DROP CONSTRAINT "FK_asuperv_supervivencia"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencia_beneficiario" DROP CONSTRAINT "FK_sb_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencia_beneficiario" DROP CONSTRAINT "FK_sb_supervivencia"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "supervivencias" DROP CONSTRAINT "FK_supervivencias_tutor"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "fotos_asistencia" DROP CONSTRAINT "FK_fotos_asist_clase"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_registrado_por"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "asistencias" DROP CONSTRAINT "FK_asistencias_clase"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_beneficiario" DROP CONSTRAINT "FK_clase_benef_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_beneficiario" DROP CONSTRAINT "FK_clase_benef_clase"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_horario" DROP CONSTRAINT "FK_clase_horario_horario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clase_horario" DROP CONSTRAINT "FK_clase_horario_clase"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "clases" DROP CONSTRAINT "FK_clases_tutor"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "beneficiario_expedientes" DROP CONSTRAINT "FK_expedientes_beneficiario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "tutores" DROP CONSTRAINT "FK_tutores_usuario"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "usuarios" DROP CONSTRAINT "FK_usuarios_rol"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "roles_permisos" DROP CONSTRAINT "FK_roles_permisos_permiso"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "roles_permisos" DROP CONSTRAINT "FK_roles_permisos_rol"`,
+    );
 
     await queryRunner.query(`DROP TABLE "comentarios_ayuda"`);
     await queryRunner.query(`DROP TABLE "ayudas"`);

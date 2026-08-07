@@ -2,12 +2,16 @@
 node_modules/
 */node_modules/
 
-# Environment variables
+# Environment variables (nunca commitear valores reales)
 .env
 .env.local
 .env*.local
+.env.production
 backend/.env
 backend/.env.local
+backend/.env.production
+backend/.env.*
+!backend/.env.example
 frontend/.env.local
 
 # Build outputs
@@ -36,3 +40,6 @@ postgres_data/
 .claude/
 .gemini/
 .opencode/
+
+# Scripts de debug / scratch en la raíz del backend
+backend/_*
