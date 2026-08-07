@@ -1,4 +1,11 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsDateString, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsBoolean,
+  IsDateString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateBeneficiarioDto {
   @IsString()

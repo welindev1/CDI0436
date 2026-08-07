@@ -15,7 +15,6 @@ import {
   UploadedFile,
   BadRequestException,
   Res,
-  StreamableFile,
   ValidationPipe,
   UseGuards,
 } from '@nestjs/common';
@@ -58,27 +57,34 @@ export class BeneficiariosController {
     @Query('tipoExpediente') tipoExpediente?: string,
     @Query('condicion') condicion?: string,
   ) {
-    return this.beneficiariosService.getReporteCarpetas(tipoExpediente, condicion);
+    return this.beneficiariosService.getReporteCarpetas(
+      tipoExpediente,
+      condicion,
+    );
   }
 
   @Get('exportar')
   @RequierePermiso('reportes:exportar')
   async exportar(
-    @Query(new ValidationPipe({ 
-      transform: true, 
-      whitelist: true,
-      skipMissingProperties: true,
-      forbidNonWhitelisted: false 
-    })) filters: FilterBeneficiarioDto,
-    @Res() res: Response
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        skipMissingProperties: true,
+        forbidNonWhitelisted: false,
+      }),
+    )
+    filters: FilterBeneficiarioDto,
+    @Res() res: Response,
   ) {
     const buffer = await this.beneficiariosService.exportarAExcel(filters);
-    
+
     const fecha = new Date().toISOString().split('T')[0];
     res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename=beneficiarios_${fecha}.xlsx`,
-      'Content-Length': buffer.length
+      'Content-Length': buffer.length,
     });
 
     res.send(buffer);
@@ -86,13 +92,15 @@ export class BeneficiariosController {
 
   @Get('plantilla/descargar')
   @RequierePermiso('beneficiarios:crear')
-  async descargarPlantilla(@Res() res: Response) {
-    const buffer = await this.beneficiariosService.generarPlantillaExcel();
-    
+  descargarPlantilla(@Res() res: Response) {
+    const buffer = this.beneficiariosService.generarPlantillaExcel();
+
     res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename=plantilla_beneficiarios.xlsx',
-      'Content-Length': buffer.length
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition':
+        'attachment; filename=plantilla_beneficiarios.xlsx',
+      'Content-Length': buffer.length,
     });
 
     res.send(buffer);
@@ -103,7 +111,7 @@ export class BeneficiariosController {
   @UseInterceptors(FileInterceptor('file'))
   async importar(
     @UploadedFile() file: Express.Multer.File,
-    @Body() options?: ImportOptionsDto
+    @Body() options?: ImportOptionsDto,
   ) {
     if (!file) {
       throw new BadRequestException('No se proporcionó ningún archivo');
@@ -111,14 +119,19 @@ export class BeneficiariosController {
 
     const allowedMimeTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel'
+      'application/vnd.ms-excel',
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('El archivo debe ser un Excel (.xlsx o .xls)');
+      throw new BadRequestException(
+        'El archivo debe ser un Excel (.xlsx o .xls)',
+      );
     }
 
-    return await this.beneficiariosService.importarDesdeExcel(file.buffer, options);
+    return await this.beneficiariosService.importarDesdeExcel(
+      file.buffer,
+      options,
+    );
   }
 
   @Public()
@@ -152,7 +165,7 @@ export class BeneficiariosController {
   @RequierePermiso('beneficiarios:editar')
   updateExpediente(
     @Param('expedienteId', ParseUUIDPipe) expedienteId: string,
-    @Body() data: any
+    @Body() data: any,
   ) {
     return this.beneficiariosService.updateExpediente(expedienteId, data);
   }
@@ -186,18 +199,15 @@ export class BeneficiariosController {
 
   @Post(':id/expediente')
   @RequierePermiso('beneficiarios:editar')
-  addExpediente(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() data: any
-  ) {
+  addExpediente(@Param('id', ParseUUIDPipe) id: string, @Body() data: any) {
     return this.beneficiariosService.addExpediente(id, data);
   }
 
   @Patch(':id')
   @RequierePermiso('beneficiarios:editar')
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body() updateBeneficiarioDto: UpdateBeneficiarioDto
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateBeneficiarioDto: UpdateBeneficiarioDto,
   ) {
     return this.beneficiariosService.update(id, updateBeneficiarioDto);
   }
@@ -206,7 +216,7 @@ export class BeneficiariosController {
   @RequierePermiso('beneficiarios:editar')
   asignarClases(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() asignarClaseDto: AsignarClaseDto
+    @Body() asignarClaseDto: AsignarClaseDto,
   ) {
     return this.beneficiariosService.asignarClases(id, asignarClaseDto);
   }
@@ -216,7 +226,7 @@ export class BeneficiariosController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removerDeClase(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('claseId', ParseUUIDPipe) claseId: string
+    @Param('claseId', ParseUUIDPipe) claseId: string,
   ) {
     return this.beneficiariosService.removerDeClase(id, claseId);
   }

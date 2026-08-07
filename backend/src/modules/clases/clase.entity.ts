@@ -1,4 +1,16 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, ManyToMany, JoinTable, OneToMany, CreateDateColumn, UpdateDateColumn, Index, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  JoinColumn,
+} from 'typeorm';
 import { Tutor } from '../tutores/tutor.entity';
 import { Horario } from '../horarios/horario.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
@@ -21,27 +33,27 @@ export class Clase {
   @Column({ length: 50, nullable: true })
   codigo: string;
 
-  @ManyToOne(() => Tutor, tutor => tutor.clases)
+  @ManyToOne(() => Tutor, (tutor) => tutor.clases)
   @JoinColumn({ name: 'tutor_id' })
   tutor: Tutor;
 
-  @ManyToMany(() => Horario, horario => horario.clases)
+  @ManyToMany(() => Horario, (horario) => horario.clases)
   @JoinTable({
     name: 'clase_horario',
     joinColumn: { name: 'clase_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'horario_id', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'horario_id', referencedColumnName: 'id' },
   })
   horarios: Horario[];
 
-  @ManyToMany(() => Beneficiario, beneficiario => beneficiario.clases)
+  @ManyToMany(() => Beneficiario, (beneficiario) => beneficiario.clases)
   @JoinTable({
     name: 'clase_beneficiario',
     joinColumn: { name: 'clase_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'beneficiario_id', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'beneficiario_id', referencedColumnName: 'id' },
   })
   beneficiarios: Beneficiario[];
 
-  @OneToMany(() => Asistencia, asistencia => asistencia.clase)
+  @OneToMany(() => Asistencia, (asistencia) => asistencia.clase)
   asistencias: Asistencia[];
 
   @Column({ type: 'int', default: 0 })

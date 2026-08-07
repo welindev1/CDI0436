@@ -10,7 +10,6 @@ import { DataSource } from 'typeorm';
 // Custom exception filter and validation pipe
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ValidationPipe } from './common/pipes/validation.pipe';
-import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -25,7 +24,9 @@ async function bootstrap() {
       if (migrations.length === 0) {
         console.log('[Migration] No pending migrations.');
       } else {
-        console.log(`[Migration] ${migrations.length} migration(s) executed successfully.`);
+        console.log(
+          `[Migration] ${migrations.length} migration(s) executed successfully.`,
+        );
       }
     } catch (error) {
       console.error('[Migration] Failed to run migrations:', error);
@@ -55,7 +56,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-  
+
   // ========================================
   // Global Exception Filter
   // ========================================

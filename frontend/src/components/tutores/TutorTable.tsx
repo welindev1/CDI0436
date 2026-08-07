@@ -54,6 +54,7 @@ export default function TutorTable({
             <TableCell isHeader>Nombre</TableCell>
             <TableCell isHeader>Contacto</TableCell>
             <TableCell isHeader>Especialidad</TableCell>
+            <TableCell isHeader>Tipo</TableCell>
             <TableCell isHeader>Clases</TableCell>
             <TableCell isHeader>Estado</TableCell>
             <TableCell isHeader>Acciones</TableCell>
@@ -93,6 +94,17 @@ export default function TutorTable({
               <TableCell>
                 <span className="text-sm text-gray-600">
                   {tutor.especialidad || '-'}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  tutor.tipo === 'club'
+                    ? 'bg-indigo-100 text-indigo-800'
+                    : tutor.tipo === 'ambos'
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {tutor.tipo === 'club' ? 'Club' : tutor.tipo === 'ambos' ? 'Ambos' : 'Clase'}
                 </span>
               </TableCell>
               <TableCell>

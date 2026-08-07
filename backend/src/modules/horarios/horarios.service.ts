@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Horario } from './horario.entity';
@@ -16,19 +20,21 @@ export class HorariosService {
   async create(createHorarioDto: CreateHorarioDto): Promise<Horario> {
     // Validar que hora_fin sea mayor que hora_inicio
     if (createHorarioDto.hora_inicio >= createHorarioDto.hora_fin) {
-      throw new BadRequestException('La hora de fin debe ser mayor que la hora de inicio');
+      throw new BadRequestException(
+        'La hora de fin debe ser mayor que la hora de inicio',
+      );
     }
 
     // Verificar conflictos de horario
     const conflicto = await this.verificarConflicto(
       createHorarioDto.dia,
       createHorarioDto.hora_inicio,
-      createHorarioDto.hora_fin
+      createHorarioDto.hora_fin,
     );
 
     if (conflicto) {
       throw new BadRequestException(
-        `Ya existe un horario para ${createHorarioDto.dia} que se superpone con el horario proporcionado`
+        `Ya existe un horario para ${createHorarioDto.dia} que se superpone con el horario proporcionado`,
       );
     }
 
@@ -37,7 +43,8 @@ export class HorariosService {
   }
 
   async findAll(filters?: FilterHorarioDto): Promise<Horario[]> {
-    const query = this.horariosRepository.createQueryBuilder('horario')
+    const query = this.horariosRepository
+      .createQueryBuilder('horario')
       .leftJoinAndSelect('horario.clases', 'clases')
       .orderBy('horario.dia', 'ASC')
       .addOrderBy('horario.hora_inicio', 'ASC');
@@ -58,7 +65,7 @@ export class HorariosService {
   async findOne(id: string): Promise<Horario> {
     const horario = await this.horariosRepository.findOne({
       where: { id },
-      relations: ['clases']
+      relations: ['clases'],
     });
 
     if (!horario) {
@@ -68,7 +75,10 @@ export class HorariosService {
     return horario;
   }
 
-  async update(id: string, updateHorarioDto: UpdateHorarioDto): Promise<Horario> {
+  async update(
+    id: string,
+    updateHorarioDto: UpdateHorarioDto,
+  ): Promise<Horario> {
     const horario = await this.findOne(id);
 
     // Validar horas si se proporcionan ambas
@@ -76,16 +86,23 @@ export class HorariosService {
     const horaFin = updateHorarioDto.hora_fin || horario.hora_fin;
 
     if (horaInicio >= horaFin) {
-      throw new BadRequestException('La hora de fin debe ser mayor que la hora de inicio');
+      throw new BadRequestException(
+        'La hora de fin debe ser mayor que la hora de inicio',
+      );
     }
 
     // Verificar conflictos excluyendo el horario actual
     const dia = updateHorarioDto.dia || horario.dia;
-    const conflicto = await this.verificarConflicto(dia, horaInicio, horaFin, id);
+    const conflicto = await this.verificarConflicto(
+      dia,
+      horaInicio,
+      horaFin,
+      id,
+    );
 
     if (conflicto) {
       throw new BadRequestException(
-        `Ya existe un horario para ${dia} que se superpone con el horario proporcionado`
+        `Ya existe un horario para ${dia} que se superpone con el horario proporcionado`,
       );
     }
 
@@ -96,7 +113,7 @@ export class HorariosService {
   async remove(id: string): Promise<void> {
     const horario = await this.horariosRepository.findOne({
       where: { id },
-      relations: ['clases']
+      relations: ['clases'],
     });
 
     if (!horario) {
@@ -106,7 +123,7 @@ export class HorariosService {
     // Verificar que no tenga clases asignadas
     if (horario.clases && horario.clases.length > 0) {
       throw new BadRequestException(
-        `No se puede eliminar el horario porque tiene ${horario.clases.length} clase(s) asignada(s)`
+        `No se puede eliminar el horario porque tiene ${horario.clases.length} clase(s) asignada(s)`,
       );
     }
 
@@ -124,14 +141,15 @@ export class HorariosService {
     dia: string,
     horaInicio: string,
     horaFin: string,
-    excluirId?: string
+    excluirId?: string,
   ): Promise<boolean> {
-    const query = this.horariosRepository.createQueryBuilder('horario')
+    const query = this.horariosRepository
+      .createQueryBuilder('horario')
       .where('horario.dia = :dia', { dia })
       .andWhere('horario.activo = :activo', { activo: true })
       .andWhere(
         '(horario.hora_inicio < :horaFin AND horario.hora_fin > :horaInicio)',
-        { horaInicio, horaFin }
+        { horaInicio, horaFin },
       );
 
     if (excluirId) {
@@ -146,13 +164,14 @@ export class HorariosService {
   async findByDia(dia: string): Promise<Horario[]> {
     return await this.horariosRepository.find({
       where: { dia: dia as any, activo: true },
-      order: { hora_inicio: 'ASC' }
+      order: { hora_inicio: 'ASC' },
     });
   }
 
   // Método para obtener horarios disponibles (sin clases asignadas)
   async findDisponibles(): Promise<Horario[]> {
-    return await this.horariosRepository.createQueryBuilder('horario')
+    return await this.horariosRepository
+      .createQueryBuilder('horario')
       .leftJoin('horario.clases', 'clases')
       .where('horario.activo = :activo', { activo: true })
       .andWhere('clases.id IS NULL')

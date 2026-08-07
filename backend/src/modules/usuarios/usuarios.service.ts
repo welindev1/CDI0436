@@ -54,7 +54,7 @@ export class UsuariosService {
 
     // Eliminar passwords
     return usuarios.map((u) => {
-      const { password_hash, ...safe } = u;
+      const { password_hash: _password_hash, ...safe } = u;
       return safe as Usuario;
     });
   }
@@ -69,7 +69,7 @@ export class UsuariosService {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
 
-    const { password_hash, ...safeUsuario } = usuario;
+    const { password_hash: _password_hash, ...safeUsuario } = usuario;
     return safeUsuario as Usuario;
   }
 
@@ -81,7 +81,10 @@ export class UsuariosService {
     });
   }
 
-  async update(id: string, updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
+  async update(
+    id: string,
+    updateUsuarioDto: UpdateUsuarioDto,
+  ): Promise<Usuario> {
     const usuario = await this.usuariosRepository.findOne({
       where: { id },
     });
@@ -204,7 +207,10 @@ export class UsuariosService {
     return this.findOne(id);
   }
 
-  async validateUser(correo: string, password: string): Promise<Usuario | null> {
+  async validateUser(
+    correo: string,
+    password: string,
+  ): Promise<Usuario | null> {
     const usuario = await this.findByCorreo(correo);
 
     if (!usuario || !usuario.activo) {

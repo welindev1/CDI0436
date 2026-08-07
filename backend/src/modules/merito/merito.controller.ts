@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Body, Param, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { MeritoService } from './merito.service';
 import { CreatePeriodoDto } from './dto/create-periodo.dto';
 import { CreateNotaDto } from './dto/create-nota.dto';
@@ -39,7 +49,7 @@ export class MeritoController {
   @RequierePermiso('merito:editar')
   agregarNota(
     @Param('id') periodo_id: string,
-    @Body() createNotaDto: CreateNotaDto
+    @Body() createNotaDto: CreateNotaDto,
   ) {
     return this.meritoService.agregarNota(periodo_id, createNotaDto);
   }
@@ -49,8 +59,12 @@ export class MeritoController {
   getGanadores(
     @Param('id') periodo_id: string,
     @Query('cant_primaria', ParseIntPipe) cant_primaria: number,
-    @Query('cant_secundaria', ParseIntPipe) cant_secundaria: number
+    @Query('cant_secundaria', ParseIntPipe) cant_secundaria: number,
   ) {
-    return this.meritoService.getGanadores(periodo_id, cant_primaria, cant_secundaria);
+    return this.meritoService.getGanadores(
+      periodo_id,
+      cant_primaria,
+      cant_secundaria,
+    );
   }
 }

@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { PeriodoMerito } from './periodo-merito.entity';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
 
@@ -15,7 +24,9 @@ export class NotaMerito {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => PeriodoMerito, periodo => periodo.notas, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PeriodoMerito, (periodo) => periodo.notas, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'periodo_id' })
   periodo: PeriodoMerito;
 

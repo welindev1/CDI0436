@@ -16,9 +16,16 @@ import { Permiso } from './modules/roles/entities/permiso.entity';
 import { Supervivencia } from './modules/supervivencias/supervivencia.entity';
 import { AsistenciaSupervivencia } from './modules/supervivencias/asistencia-supervivencia.entity';
 import { FotoAsistenciaSupervivencia } from './modules/supervivencias/foto-asistencia-supervivencia.entity';
+import { Club } from './modules/clubs/club.entity';
+import { AsistenciaClub } from './modules/clubs/asistencia-club.entity';
+import { FotoAsistenciaClub } from './modules/clubs/foto-asistencia-club.entity';
 import { MenuNutricion } from './modules/nutricion/menu-nutricion.entity';
 import { PeriodoMerito } from './modules/merito/periodo-merito.entity';
 import { NotaMerito } from './modules/merito/nota-merito.entity';
+import { DocumentoUsuario } from './modules/usuarios/documento-usuario.entity';
+import { Trabajador } from './modules/asistencia-personal/trabajador.entity';
+import { AsistenciaPersonal } from './modules/asistencia-personal/asistencia-personal.entity';
+import { BonoRegalo } from './modules/bonos/bono-regalo.entity';
 
 // Importar módulos
 import { AuthModule } from './modules/auth/auth.module';
@@ -31,9 +38,12 @@ import { AsistenciasModule } from './modules/asistencias/asistencias.module';
 import { AyudasModule } from './modules/ayudas/ayudas.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { SupervivenciasModule } from './modules/supervivencias/supervivencias.module';
+import { ClubsModule } from './modules/clubs/clubs.module';
 import { NutricionModule } from './modules/nutricion/nutricion.module';
 import { MeritoModule } from './modules/merito/merito.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
+import { AsistenciaPersonalModule } from './modules/asistencia-personal/asistencia-personal.module';
+import { BonosModule } from './modules/bonos/bonos.module';
 
 @Module({
   imports: [
@@ -43,41 +53,50 @@ import { ReportesModule } from './modules/reportes/reportes.module';
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get('DATABASE_URL'),
-        entities: [
-          Usuario,
-          Tutor,
-          Horario,
-          Beneficiario,
-          BeneficiarioExpediente,
-          Clase,
-          Asistencia,
-          Reporte,
-          Rol,
-          Permiso,
-          Supervivencia,
-          AsistenciaSupervivencia,
-          FotoAsistenciaSupervivencia,
-          MenuNutricion,
-          PeriodoMerito,
-          NotaMerito,
-        ],
-        // ⚠️ MIGRACIONES: synchronize: false es obligatorio en producción.
-        // Usa los comandos del package.json para gestionar migraciones:
-        //   npm run migration:generate -- src/migrations/Nombre
-        //   npm run migration:run
-        //   npm run migration:revert
-        synchronize: false,
-        migrationsTableName: 'migrations_typeorm',
-        migrations: ['dist/src/migrations/*.{ts,js}'],
-        ssl: {
-          rejectUnauthorized: false,
-        },
-        logging: ['error', 'warn'],
-        autoLoadEntities: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get('DATABASE_URL');
+        const isLocalDb = dbUrl?.includes('localhost');
+        return {
+          type: 'postgres' as const,
+          url: dbUrl,
+          entities: [
+            Usuario,
+            Tutor,
+            Horario,
+            Beneficiario,
+            BeneficiarioExpediente,
+            Clase,
+            Asistencia,
+            Reporte,
+            Rol,
+            Permiso,
+            Supervivencia,
+            AsistenciaSupervivencia,
+            FotoAsistenciaSupervivencia,
+            Club,
+            AsistenciaClub,
+            FotoAsistenciaClub,
+            MenuNutricion,
+            PeriodoMerito,
+            NotaMerito,
+            DocumentoUsuario,
+            Trabajador,
+            AsistenciaPersonal,
+            BonoRegalo,
+          ],
+          // ⚠️ MIGRACIONES: synchronize: false es obligatorio en producción.
+          // Usa los comandos del package.json para gestionar migraciones:
+          //   npm run migration:generate -- src/migrations/Nombre
+          //   npm run migration:run
+          //   npm run migration:revert
+          synchronize: false,
+          migrationsTableName: 'migrations_typeorm',
+          migrations: ['dist/src/migrations/*.{ts,js}'],
+          ssl: isLocalDb ? false : { rejectUnauthorized: false },
+          logging: ['error', 'warn'],
+          autoLoadEntities: true,
+        };
+      },
       inject: [ConfigService],
     }),
 
@@ -92,9 +111,12 @@ import { ReportesModule } from './modules/reportes/reportes.module';
     AsistenciasModule,
     AyudasModule,
     SupervivenciasModule,
+    ClubsModule,
     NutricionModule,
     MeritoModule,
     ReportesModule,
+    AsistenciaPersonalModule,
+    BonosModule,
   ],
 })
 export class AppModule {}

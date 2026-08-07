@@ -1,11 +1,11 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   ParseUUIDPipe,
   HttpCode,
@@ -59,8 +59,8 @@ export class HorariosController {
   @Patch(':id')
   @RequierePermiso('horarios:editar')
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body() updateHorarioDto: UpdateHorarioDto
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateHorarioDto: UpdateHorarioDto,
   ) {
     return this.horariosService.update(id, updateHorarioDto);
   }

@@ -1,4 +1,13 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+  IsEnum,
+  MaxLength,
+} from 'class-validator';
+import { TipoTutor } from '../tutor.entity';
 
 export class CreateTutorDto {
   @IsString()
@@ -22,6 +31,10 @@ export class CreateTutorDto {
   @IsString()
   @IsOptional()
   especialidad?: string;
+
+  @IsEnum(TipoTutor)
+  @IsOptional()
+  tipo?: TipoTutor;
 
   @IsUUID()
   @IsOptional()

@@ -71,7 +71,10 @@ export class RolesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() asignarPermisosDto: AsignarPermisosDto,
   ) {
-    return this.rolesService.asignarPermisos(id, asignarPermisosDto.permisos_ids);
+    return this.rolesService.asignarPermisos(
+      id,
+      asignarPermisosDto.permisos_ids,
+    );
   }
 
   @Delete(':id')

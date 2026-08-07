@@ -6,7 +6,7 @@ export class InitialSchema1784300000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Skip if tables already exist (production DB was created with synchronize)
     const result = await queryRunner.query(
-      `SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'usuarios'`
+      `SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'usuarios'`,
     );
     if (parseInt(result[0].count) > 0) {
       console.log('[Migration] Tables already exist, skipping InitialSchema.');
@@ -15,14 +15,29 @@ export class InitialSchema1784300000000 implements MigrationInterface {
 
     // Enum types (use IF NOT EXISTS pattern via DO block)
     const enums = [
-      { name: 'dia_semana_enum', values: "'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'" },
+      {
+        name: 'dia_semana_enum',
+        values:
+          "'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'",
+      },
       { name: 'estado_asistencia_enum', values: "'presente', 'ausente'" },
-      { name: 'tipo_reporte_enum', values: "'asistencia_clase', 'asistencia_alumno', 'asistencia_periodo', 'asistencia_global'" },
+      {
+        name: 'tipo_reporte_enum',
+        values:
+          "'asistencia_clase', 'asistencia_alumno', 'asistencia_periodo', 'asistencia_global'",
+      },
       { name: 'formato_reporte_enum', values: "'pdf', 'excel', 'csv'" },
       { name: 'tanda_nutricion_enum', values: "'matutina', 'vespertina'" },
       { name: 'ciclo_educativo_enum', values: "'Primaria', 'Secundaria'" },
-      { name: 'tipo_ayuda_enum', values: "'medica', 'alimentos', 'pequeno_negocio', 'educacion', 'otros'" },
-      { name: 'estado_ayuda_enum', values: "'pendiente', 'aprobada', 'rechazada'" },
+      {
+        name: 'tipo_ayuda_enum',
+        values:
+          "'medica', 'alimentos', 'pequeno_negocio', 'educacion', 'otros'",
+      },
+      {
+        name: 'estado_ayuda_enum',
+        values: "'pendiente', 'aprobada', 'rechazada'",
+      },
     ];
 
     for (const e of enums) {
@@ -361,6 +376,8 @@ export class InitialSchema1784300000000 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_ROLES_ACTIVO" ON "roles" ("activo")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ROLES_SUPER_ADMIN" ON "roles" ("es_super_admin")`,
       `CREATE INDEX IF NOT EXISTS "IDX_PERMISOS_MODULO" ON "permisos" ("modulo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_roles_permisos_rol" ON "roles_permisos" ("rol_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_roles_permisos_permiso" ON "roles_permisos" ("permiso_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_USUARIOS_ROL_ID" ON "usuarios" ("rol_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_USUARIOS_ACTIVO" ON "usuarios" ("activo")`,
       `CREATE INDEX IF NOT EXISTS "IDX_TUTORES_CORREO" ON "tutores" ("correo")`,
@@ -371,14 +388,44 @@ export class InitialSchema1784300000000 implements MigrationInterface {
       `CREATE INDEX IF NOT EXISTS "IDX_BENEFICIARIOS_NOMBRE" ON "beneficiarios" ("nombre")`,
       `CREATE INDEX IF NOT EXISTS "IDX_EXPEDIENTES_BENEFICIARIO_ID" ON "beneficiario_expedientes" ("beneficiario_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_EXPEDIENTES_TIPO" ON "beneficiario_expedientes" ("tipo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_EXPEDIENTES_FECHA_EVENTO" ON "beneficiario_expedientes" ("fecha_evento")`,
       `CREATE INDEX IF NOT EXISTS "IDX_CLASES_TUTOR_ID" ON "clases" ("tutor_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_CLASES_CODIGO" ON "clases" ("codigo")`,
       `CREATE INDEX IF NOT EXISTS "IDX_CLASES_ACTIVO" ON "clases" ("activo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_clase_horario_clase" ON "clase_horario" ("clase_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_clase_horario_horario" ON "clase_horario" ("horario_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_clase_beneficiario_clase" ON "clase_beneficiario" ("clase_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_clase_beneficiario_beneficiario" ON "clase_beneficiario" ("beneficiario_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_CLASE_ID" ON "asistencias" ("clase_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_BENEFICIARIO_ID" ON "asistencias" ("beneficiario_id")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_FECHA" ON "asistencias" ("fecha")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_ESTADO" ON "asistencias" ("estado")`,
       `CREATE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_REGISTRADO_POR" ON "asistencias" ("registrado_por_id")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_ASISTENCIAS_UNICA" ON "asistencias" ("clase_id", "beneficiario_id", "fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_ASIST_CLASE_FECHA" ON "fotos_asistencia" ("clase_id", "fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_ASIST_CLASE_ID" ON "fotos_asistencia" ("clase_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_ASIST_FECHA" ON "fotos_asistencia" ("fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUPERVIVENCIAS_TUTOR_ID" ON "supervivencias" ("tutor_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUPERVIVENCIAS_CODIGO" ON "supervivencias" ("codigo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_SUPERVIVENCIAS_ACTIVO" ON "supervivencias" ("activo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_superv_benef_superv" ON "supervivencia_beneficiario" ("supervivencia_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_superv_benef_benef" ON "supervivencia_beneficiario" ("beneficiario_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ASIS_SUPERV_SUPERVIVENCIA_ID" ON "asistencias_supervivencia" ("supervivencia_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ASIS_SUPERV_BENEFICIARIO_ID" ON "asistencias_supervivencia" ("beneficiario_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ASIS_SUPERV_FECHA" ON "asistencias_supervivencia" ("fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_ASIS_SUPERV_COMPOSITE" ON "asistencias_supervivencia" ("supervivencia_id", "fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_SUPERV_COMPOSITE" ON "fotos_asistencia_supervivencia" ("supervivencia_id", "fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_SUPERV_SUPERVIVENCIA_ID" ON "fotos_asistencia_supervivencia" ("supervivencia_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_FOTOS_SUPERV_FECHA" ON "fotos_asistencia_supervivencia" ("fecha")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_REPORTES_TIPO" ON "reportes" ("tipo")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_REPORTES_FORMATO" ON "reportes" ("formato")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_REPORTES_GENERADO_POR_ID" ON "reportes" ("generado_por_id")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "IDX_menus_nutricion_fecha_tanda" ON "menus_nutricion" ("fecha", "tanda")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_PERIODOS_MERITO_ANIO" ON "periodos_merito" ("anio")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_PERIODOS_MERITO_ESTADO" ON "periodos_merito" ("estado")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_NOTAS_MERITO_PERIODO_ID" ON "notas_merito" ("periodo_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_NOTAS_MERITO_BENEFICIARIO_ID" ON "notas_merito" ("beneficiario_id")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_NOTAS_MERITO_CICLO" ON "notas_merito" ("ciclo")`,
       `CREATE INDEX IF NOT EXISTS "IDX_AYUDAS_CODIGO_BENEF" ON "ayudas" ("codigo_beneficiario")`,
       `CREATE INDEX IF NOT EXISTS "IDX_AYUDAS_TIPO" ON "ayudas" ("tipo")`,
       `CREATE INDEX IF NOT EXISTS "IDX_AYUDAS_ESTADO" ON "ayudas" ("estado")`,
@@ -428,5 +475,7 @@ export class InitialSchema1784300000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // No-op for safety
+    void queryRunner;
+    await Promise.resolve();
   }
 }

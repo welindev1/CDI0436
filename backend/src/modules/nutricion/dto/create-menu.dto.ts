@@ -1,4 +1,11 @@
-import { IsString, IsEnum, IsOptional, IsInt, MinLength, Min } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsInt,
+  MinLength,
+  Min,
+} from 'class-validator';
 import { TandaNutricion } from '../menu-nutricion.entity';
 
 export class CreateMenuNutricionDto {

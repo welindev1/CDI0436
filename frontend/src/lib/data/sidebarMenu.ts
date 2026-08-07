@@ -1,4 +1,4 @@
-import { Home, Users, BookOpen, Clock, FileText, Settings, UserCircle, Shield, UserCog, UtensilsCrossed, Tent, BarChart3, Cake, HeartPulse, Award, Gift } from 'lucide-react';
+import { Home, Users, BookOpen, Clock, FileText, Settings, Shield, UserCog, UserCheck, UserCircle, UtensilsCrossed, Tent, BarChart3, HeartPulse, Award, Gift, Cake, Trophy, Package, ListChecks } from 'lucide-react';
 import type { MenuItem } from '@/lib/types';
 
 export const menuGroups: MenuItem[] = [
@@ -8,7 +8,7 @@ export const menuGroups: MenuItem[] = [
     href: '/dashboard',
   },
   {
-    title: 'Gestión de Personas',
+    title: 'Participantes',
     icon: Users,
     subItems: [
       {
@@ -18,47 +18,11 @@ export const menuGroups: MenuItem[] = [
         permisos: ['beneficiarios:ver'],
       },
       {
-        title: 'Tutores',
-        icon: UserCircle,
-        href: '/dashboard/tutores',
-        permisos: ['tutores:ver'],
-      },
-      {
-        title: 'Cumpleaños',
-        icon: Cake,
-        href: '/dashboard/cumpleanos',
-        permisos: ['cumpleanos:ver'],
-      },
-    ],
-  },
-  {
-    title: 'Académico y Operativa',
-    icon: BookOpen,
-    subItems: [
-      {
-        title: 'Clases',
-        icon: BookOpen,
-        href: '/dashboard/clases',
-        permisos: ['clases:ver'],
-      },
-      {
-        title: 'Horarios',
-        icon: Clock,
-        href: '/dashboard/horarios',
-        permisos: ['horarios:ver'],
-      },
-      {
         title: 'Mérito Estudiantil',
         icon: Award,
         href: '/dashboard/merito',
         permisos: ['merito:ver'],
       },
-    ],
-  },
-  {
-    title: 'Bienestar Integral',
-    icon: HeartPulse,
-    subItems: [
       {
         title: 'Solicitudes de Ayuda',
         icon: FileText,
@@ -72,6 +36,48 @@ export const menuGroups: MenuItem[] = [
         permisos: ['supervivencia:ver'],
       },
       {
+        title: 'Cumpleaños',
+        icon: Cake,
+        href: '/dashboard/cumpleanos',
+        permisos: ['cumpleanos:ver'],
+      },
+    ],
+  },
+  {
+    title: 'Tutoría',
+    icon: UserCheck,
+    subItems: [
+      {
+        title: 'Tutores',
+        icon: UserCircle,
+        href: '/dashboard/tutores',
+        permisos: ['tutores:ver'],
+      },
+      {
+        title: 'Clases',
+        icon: BookOpen,
+        href: '/dashboard/clases',
+        permisos: ['clases:ver'],
+      },
+      {
+        title: 'Clubs',
+        icon: Trophy,
+        href: '/dashboard/clubs',
+        permisos: ['clubs:ver'],
+      },
+      {
+        title: 'Horarios',
+        icon: Clock,
+        href: '/dashboard/horarios',
+        permisos: ['horarios:ver'],
+      },
+    ],
+  },
+  {
+    title: 'Bienestar Integral',
+    icon: HeartPulse,
+    subItems: [
+      {
         title: 'Nutrición',
         icon: UtensilsCrossed,
         href: '/dashboard/nutricion',
@@ -80,7 +86,7 @@ export const menuGroups: MenuItem[] = [
     ],
   },
   {
-    title: 'Análisis y Reportes',
+    title: 'Reportes',
     icon: BarChart3,
     subItems: [
       {
@@ -95,10 +101,28 @@ export const menuGroups: MenuItem[] = [
         href: '/dashboard/reportes/carpetas',
         permisos: ['reportes:ver'],
       },
+    ],
+  },
+  {
+    title: 'Bonos',
+    icon: Gift,
+    subItems: [
       {
-        title: 'Bonos de Regalo',
+        title: 'Bonos de Navidad',
         icon: Gift,
         href: '/dashboard/bonos',
+        permisos: ['bonos:ver'],
+      },
+      {
+        title: 'Bonos de Regalos',
+        icon: Package,
+        href: '/dashboard/bonos/regalos',
+        permisos: ['bonos:ver'],
+      },
+      {
+        title: 'Lista de Regalos',
+        icon: ListChecks,
+        href: '/dashboard/bonos/lista',
         permisos: ['bonos:ver'],
       },
     ],
@@ -113,6 +137,12 @@ export const adminGroup: MenuItem = {
       title: 'Usuarios',
       icon: UserCog,
       href: '/dashboard/usuarios',
+      permisos: ['usuarios:ver'],
+    },
+    {
+      title: 'Asistencia Personal',
+      icon: UserCheck,
+      href: '/dashboard/asistencia-personal',
       permisos: ['usuarios:ver'],
     },
     {

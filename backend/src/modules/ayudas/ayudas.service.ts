@@ -41,20 +41,27 @@ export class AyudasService {
     return ayuda;
   }
 
-  async updateEstado(id: string, updateEstadoDto: UpdateEstadoAyudaDto): Promise<Ayuda> {
+  async updateEstado(
+    id: string,
+    updateEstadoDto: UpdateEstadoAyudaDto,
+  ): Promise<Ayuda> {
     const ayuda = await this.findOne(id);
     ayuda.estado = updateEstadoDto.estado;
     const saved = await this.ayudasRepository.save(ayuda);
 
     // Enviar webhook a n8n para procesar la notificación de WhatsApp
-    if (saved.estado === EstadoAyuda.APROBADA || saved.estado === EstadoAyuda.RECHAZADA) {
+    if (
+      saved.estado === EstadoAyuda.APROBADA ||
+      saved.estado === EstadoAyuda.RECHAZADA
+    ) {
       this.webhookService.notificarCambioEstado(saved, saved.estado);
     }
 
     // También mantener envío directo de WhatsApp como respaldo (opcional)
     // Si prefieres usar solo n8n, puedes comentar o eliminar este bloque
     if (saved.telefono) {
-      const estadoTexto = saved.estado === EstadoAyuda.APROBADA ? 'aprobada ✅' : 'rechazada ❌';
+      const estadoTexto =
+        saved.estado === EstadoAyuda.APROBADA ? 'aprobada ✅' : 'rechazada ❌';
       const mensaje = `Hola ${saved.nombre_beneficiario}, le informamos que su solicitud de ayuda (${saved.tipo}) ha sido ${estadoTexto}. CDI - Centro de Desarrollo Integral.`;
       // Se envía de forma asíncrona sin bloquear la respuesta
       this.whatsappService.enviarMensaje(saved.telefono, mensaje);
@@ -68,7 +75,10 @@ export class AyudasService {
     await this.ayudasRepository.remove(ayuda);
   }
 
-  async updateFotoEntrega(id: string, updateFotoEntregaDto: UpdateFotoEntregaDto): Promise<Ayuda> {
+  async updateFotoEntrega(
+    id: string,
+    updateFotoEntregaDto: UpdateFotoEntregaDto,
+  ): Promise<Ayuda> {
     const ayuda = await this.findOne(id);
     ayuda.foto_entrega_url = updateFotoEntregaDto.foto_entrega_url;
     return await this.ayudasRepository.save(ayuda);
@@ -79,12 +89,18 @@ export class AyudasService {
 
     const getTipoLabel = (tipo: string, especificacion?: string) => {
       switch (tipo) {
-        case 'medica': return 'MEDICA';
-        case 'alimentos': return 'ALIMENTOS';
-        case 'pequeno_negocio': return 'PEQUENO NEGOCIO';
-        case 'educacion': return 'EDUCACION';
-        case 'otros': return especificacion ? `OTROS: ${especificacion}` : 'OTROS';
-        default: return tipo.toUpperCase();
+        case 'medica':
+          return 'MEDICA';
+        case 'alimentos':
+          return 'ALIMENTOS';
+        case 'pequeno_negocio':
+          return 'PEQUENO NEGOCIO';
+        case 'educacion':
+          return 'EDUCACION';
+        case 'otros':
+          return especificacion ? `OTROS: ${especificacion}` : 'OTROS';
+        default:
+          return tipo.toUpperCase();
       }
     };
 
@@ -124,7 +140,10 @@ export class AyudasService {
   }
 
   // Métodos para comentarios
-  async createComentario(ayudaId: string, createComentarioDto: CreateComentarioDto): Promise<ComentarioAyuda> {
+  async createComentario(
+    ayudaId: string,
+    createComentarioDto: CreateComentarioDto,
+  ): Promise<ComentarioAyuda> {
     await this.findOne(ayudaId); // Verificar que la ayuda existe
 
     const comentario = this.comentariosRepository.create({

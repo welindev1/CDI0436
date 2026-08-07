@@ -1,31 +1,164 @@
-name: CI Pipeline
+name: CI
 
-# 1. ¿Cuándo se va a ejecutar este pipeline?
 on:
   pull_request:
-    branches: [ "main" ] # Se activa cuando alguien hace un PR hacia main
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-# 2. ¿Qué tareas (jobs) va a realizar?
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Instalación y Construcción
-    runs-on: ubuntu-latest # Una máquina virtual gratuita de GitHub
-
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
     steps:
-    # Paso A: Traer el código de tu repositorio a la máquina virtual
-    - name: Clonar el repositorio
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    # Paso B: Preparar el entorno con Node.js
-    - name: Configurar Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20' # Aquí pones la versión que uses en tu proyecto
+      - name: Bloquear archivos de entorno / claves commiteados
+        run: |
+          set -euo pipefail
+          blocked=$(
+            git ls-files \
+              | grep -E '(^|/)\.env($|[^a-z])' \
+              | grep -v '\.env\.example$' \
+            || true
+          )
+          blocked+=$'\n'$(git ls-files | grep -E '\.(pem|key|p12|pfx|p8)$' || true)
+          blocked+=$'\n'$(git ls-files | grep -E '(^|/)id_rsa$|(^|/)\.ssh/|(^|/)\.htpasswd' || true)
+          blocked=$(printf '%s\n' "$blocked" | sed '/^$/d' | sort -u)
+          if [ -n "$blocked" ]; then
+            echo "::error::Archivos sensibles commiteados (no deben existir en el repo):"
+            printf '%s\n' "$blocked"
+            exit 1
+          fi
+          echo "OK - No hay archivos de entorno ni claves commiteados"
 
-    # Paso C: Instalar las librerías
-    - name: Instalar dependencias
-      run: npm install
+      - name: Bloquear scripts de debug / basura
+        run: |
+          set -euo pipefail
+          garbage=$(
+            git ls-files \
+              | grep -E '^backend/_[^/]+\.(ts|js|js\.map|d\.ts)$' \
+            || true
+          )
+          if [ -n "$garbage" ]; then
+            echo "::error::Scripts de debug/scratch commiteados (prefijo '_'):"
+            printf '%s\n' "$garbage"
+            echo "Movelos a backend/scripts/ o agregalos a .gitignore."
+            exit 1
+          fi
+          echo "OK - No hay scripts basura commiteados"
 
-    # Paso D: Verificar que el proyecto se construye sin errores
-    - name: Ejecutar Build
-      run: npm run build
+      - name: Bloquear uploads y documentos binarios
+        run: |
+          set -euo pipefail
+          banned=$(
+            git ls-files \
+              | grep -E '(^|/)uploads/' \
+              | grep -v 'uploads/\.gitkeep$' \
+            || true
+          )
+          banned+=$'\n'$(
+            git ls-files \
+              | grep -iE '\.(pdf|docx?|xlsx?|pptx?|zip|tar\.gz|rar|7z)$' \
+              | grep -v '^docs/' \
+            || true
+          )
+          banned=$(printf '%s\n' "$banned" | sed '/^$/d' | sort -u)
+          if [ -n "$banned" ]; then
+            echo "::error::Archivos de uploads/datos o binarios commiteados:"
+            printf '%s\n' "$banned"
+            echo "Los uploads son datos de runtime; agrega /uploads a .gitignore."
+            exit 1
+          fi
+          echo "OK - Sin uploads ni documentos binarios commiteados"
+
+      - name: Escaneo de secretos en el arbol
+        run: |
+          set -euo pipefail
+          bad=0
+
+          # 1) Tokens / claves privadas en cualquier archivo versionado
+          files=$(
+            git ls-files \
+              | grep -vE '(\.env\.example$|\.md$|package-lock\.json$|\.map$|\.snap$|^frontend/public/)' \
+            || true
+          )
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if grep -qE 'npg_[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----' "$f"; then
+              echo "::error::Posible secreto detectado en: $f"
+              bad=1
+            fi
+          done <<< "$files"
+
+          # 2) Credenciales de BD embebidas en archivos de entorno (excepto plantilla)
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if grep -qE 'postgresql://[^:@/]+:[^:@/]+@' "$f"; then
+              echo "::error::Credenciales de BD (usuario:password) en: $f"
+              bad=1
+            fi
+          done < <(git ls-files | grep -E '(^|/)\.env' | grep -v '\.env\.example$')
+
+          if [ "$bad" -ne 0 ]; then
+            echo "::error::El escaneo de secretos falló. Revisá los archivos listados arriba."
+            exit 1
+          fi
+          echo "OK - Sin secretos detectados"
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck + Build
+        run: npm run build
+
+      - name: Lint (sin auto-fix)
+        run: npm run lint:check
+
+      - name: Tests
+        run: npm run test -- --passWithNoTests --runInBand
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build

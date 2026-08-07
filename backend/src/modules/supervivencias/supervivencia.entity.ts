@@ -1,4 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, ManyToOne, JoinTable, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  ManyToOne,
+  JoinTable,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Beneficiario } from '../beneficiarios/beneficiario.entity';
 import { Tutor } from '../tutores/tutor.entity';
 
@@ -23,11 +34,11 @@ export class Supervivencia {
   @JoinColumn({ name: 'tutor_id' })
   tutor: Tutor;
 
-  @ManyToMany(() => Beneficiario, beneficiario => beneficiario.supervivencias)
+  @ManyToMany(() => Beneficiario, (beneficiario) => beneficiario.supervivencias)
   @JoinTable({
     name: 'supervivencia_beneficiario',
     joinColumn: { name: 'supervivencia_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'beneficiario_id', referencedColumnName: 'id' }
+    inverseJoinColumn: { name: 'beneficiario_id', referencedColumnName: 'id' },
   })
   beneficiarios: Beneficiario[];
 

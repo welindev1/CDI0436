@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PeriodoMerito } from './periodo-merito.entity';
@@ -19,13 +23,17 @@ export class MeritoService {
   ) {}
 
   // --- PERIODOS ---
-  async createPeriodo(createPeriodoDto: CreatePeriodoDto): Promise<PeriodoMerito> {
+  async createPeriodo(
+    createPeriodoDto: CreatePeriodoDto,
+  ): Promise<PeriodoMerito> {
     const nuevoPeriodo = this.periodoRepository.create(createPeriodoDto);
     return await this.periodoRepository.save(nuevoPeriodo);
   }
 
   async findAllPeriodos(): Promise<PeriodoMerito[]> {
-    return await this.periodoRepository.find({ order: { anio: 'DESC', creado_en: 'DESC' } });
+    return await this.periodoRepository.find({
+      order: { anio: 'DESC', creado_en: 'DESC' },
+    });
   }
 
   async findPeriodoById(id: string): Promise<PeriodoMerito> {
@@ -41,27 +49,36 @@ export class MeritoService {
   }
 
   // --- NOTAS ---
-  async agregarNota(periodo_id: string, createNotaDto: CreateNotaDto): Promise<NotaMerito> {
+  async agregarNota(
+    periodo_id: string,
+    createNotaDto: CreateNotaDto,
+  ): Promise<NotaMerito> {
     const periodo = await this.findPeriodoById(periodo_id);
     if (periodo.estado !== 'activo') {
       throw new BadRequestException('El periodo está cerrado');
     }
 
-    const beneficiario = await this.beneficiarioRepository.findOne({ where: { id: createNotaDto.beneficiario_id } });
-    if (!beneficiario) throw new NotFoundException('Beneficiario no encontrado');
+    const beneficiario = await this.beneficiarioRepository.findOne({
+      where: { id: createNotaDto.beneficiario_id },
+    });
+    if (!beneficiario)
+      throw new NotFoundException('Beneficiario no encontrado');
 
     // Verificar si ya tiene nota
     const notaExistente = await this.notaRepository.findOne({
-      where: { periodo: { id: periodo_id }, beneficiario: { id: createNotaDto.beneficiario_id } }
+      where: {
+        periodo: { id: periodo_id },
+        beneficiario: { id: createNotaDto.beneficiario_id },
+      },
     });
 
     if (notaExistente) {
-      const promedio = (
-        createNotaDto.matematicas +
-        createNotaDto.lengua_espanola +
-        createNotaDto.naturales +
-        createNotaDto.sociales
-      ) / 4;
+      const promedio =
+        (createNotaDto.matematicas +
+          createNotaDto.lengua_espanola +
+          createNotaDto.naturales +
+          createNotaDto.sociales) /
+        4;
 
       notaExistente.ciclo = createNotaDto.ciclo;
       notaExistente.curso = createNotaDto.curso;
@@ -70,16 +87,16 @@ export class MeritoService {
       notaExistente.naturales = createNotaDto.naturales;
       notaExistente.sociales = createNotaDto.sociales;
       notaExistente.promedio = promedio;
-      
+
       return await this.notaRepository.save(notaExistente);
     }
 
-    const promedio = (
-      createNotaDto.matematicas +
-      createNotaDto.lengua_espanola +
-      createNotaDto.naturales +
-      createNotaDto.sociales
-    ) / 4;
+    const promedio =
+      (createNotaDto.matematicas +
+        createNotaDto.lengua_espanola +
+        createNotaDto.naturales +
+        createNotaDto.sociales) /
+      4;
 
     const nuevaNota = this.notaRepository.create({
       periodo,
@@ -90,7 +107,7 @@ export class MeritoService {
       lengua_espanola: createNotaDto.lengua_espanola,
       naturales: createNotaDto.naturales,
       sociales: createNotaDto.sociales,
-      promedio
+      promedio,
     });
 
     return await this.notaRepository.save(nuevaNota);
@@ -98,28 +115,32 @@ export class MeritoService {
 
   async getDashboardPeriodo(periodo_id: string) {
     const periodo = await this.findPeriodoById(periodo_id);
-    
+
     // Obtener todos los beneficiarios activos
-    const todosBeneficiarios = await this.beneficiarioRepository.find({ where: { activo: true } });
-    
+    const todosBeneficiarios = await this.beneficiarioRepository.find({
+      where: { activo: true },
+    });
+
     // Obtener notas registradas en este periodo
     const notasRegistradas = await this.notaRepository.find({
       where: { periodo: { id: periodo_id } },
-      relations: ['beneficiario']
+      relations: ['beneficiario'],
     });
 
-    const idsConNota = notasRegistradas.map(n => n.beneficiario.id);
-    const faltanPorEntregar = todosBeneficiarios.filter(b => !idsConNota.includes(b.id));
+    const idsConNota = notasRegistradas.map((n) => n.beneficiario.id);
+    const faltanPorEntregar = todosBeneficiarios.filter(
+      (b) => !idsConNota.includes(b.id),
+    );
 
     return {
       periodo,
-      faltan_por_entregar: faltanPorEntregar.map(b => ({
+      faltan_por_entregar: faltanPorEntregar.map((b) => ({
         id: b.id,
         codigo: b.codigo,
         nombre: b.nombre,
-        apellido: b.apellido
+        apellido: b.apellido,
       })),
-      notas_registradas: notasRegistradas.map(n => ({
+      notas_registradas: notasRegistradas.map((n) => ({
         id: n.id,
         beneficiario_id: n.beneficiario.id,
         codigo: n.beneficiario.codigo,
@@ -131,43 +152,47 @@ export class MeritoService {
         matematicas: n.matematicas,
         lengua_espanola: n.lengua_espanola,
         naturales: n.naturales,
-        sociales: n.sociales
-      }))
+        sociales: n.sociales,
+      })),
     };
   }
 
-  async getGanadores(periodo_id: string, cant_primaria: number, cant_secundaria: number) {
+  async getGanadores(
+    periodo_id: string,
+    cant_primaria: number,
+    cant_secundaria: number,
+  ) {
     await this.findPeriodoById(periodo_id); // Valida que exista
 
     const primaria = await this.notaRepository.find({
       where: { periodo: { id: periodo_id }, ciclo: CicloEducativo.PRIMARIA },
       relations: ['beneficiario'],
       order: { promedio: 'DESC' },
-      take: cant_primaria
+      take: cant_primaria,
     });
 
     const secundaria = await this.notaRepository.find({
       where: { periodo: { id: periodo_id }, ciclo: CicloEducativo.SECUNDARIA },
       relations: ['beneficiario'],
       order: { promedio: 'DESC' },
-      take: cant_secundaria
+      take: cant_secundaria,
     });
 
     return {
-      primaria: primaria.map(n => ({
+      primaria: primaria.map((n) => ({
         id: n.beneficiario.id,
         codigo: n.beneficiario.codigo,
         nombre: `${n.beneficiario.nombre} ${n.beneficiario.apellido || ''}`,
         curso: n.curso,
-        promedio: n.promedio
+        promedio: n.promedio,
       })),
-      secundaria: secundaria.map(n => ({
+      secundaria: secundaria.map((n) => ({
         id: n.beneficiario.id,
         codigo: n.beneficiario.codigo,
         nombre: `${n.beneficiario.nombre} ${n.beneficiario.apellido || ''}`,
         curso: n.curso,
-        promedio: n.promedio
-      }))
+        promedio: n.promedio,
+      })),
     };
   }
 }

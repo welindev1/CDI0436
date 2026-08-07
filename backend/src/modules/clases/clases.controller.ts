@@ -1,11 +1,11 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Patch, 
-  Param, 
-  Delete, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   Query,
   ParseUUIDPipe,
   HttpCode,
@@ -66,8 +66,8 @@ export class ClasesController {
   @Patch(':id')
   @RequierePermiso('clases:editar')
   update(
-    @Param('id', ParseUUIDPipe) id: string, 
-    @Body() updateClaseDto: UpdateClaseDto
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateClaseDto: UpdateClaseDto,
   ) {
     return this.clasesService.update(id, updateClaseDto);
   }
@@ -76,7 +76,7 @@ export class ClasesController {
   @RequierePermiso('clases:editar')
   agregarBeneficiarios(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() agregarBeneficiariosDto: AgregarBeneficiariosDto
+    @Body() agregarBeneficiariosDto: AgregarBeneficiariosDto,
   ) {
     return this.clasesService.agregarBeneficiarios(id, agregarBeneficiariosDto);
   }
@@ -86,7 +86,7 @@ export class ClasesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   removerBeneficiario(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string
+    @Param('beneficiarioId', ParseUUIDPipe) beneficiarioId: string,
   ) {
     return this.clasesService.removerBeneficiario(id, beneficiarioId);
   }

@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  JoinColumn,
+} from 'typeorm';
 import { Clase } from '../clases/clase.entity';
 
 @Entity('fotos_asistencia')
@@ -10,6 +19,7 @@ export class FotoAsistencia {
   id: string;
 
   @ManyToOne(() => Clase, { eager: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'clase_id' })
   clase: Clase;
 
   @Column({ type: 'date' })

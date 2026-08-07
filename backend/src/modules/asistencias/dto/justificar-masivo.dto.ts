@@ -1,4 +1,11 @@
-import { IsUUID, IsDateString, IsArray, ArrayMinSize, IsString, IsOptional } from 'class-validator';
+import {
+  IsUUID,
+  IsDateString,
+  IsArray,
+  ArrayMinSize,
+  IsString,
+  IsOptional,
+} from 'class-validator';
 
 export class JustificarMasivoDto {
   @IsUUID()

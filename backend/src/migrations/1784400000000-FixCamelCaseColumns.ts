@@ -21,17 +21,21 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Helper to check if a column exists
-    const columnExists = async (table: string, column: string): Promise<boolean> => {
+    const columnExists = async (
+      table: string,
+      column: string,
+    ): Promise<boolean> => {
       const result = await queryRunner.query(
         `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2`,
-        [table, column]
+        [table, column],
       );
       return result.length > 0;
     };
 
     // Helper to drop FK by finding it dynamically
     const dropFkIfExists = async (table: string, column: string) => {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         SELECT tc.constraint_name
         FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
@@ -39,11 +43,17 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
         WHERE tc.constraint_type = 'FOREIGN KEY'
           AND tc.table_name = $1
           AND kcu.column_name = $2
-      `, [table, column]);
+      `,
+        [table, column],
+      );
 
       for (const row of result) {
-        await queryRunner.query(`ALTER TABLE "${table}" DROP CONSTRAINT IF EXISTS "${row.constraint_name}"`);
-        console.log(`[FixCamelCase] Dropped FK ${row.constraint_name} on ${table}.${column}`);
+        await queryRunner.query(
+          `ALTER TABLE "${table}" DROP CONSTRAINT IF EXISTS "${row.constraint_name}"`,
+        );
+        console.log(
+          `[FixCamelCase] Dropped FK ${row.constraint_name} on ${table}.${column}`,
+        );
       }
     };
 
@@ -52,7 +62,11 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
       { table: 'tutores', from: 'usuarioId', to: 'usuario_id' },
       { table: 'asistencias', from: 'claseId', to: 'clase_id' },
       { table: 'asistencias', from: 'beneficiarioId', to: 'beneficiario_id' },
-      { table: 'asistencias', from: 'registradoPorId', to: 'registrado_por_id' },
+      {
+        table: 'asistencias',
+        from: 'registradoPorId',
+        to: 'registrado_por_id',
+      },
       { table: 'fotos_asistencia', from: 'claseId', to: 'clase_id' },
       { table: 'reportes', from: 'generadoPorId', to: 'generado_por_id' },
     ];
@@ -62,12 +76,16 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
       const targetExists = await columnExists(rename.table, rename.to);
 
       if (targetExists) {
-        console.log(`[FixCamelCase] ${rename.table}.${rename.to} already correct, skipping.`);
+        console.log(
+          `[FixCamelCase] ${rename.table}.${rename.to} already correct, skipping.`,
+        );
         continue;
       }
 
       if (!sourceExists) {
-        console.log(`[FixCamelCase] ${rename.table}.${rename.from} not found, skipping.`);
+        console.log(
+          `[FixCamelCase] ${rename.table}.${rename.from} not found, skipping.`,
+        );
         continue;
       }
 
@@ -75,8 +93,12 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
       await dropFkIfExists(rename.table, rename.from);
 
       // Rename the column
-      await queryRunner.query(`ALTER TABLE "${rename.table}" RENAME COLUMN "${rename.from}" TO "${rename.to}"`);
-      console.log(`[FixCamelCase] Renamed ${rename.table}.${rename.from} → ${rename.to}`);
+      await queryRunner.query(
+        `ALTER TABLE "${rename.table}" RENAME COLUMN "${rename.from}" TO "${rename.to}"`,
+      );
+      console.log(
+        `[FixCamelCase] Renamed ${rename.table}.${rename.from} → ${rename.to}`,
+      );
     }
 
     // Re-add FK constraints (using IF NOT EXISTS pattern via exception handling)
@@ -103,5 +125,7 @@ export class FixCamelCaseColumns1784400000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // No-op: reverting camelCase would break the app
+    void queryRunner;
+    await Promise.resolve();
   }
 }

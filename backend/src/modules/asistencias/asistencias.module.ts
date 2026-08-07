@@ -9,7 +9,15 @@ import { Beneficiario } from '../beneficiarios/beneficiario.entity';
 import { Tutor } from '../tutores/tutor.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Asistencia, FotoAsistencia, Clase, Beneficiario, Tutor])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Asistencia,
+      FotoAsistencia,
+      Clase,
+      Beneficiario,
+      Tutor,
+    ]),
+  ],
   controllers: [AsistenciasController],
   providers: [AsistenciasService],
   exports: [AsistenciasService, TypeOrmModule],

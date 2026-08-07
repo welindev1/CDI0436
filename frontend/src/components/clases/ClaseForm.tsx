@@ -58,7 +58,7 @@ export default function ClaseForm({ clase, onSubmit, onCancel }: ClaseFormProps)
         tutoresApi.getAll(),
         horariosApi.getAll(),
       ]);
-      setTutores(tutoresData);
+      setTutores(tutoresData.filter(t => t.tipo === 'clase' || t.tipo === 'ambos'));
       setHorarios(horariosData);
     } catch (err: unknown) {
       setError('Error al cargar tutores y horarios');

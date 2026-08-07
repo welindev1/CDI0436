@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  CreateDateColumn,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { Ayuda } from './ayuda.entity';
 
 @Entity('comentarios_ayuda')

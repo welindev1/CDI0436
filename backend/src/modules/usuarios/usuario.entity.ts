@@ -39,7 +39,6 @@ export class Usuario {
   @Column({ default: true })
   primer_login: boolean;
 
-
   @CreateDateColumn()
   creado_en: Date;
 
