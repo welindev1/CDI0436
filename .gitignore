@@ -43,3 +43,9 @@ postgres_data/
 
 # Scripts de debug / scratch en la raíz del backend
 backend/_*
+
+# Uploads de usuarios (runtime - nunca commitear)
+backend/uploads/
+
+# Documentos sueltos en la raíz
+*.pdf

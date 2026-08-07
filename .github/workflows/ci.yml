@@ -53,6 +53,30 @@ jobs:
           fi
           echo "OK - No hay scripts basura commiteados"
 
+      - name: Bloquear uploads y documentos binarios
+        run: |
+          set -euo pipefail
+          banned=$(
+            git ls-files \
+              | grep -E '(^|/)uploads/' \
+              | grep -v 'uploads/\.gitkeep$' \
+            || true
+          )
+          banned+=$'\n'$(
+            git ls-files \
+              | grep -iE '\.(pdf|docx?|xlsx?|pptx?|zip|tar\.gz|rar|7z)$' \
+              | grep -v '^docs/' \
+            || true
+          )
+          banned=$(printf '%s\n' "$banned" | sed '/^$/d' | sort -u)
+          if [ -n "$banned" ]; then
+            echo "::error::Archivos de uploads/datos o binarios commiteados:"
+            printf '%s\n' "$banned"
+            echo "Los uploads son datos de runtime; agrega /uploads a .gitignore."
+            exit 1
+          fi
+          echo "OK - Sin uploads ni documentos binarios commiteados"
+
       - name: Escaneo de secretos en el arbol
         run: |
           set -euo pipefail
