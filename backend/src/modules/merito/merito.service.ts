@@ -161,22 +161,65 @@ export class MeritoService {
     periodo_id: string,
     cant_primaria: number,
     cant_secundaria: number,
+    min_primaria?: number,
+    max_primaria?: number,
+    min_secundaria?: number,
+    max_secundaria?: number,
   ) {
     await this.findPeriodoById(periodo_id); // Valida que exista
 
-    const primaria = await this.notaRepository.find({
-      where: { periodo: { id: periodo_id }, ciclo: CicloEducativo.PRIMARIA },
-      relations: ['beneficiario'],
-      order: { promedio: 'DESC' },
-      take: cant_primaria,
-    });
+    const useRangePrimaria =
+      min_primaria !== undefined && max_primaria !== undefined;
+    const useRangeSecundaria =
+      min_secundaria !== undefined && max_secundaria !== undefined;
 
-    const secundaria = await this.notaRepository.find({
-      where: { periodo: { id: periodo_id }, ciclo: CicloEducativo.SECUNDARIA },
-      relations: ['beneficiario'],
-      order: { promedio: 'DESC' },
-      take: cant_secundaria,
-    });
+    let primaria: NotaMerito[];
+    let secundaria: NotaMerito[];
+
+    if (useRangePrimaria) {
+      primaria = await this.notaRepository
+        .createQueryBuilder('nota')
+        .innerJoinAndSelect('nota.beneficiario', 'beneficiario')
+        .where('nota.periodo_id = :periodo_id', { periodo_id })
+        .andWhere('nota.ciclo = :ciclo', { ciclo: CicloEducativo.PRIMARIA })
+        .andWhere('nota.promedio >= :min AND nota.promedio <= :max', {
+          min: min_primaria,
+          max: max_primaria,
+        })
+        .orderBy('nota.promedio', 'DESC')
+        .getMany();
+    } else {
+      primaria = await this.notaRepository.find({
+        where: { periodo: { id: periodo_id }, ciclo: CicloEducativo.PRIMARIA },
+        relations: ['beneficiario'],
+        order: { promedio: 'DESC' },
+        take: cant_primaria,
+      });
+    }
+
+    if (useRangeSecundaria) {
+      secundaria = await this.notaRepository
+        .createQueryBuilder('nota')
+        .innerJoinAndSelect('nota.beneficiario', 'beneficiario')
+        .where('nota.periodo_id = :periodo_id', { periodo_id })
+        .andWhere('nota.ciclo = :ciclo', { ciclo: CicloEducativo.SECUNDARIA })
+        .andWhere('nota.promedio >= :min AND nota.promedio <= :max', {
+          min: min_secundaria,
+          max: max_secundaria,
+        })
+        .orderBy('nota.promedio', 'DESC')
+        .getMany();
+    } else {
+      secundaria = await this.notaRepository.find({
+        where: {
+          periodo: { id: periodo_id },
+          ciclo: CicloEducativo.SECUNDARIA,
+        },
+        relations: ['beneficiario'],
+        order: { promedio: 'DESC' },
+        take: cant_secundaria,
+      });
+    }
 
     return {
       primaria: primaria.map((n) => ({

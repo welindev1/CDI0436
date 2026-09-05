@@ -58,13 +58,27 @@ export class MeritoController {
   @RequierePermiso('merito:ver')
   getGanadores(
     @Param('id') periodo_id: string,
-    @Query('cant_primaria', ParseIntPipe) cant_primaria: number,
-    @Query('cant_secundaria', ParseIntPipe) cant_secundaria: number,
+    @Query('cant_primaria', new ParseIntPipe({ optional: true }))
+    cant_primaria?: number,
+    @Query('cant_secundaria', new ParseIntPipe({ optional: true }))
+    cant_secundaria?: number,
+    @Query('min_primaria', new ParseIntPipe({ optional: true }))
+    min_primaria?: number,
+    @Query('max_primaria', new ParseIntPipe({ optional: true }))
+    max_primaria?: number,
+    @Query('min_secundaria', new ParseIntPipe({ optional: true }))
+    min_secundaria?: number,
+    @Query('max_secundaria', new ParseIntPipe({ optional: true }))
+    max_secundaria?: number,
   ) {
     return this.meritoService.getGanadores(
       periodo_id,
-      cant_primaria,
-      cant_secundaria,
+      cant_primaria ?? 3,
+      cant_secundaria ?? 3,
+      min_primaria,
+      max_primaria,
+      min_secundaria,
+      max_secundaria,
     );
   }
 }
