@@ -70,8 +70,23 @@ export const meritoApi = {
     return response.data;
   },
 
-  getGanadores: async (periodo_id: string, cant_primaria: number = 3, cant_secundaria: number = 3): Promise<GanadoresResponse> => {
-    const response = await apiClient.get(`/merito/periodos/${periodo_id}/ganadores?cant_primaria=${cant_primaria}&cant_secundaria=${cant_secundaria}`);
+  getGanadores: async (
+    periodo_id: string,
+    cant_primaria: number = 3,
+    cant_secundaria: number = 3,
+    min_primaria?: number,
+    max_primaria?: number,
+    min_secundaria?: number,
+    max_secundaria?: number,
+  ): Promise<GanadoresResponse> => {
+    const params = new URLSearchParams();
+    params.set('cant_primaria', String(cant_primaria));
+    params.set('cant_secundaria', String(cant_secundaria));
+    if (min_primaria !== undefined) params.set('min_primaria', String(min_primaria));
+    if (max_primaria !== undefined) params.set('max_primaria', String(max_primaria));
+    if (min_secundaria !== undefined) params.set('min_secundaria', String(min_secundaria));
+    if (max_secundaria !== undefined) params.set('max_secundaria', String(max_secundaria));
+    const response = await apiClient.get(`/merito/periodos/${periodo_id}/ganadores?${params.toString()}`);
     return response.data;
   },
 

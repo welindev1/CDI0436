@@ -14,7 +14,7 @@ import { GanadoresList } from '@/components/merito/GanadoresList';
 import { Search, ArrowLeft, Loader2, Trophy, Award, CheckCircle2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { BeneficiarioPendiente, GanadoresResponse, GanadorMerito, NotaMerito } from '@/lib/types';
+import type { BeneficiarioPendiente, GanadoresResponse, GanadorMerito, ModoGanadores, NotaMerito } from '@/lib/types';
 
 export default function PeriodoDetallePage() {
   const { id } = useParams();
@@ -35,8 +35,13 @@ export default function PeriodoDetallePage() {
 
   // Ganadores state
   const [modalGanadores, setModalGanadores] = useState(false);
+  const [modoGanadores, setModoGanadores] = useState<ModoGanadores>('cantidad');
   const [cantPrimaria, setCantPrimaria] = useState(3);
   const [cantSecundaria, setCantSecundaria] = useState(3);
+  const [minPrimaria, setMinPrimaria] = useState(90);
+  const [maxPrimaria, setMaxPrimaria] = useState(100);
+  const [minSecundaria, setMinSecundaria] = useState(90);
+  const [maxSecundaria, setMaxSecundaria] = useState(100);
   const [previewGanadores, setPreviewGanadores] = useState<GanadoresResponse | null>(null);
   const [mostrarPreview, setMostrarPreview] = useState(false);
 
@@ -125,16 +130,26 @@ export default function PeriodoDetallePage() {
   };
 
   const cargarVistaPrevia = async () => {
-    generarGanadores.mutate(
-      { periodoId, cantPrimaria, cantSecundaria },
-      {
-        onSuccess: (result) => {
-          setPreviewGanadores(result);
-          setMostrarPreview(true);
-        },
-        onError: () => alert('Error al obtener los ganadores'),
-      }
-    );
+    const payload =
+      modoGanadores === 'rango_nota'
+        ? {
+            periodoId,
+            cantPrimaria,
+            cantSecundaria,
+            minPrimaria,
+            maxPrimaria,
+            minSecundaria,
+            maxSecundaria,
+          }
+        : { periodoId, cantPrimaria, cantSecundaria };
+
+    generarGanadores.mutate(payload, {
+      onSuccess: (result) => {
+        setPreviewGanadores(result);
+        setMostrarPreview(true);
+      },
+      onError: () => alert('Error al obtener los ganadores'),
+    });
   };
 
   const generarPDFGanadores = () => {
@@ -201,7 +216,9 @@ export default function PeriodoDetallePage() {
       }
 
       doc.save(
-        `Merito_Estudiantil_${data?.periodo.anio}_P${cantPrimaria}_S${cantSecundaria}.pdf`
+        modoGanadores === 'rango_nota'
+          ? `Merito_Estudiantil_${data?.periodo.anio}_P_${minPrimaria}-${maxPrimaria}_S_${minSecundaria}-${maxSecundaria}.pdf`
+          : `Merito_Estudiantil_${data?.periodo.anio}_P${cantPrimaria}_S${cantSecundaria}.pdf`
       );
     } catch (error: unknown) {
       console.error(error);
@@ -374,10 +391,20 @@ export default function PeriodoDetallePage() {
             >
               <GanadoresList
                 preview={previewGanadores}
+                modo={modoGanadores}
                 cantPrimaria={cantPrimaria}
                 cantSecundaria={cantSecundaria}
+                minPrimaria={minPrimaria}
+                maxPrimaria={maxPrimaria}
+                minSecundaria={minSecundaria}
+                maxSecundaria={maxSecundaria}
+                onModoChange={setModoGanadores}
                 onCantPrimariaChange={setCantPrimaria}
                 onCantSecundariaChange={setCantSecundaria}
+                onMinPrimariaChange={setMinPrimaria}
+                onMaxPrimariaChange={setMaxPrimaria}
+                onMinSecundariaChange={setMinSecundaria}
+                onMaxSecundariaChange={setMaxSecundaria}
                 onPreview={cargarVistaPrevia}
                 onDownloadPDF={generarPDFGanadores}
                 onBack={() => {

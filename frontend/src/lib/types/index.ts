@@ -263,6 +263,8 @@ export interface ComentarioAyuda {
 
 // ============ Mérito ============
 
+export type ModoGanadores = 'cantidad' | 'rango_nota';
+
 export interface PeriodoMerito {
   id: string;
   nombre: string;

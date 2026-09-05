@@ -70,14 +70,22 @@ export function useGenerarGanadoresMerito() {
       periodoId,
       cantPrimaria,
       cantSecundaria,
+      minPrimaria,
+      maxPrimaria,
+      minSecundaria,
+      maxSecundaria,
     }: {
       periodoId: string;
       cantPrimaria: number;
       cantSecundaria: number;
-    }) => meritoApi.getGanadores(periodoId, cantPrimaria, cantSecundaria),
+      minPrimaria?: number;
+      maxPrimaria?: number;
+      minSecundaria?: number;
+      maxSecundaria?: number;
+    }) => meritoApi.getGanadores(periodoId, cantPrimaria, cantSecundaria, minPrimaria, maxPrimaria, minSecundaria, maxSecundaria),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: [...meritoKeys.ganadores(variables.periodoId), variables.cantPrimaria, variables.cantSecundaria],
+        queryKey: [...meritoKeys.ganadores(variables.periodoId)],
       });
     },
   });
@@ -86,11 +94,15 @@ export function useGenerarGanadoresMerito() {
 export function useGanadoresMerito(
   periodoId: string,
   cantPrimaria = 3,
-  cantSecundaria = 3
+  cantSecundaria = 3,
+  minPrimaria?: number,
+  maxPrimaria?: number,
+  minSecundaria?: number,
+  maxSecundaria?: number,
 ) {
   return useQuery({
-    queryKey: [...meritoKeys.ganadores(periodoId), cantPrimaria, cantSecundaria],
-    queryFn: () => meritoApi.getGanadores(periodoId, cantPrimaria, cantSecundaria),
+    queryKey: [...meritoKeys.ganadores(periodoId), cantPrimaria, cantSecundaria, minPrimaria, maxPrimaria, minSecundaria, maxSecundaria],
+    queryFn: () => meritoApi.getGanadores(periodoId, cantPrimaria, cantSecundaria, minPrimaria, maxPrimaria, minSecundaria, maxSecundaria),
     enabled: !!periodoId,
   });
 }
