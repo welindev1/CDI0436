@@ -37,14 +37,14 @@ export default function BonosRegalosPage() {
         let colMap: Record<string, number> = {};
 
         for (let i = 0; i < Math.min(raw.length, 10); i++) {
-          const row = raw[i].map((c: unknown) => String(c).toLowerCase());
-          const hasId = row.some(c => c.includes('id local') || c.includes('beneficiario'));
+          const row = raw[i].map((c: unknown) => String(c).toLowerCase().trim());
+          const hasId = row.some(c => c.includes('id local') || c.includes('beneficiario') || c === 'codigo' || c === 'código');
           if (hasId) {
             headerRow = i;
             row.forEach((cell, idx) => {
-              if (cell.includes('id local')) {
+              if (cell.includes('id local') || cell === 'codigo' || cell === 'código') {
                 colMap['codigo'] = idx;
-              } else if (cell.includes('nombre del beneficiario') || cell.includes('nombre beneficiario')) {
+              } else if (cell.includes('nombre del beneficiario') || cell.includes('nombre beneficiario') || cell.includes('nombre completo')) {
                 colMap['beneficiario'] = idx;
               } else if (cell.includes('nombre del padre') || cell.includes('nombre padre')) {
                 colMap['padre'] = idx;
